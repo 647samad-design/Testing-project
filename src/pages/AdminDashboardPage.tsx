@@ -11,6 +11,7 @@ import {
   getAdminMetrics, getUnverifiedPositions, verifyPosition, flagPositionOutdated,
   listCandidatesForAdmin, updateCandidate, deleteCandidate,
   listProfilesForAdmin, setAdminRole, getAuditLog,
+  listPendingSubmissions, approveSubmission, rejectSubmission,
 } from '@/services/admin';
 import type { VerificationStatus } from '@/types';
 import { Navigate } from 'react-router-dom';
@@ -68,6 +69,7 @@ export function AdminDashboardPage() {
       <Tabs defaultValue="review">
         <TabsList>
           <TabsTrigger value="review">Review Claims</TabsTrigger>
+          <TabsTrigger value="submissions">Content Submissions</TabsTrigger>
           <TabsTrigger value="add">Add Content</TabsTrigger>
           <TabsTrigger value="manage">Manage Candidates</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
@@ -140,6 +142,10 @@ export function AdminDashboardPage() {
 
         {/* Add content */}
         <TabsContent value="review" />
+        <TabsContent value="submissions" className="mt-6">
+          <SubmissionsTab />
+        </TabsContent>
+
         <TabsContent value="add" className="mt-6">
           <div className="grid gap-6 md:grid-cols-2">
             <AddCandidateForm />
@@ -161,6 +167,79 @@ export function AdminDashboardPage() {
           <ActivityLogTab />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function SubmissionsTab() {
+  const [subs, setSubs] = useState<Awaited<ReturnType<typeof listPendingSubmissions>>>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setSubs(await listPendingSubmissions());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load submissions.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleApprove(id: string) {
+    setBusyId(id);
+    try {
+      const result = await approveSubmission(id);
+      toast.success(result.applied_to_candidates
+        ? 'Approved and published to the candidate profile.'
+        : `Approved — "${result.field_name}" doesn't map to a profile field yet, follow up manually.`);
+      setSubs((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to approve submission.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReject(id: string) {
+    setBusyId(id);
+    try {
+      await rejectSubmission(id);
+      toast.success('Submission rejected.');
+      setSubs((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to reject submission.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading submissions…" />;
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Content candidates have submitted about themselves (bio, photo, links, etc). Approving a
+        submission for a field like bio or photo publishes it straight to their profile.
+      </p>
+      {subs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No pending submissions.</p>
+      ) : (
+        subs.map((s) => (
+          <Card key={s.id} className="p-4">
+            <p className="text-sm font-medium">{s.field_name.replace(/_/g, ' ')}</p>
+            <p className="mt-1 text-sm text-muted-foreground break-words line-clamp-3">{s.field_value || '(empty)'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{new Date(s.submitted_at).toLocaleString()}</p>
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" disabled={busyId === s.id} onClick={() => handleApprove(s.id)}>Approve</Button>
+              <Button size="sm" variant="outline" disabled={busyId === s.id} onClick={() => handleReject(s.id)}>Reject</Button>
+            </div>
+          </Card>
+        ))
+      )}
     </div>
   );
 }

@@ -430,7 +430,8 @@ export interface CandidateEvent {
 export interface Subscription {
   id: string;
   user_id: string;
-  plan: 'free' | 'premium_monthly' | 'premium_yearly';
+  plan: 'free' | 'candidate_monthly' | 'candidate_yearly' | 'pro_monthly' | 'pro_yearly'
+    | 'premium_monthly' | 'premium_yearly'; // legacy values, kept for old rows
   status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'expired';
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;

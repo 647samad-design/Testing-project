@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
+import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { useAuth } from '@/hooks/use-auth';
 import { getMyClaimedCandidates, submitCandidateContent, submitQuestionnaireResponse, submitEvent } from '@/services/candidate-portal';
 
@@ -138,6 +139,47 @@ export function CandidatePortalPage() {
                       Use the tabs above to submit updates to your profile. All changes go through admin review before appearing publicly.
                       Your payments never affect your ranking, placement, or editorial content.
                     </p>
+
+                    <div className="mt-6 border-t border-border pt-6">
+                      <Label className="text-sm font-semibold">Profile Photo</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Upload a photo, then submit it for review. It goes live once approved.
+                      </p>
+                      <div className="mt-3">
+                        <PhotoUpload
+                          candidateId={verifiedClaim.candidate_id}
+                          onUploaded={async (url) => {
+                            if (!url) return;
+                            setSubmitting(true);
+                            const r = await submitCandidateContent(verifiedClaim.candidate_id, 'photo_url', url);
+                            setSubmitting(false);
+                            setMessage(r.success ? 'Photo submitted for review.' : (r.error ?? 'Failed to submit photo.'));
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-6 border-t border-border pt-6">
+                      <Label className="text-sm font-semibold">Candidate Management</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Upgrade to launch campaign tools, invite a team, and unlock analytics for your profile.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 rounded-xl gap-1.5"
+                        onClick={async () => {
+                          try {
+                            const { startCheckout } = await import('@/services/stripe');
+                            await startCheckout('candidate_management', verifiedClaim.candidate_id);
+                          } catch (err) {
+                            setMessage(err instanceof Error ? err.message : 'Could not start checkout.');
+                          }
+                        }}
+                      >
+                        <Sparkles className="h-3.5 w-3.5" /> Upgrade to Management — $299
+                      </Button>
+                    </div>
                   </Card>
                 )}
 

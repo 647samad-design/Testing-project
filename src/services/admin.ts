@@ -188,7 +188,31 @@ export async function deleteBallotMeasure(id: string): Promise<void> {
   await logAdminAction('delete_ballot_measure', 'ballot_measures', id);
 }
 
-/** Recent audit log entries for the admin "Activity" tab. */
+/** Pending candidate self-service submissions (bio, photo, links, etc) for admin review. */
+export async function listPendingSubmissions(): Promise<Array<{
+  id: string; candidate_id: string; field_name: string; field_value: string | null; submitted_at: string;
+}>> {
+  const { data, error } = await supabase
+    .from('candidate_submissions')
+    .select('id, candidate_id, field_name, field_value, submitted_at')
+    .eq('status', 'pending')
+    .order('submitted_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Approves a submission via the SECURITY DEFINER RPC, which also writes the
+ * value onto the live candidate row when the field maps to one directly. */
+export async function approveSubmission(id: string): Promise<{ applied_to_candidates: boolean; field_name: string }> {
+  const { data, error } = await supabase.rpc('apply_candidate_submission', { p_submission_id: id });
+  if (error) throw error;
+  return data as { applied_to_candidates: boolean; field_name: string };
+}
+
+export async function rejectSubmission(id: string, notes?: string): Promise<void> {
+  const { error } = await supabase.rpc('reject_candidate_submission', { p_submission_id: id, p_notes: notes ?? null });
+  if (error) throw error;
+}
 export async function getAuditLog(limit = 50): Promise<Array<{
   id: string; admin_id: string | null; action: string; target_table: string | null;
   target_id: string | null; details: Record<string, unknown> | null; created_at: string;
