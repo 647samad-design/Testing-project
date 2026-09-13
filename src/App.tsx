@@ -22,6 +22,9 @@ import { CandidateQuizPage } from '@/pages/CandidateQuizPage';
 import { PricingPage } from '@/pages/PricingPage';
 import { MessagesPage } from '@/pages/MessagesPage';
 import { ContestDetailPage, MeasureDetailPage } from '@/pages/ContestDetailPage';
+import { PrivacyPolicyPage } from '@/pages/legal/PrivacyPolicyPage';
+import { TermsOfServicePage } from '@/pages/legal/TermsOfServicePage';
+import { DisclaimerPage } from '@/pages/legal/DisclaimerPage';
 import { Toaster } from '@/components/ui/sonner';
 
 function App() {
@@ -55,6 +58,9 @@ function App() {
               <Route path="/onboarding" element={<OnboardingQuizPage />} />
               <Route path="/candidate-quiz" element={<CandidateQuizPage />} />
               <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsOfServicePage />} />
+              <Route path="/disclaimer" element={<DisclaimerPage />} />
               <Route path="*" element={<LandingPage />} />
             </Routes>
           </main>

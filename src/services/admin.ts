@@ -1,5 +1,20 @@
 import { supabase } from '@/lib/supabase';
 
+/** Writes one row to `audit_log` via the SECURITY DEFINER `log_admin_action` RPC.
+ * Never throws — a logging failure should not block the admin's actual action. */
+async function logAdminAction(action: string, targetTable?: string, targetId?: string, details?: Record<string, unknown>) {
+  try {
+    await supabase.rpc('log_admin_action', {
+      p_action: action,
+      p_target_table: targetTable ?? null,
+      p_target_id: targetId ?? null,
+      p_details: details ?? null,
+    });
+  } catch {
+    // Swallow — audit logging is best-effort and must not break the admin flow.
+  }
+}
+
 export async function getAdminMetrics(): Promise<{
   candidates: number;
   elections: number;
@@ -58,6 +73,7 @@ export async function verifyPosition(positionId: string): Promise<void> {
     .update({ verification_status: 'verified' })
     .eq('id', positionId);
   if (error) throw error;
+  await logAdminAction('verify_position', 'candidate_positions', positionId);
 }
 
 export async function flagPositionOutdated(positionId: string): Promise<void> {
@@ -66,6 +82,7 @@ export async function flagPositionOutdated(positionId: string): Promise<void> {
     .update({ verification_status: 'not_verified' })
     .eq('id', positionId);
   if (error) throw error;
+  await logAdminAction('flag_position_outdated', 'candidate_positions', positionId);
 }
 
 export async function addCandidate(candidate: {
@@ -73,13 +90,43 @@ export async function addCandidate(candidate: {
   last_name: string;
   party: string;
   bio: string;
+  photo_url?: string | null;
   is_demo?: boolean;
 }): Promise<void> {
-  const { error } = await supabase.from('candidates').insert({
-    ...candidate,
-    is_demo: candidate.is_demo ?? true,
-  });
+  const { data, error } = await supabase
+    .from('candidates')
+    .insert({ ...candidate, is_demo: candidate.is_demo ?? true })
+    .select('id')
+    .single();
   if (error) throw error;
+  await logAdminAction('add_candidate', 'candidates', data?.id, { first_name: candidate.first_name, last_name: candidate.last_name });
+}
+
+/** List candidates for the admin "manage" table, most recently added first. */
+export async function listCandidatesForAdmin(): Promise<Array<{
+  id: string; first_name: string; last_name: string; party: string | null; photo_url: string | null; is_demo: boolean;
+}>> {
+  const { data, error } = await supabase
+    .from('candidates')
+    .select('id, first_name, last_name, party, photo_url, is_demo')
+    .order('last_name', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function updateCandidate(
+  id: string,
+  updates: Partial<{ first_name: string; last_name: string; party: string; bio: string; photo_url: string | null }>
+): Promise<void> {
+  const { error } = await supabase.from('candidates').update(updates).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('update_candidate', 'candidates', id, updates);
+}
+
+export async function deleteCandidate(id: string): Promise<void> {
+  const { error } = await supabase.from('candidates').delete().eq('id', id);
+  if (error) throw error;
+  await logAdminAction('delete_candidate', 'candidates', id);
 }
 
 export async function addElection(election: {
@@ -87,8 +134,9 @@ export async function addElection(election: {
   election_date: string;
   description: string;
 }): Promise<void> {
-  const { error } = await supabase.from('elections').insert(election);
+  const { data, error } = await supabase.from('elections').insert(election).select('id').single();
   if (error) throw error;
+  await logAdminAction('add_election', 'elections', data?.id, { name: election.name });
 }
 
 export async function addBallotContest(contest: {
@@ -113,9 +161,65 @@ export async function addSource(source: {
   description?: string;
   credibility_level?: string;
 }): Promise<void> {
-  const { error } = await supabase.from('sources').insert({
-    credibility_level: 'secondary',
-    ...source,
+  const { data, error } = await supabase
+    .from('sources')
+    .insert({ credibility_level: 'secondary', ...source })
+    .select('id')
+    .single();
+  if (error) throw error;
+  await logAdminAction('add_source', 'sources', data?.id, { title: source.title });
+}
+
+export async function deleteSource(id: string): Promise<void> {
+  const { error } = await supabase.from('sources').delete().eq('id', id);
+  if (error) throw error;
+  await logAdminAction('delete_source', 'sources', id);
+}
+
+export async function deleteElection(id: string): Promise<void> {
+  const { error } = await supabase.from('elections').delete().eq('id', id);
+  if (error) throw error;
+  await logAdminAction('delete_election', 'elections', id);
+}
+
+export async function deleteBallotMeasure(id: string): Promise<void> {
+  const { error } = await supabase.from('ballot_measures').delete().eq('id', id);
+  if (error) throw error;
+  await logAdminAction('delete_ballot_measure', 'ballot_measures', id);
+}
+
+/** Recent audit log entries for the admin "Activity" tab. */
+export async function getAuditLog(limit = 50): Promise<Array<{
+  id: string; admin_id: string | null; action: string; target_table: string | null;
+  target_id: string | null; details: Record<string, unknown> | null; created_at: string;
+}>> {
+  const { data, error } = await supabase
+    .from('audit_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** All profiles, for the "Manage Admins" screen. Relies on the admin-read-all
+ * RLS policy added alongside `set_admin_role`. */
+export async function listProfilesForAdmin(): Promise<Array<{ id: string; full_name: string | null; is_admin: boolean }>> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, is_admin')
+    .order('full_name', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Grants or revokes admin status via the SECURITY DEFINER `set_admin_role` RPC.
+ * The RPC itself re-checks that the caller is an admin and blocks self-demotion,
+ * so this never reopens the privilege-escalation issue that was patched at the DB level. */
+export async function setAdminRole(targetUserId: string, isAdmin: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_admin_role', {
+    target_user_id: targetUserId,
+    new_is_admin: isAdmin,
   });
   if (error) throw error;
 }

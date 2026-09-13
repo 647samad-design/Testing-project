@@ -190,19 +190,48 @@ async function handleSubscriptionChange(
 
   if (!customer) return;
 
-  const premiumMonthlyPriceId = Deno.env.get("STRIPE_PREMIUM_MONTHLY_PRICE_ID");
-  const premiumYearlyPriceId = Deno.env.get("STRIPE_PREMIUM_YEARLY_PRICE_ID");
-  const candidateClaimPriceId = Deno.env.get("STRIPE_CANDIDATE_CLAIM_PRICE_ID");
+  // Voter-facing tiers. NOTE: claiming a candidate profile is FREE (client decision,
+  // Sept 2026) — there is no paid "claim" price ID anymore. Only Candidate Management
+  // ($299, per claimed candidate profile) is a paid add-on, handled separately below
+  // via candidate_management_subscriptions, not through this per-user table.
+  const candidateMonthlyPriceId = Deno.env.get("STRIPE_CANDIDATE_MONTHLY_PRICE_ID");
+  const candidateYearlyPriceId = Deno.env.get("STRIPE_CANDIDATE_YEARLY_PRICE_ID");
+  const proMonthlyPriceId = Deno.env.get("STRIPE_PRO_MONTHLY_PRICE_ID");
+  const proYearlyPriceId = Deno.env.get("STRIPE_PRO_YEARLY_PRICE_ID");
   const candidateMgmtPriceId = Deno.env.get("STRIPE_CANDIDATE_MANAGEMENT_PRICE_ID");
+
+  if (priceId === candidateMgmtPriceId) {
+    // Management is tied to a candidate profile (via metadata.candidate_id set at
+    // checkout time), not to the voter's own `subscriptions` row.
+    const candidateId = (subscription.metadata as Record<string, string> | undefined)?.candidate_id;
+    if (candidateId) {
+      await supabase.from("candidate_management_subscriptions").upsert({
+        candidate_id: candidateId,
+        status,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        current_period_start: currentPeriodStart ? new Date(currentPeriodStart * 1000).toISOString() : null,
+        current_period_end: currentPeriodEnd ? new Date(currentPeriodEnd * 1000).toISOString() : null,
+        canceled_at: status === "canceled" ? new Date().toISOString() : null,
+      }, { onConflict: "candidate_id" });
+    }
+    return;
+  }
 
   let plan = "free";
   let billingInterval: string | null = null;
 
-  if (priceId === premiumMonthlyPriceId) {
-    plan = "premium_monthly";
+  if (priceId === candidateMonthlyPriceId) {
+    plan = "candidate_monthly";
     billingInterval = "monthly";
-  } else if (priceId === premiumYearlyPriceId) {
-    plan = "premium_yearly";
+  } else if (priceId === candidateYearlyPriceId) {
+    plan = "candidate_yearly";
+    billingInterval = "yearly";
+  } else if (priceId === proMonthlyPriceId) {
+    plan = "pro_monthly";
+    billingInterval = "monthly";
+  } else if (priceId === proYearlyPriceId) {
+    plan = "pro_yearly";
     billingInterval = "yearly";
   }
 
@@ -221,26 +250,6 @@ async function handleSubscriptionChange(
       current_period_end: currentPeriodEnd ? new Date(currentPeriodEnd * 1000).toISOString() : null,
       cancel_at_period_end: cancelAtPeriodEnd ?? false,
     }, { onConflict: "user_id" });
-
-  if (priceId === candidateClaimPriceId) {
-    await supabase.from("candidate_services").insert({
-      candidate_id: null,
-      buyer_user_id: customer.user_id,
-      service_type: "profile_claim",
-      price_cents: 9900,
-      stripe_payment_id: subscriptionId,
-      status: "pending_link",
-    });
-  } else if (priceId === candidateMgmtPriceId) {
-    await supabase.from("candidate_services").insert({
-      candidate_id: null,
-      buyer_user_id: customer.user_id,
-      service_type: "profile_management",
-      price_cents: 29900,
-      stripe_payment_id: subscriptionId,
-      status: "pending_link",
-    });
-  }
 }
 
 async function handleInvoicePaid(

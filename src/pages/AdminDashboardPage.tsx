@@ -7,10 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
-import { getAdminMetrics, getUnverifiedPositions, verifyPosition, flagPositionOutdated } from '@/services/admin';
+import {
+  getAdminMetrics, getUnverifiedPositions, verifyPosition, flagPositionOutdated,
+  listCandidatesForAdmin, updateCandidate, deleteCandidate,
+  listProfilesForAdmin, setAdminRole, getAuditLog,
+} from '@/services/admin';
 import type { VerificationStatus } from '@/types';
 import { Navigate } from 'react-router-dom';
 import { LoadingState } from '@/components/shared/StateComponents';
+import { PhotoUpload } from '@/components/shared/PhotoUpload';
+import { toast } from 'sonner';
+import { Pencil, Trash2, ShieldOff, ShieldCheck as ShieldCheckIcon, ScrollText } from 'lucide-react';
 
 export function AdminDashboardPage() {
   const { profile, loading: authLoading } = useAuth();
@@ -62,6 +69,9 @@ export function AdminDashboardPage() {
         <TabsList>
           <TabsTrigger value="review">Review Claims</TabsTrigger>
           <TabsTrigger value="add">Add Content</TabsTrigger>
+          <TabsTrigger value="manage">Manage Candidates</TabsTrigger>
+          <TabsTrigger value="admins">Admins</TabsTrigger>
+          <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
 
         {/* Review unverified positions */}
@@ -93,8 +103,12 @@ export function AdminDashboardPage() {
                         variant="outline"
                         className="gap-1.5 text-success border-success/30 hover:bg-success/10"
                         onClick={async () => {
-                          await verifyPosition(p.id);
-                          setUnverified((prev) => prev.filter((x) => x.id !== p.id));
+                          try {
+                            await verifyPosition(p.id);
+                            setUnverified((prev) => prev.filter((x) => x.id !== p.id));
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : 'Failed to verify. Please try again.');
+                          }
                         }}
                       >
                         <Check className="h-4 w-4" />
@@ -105,8 +119,12 @@ export function AdminDashboardPage() {
                         variant="outline"
                         className="gap-1.5 text-warning border-warning/30 hover:bg-warning/10"
                         onClick={async () => {
-                          await flagPositionOutdated(p.id);
-                          setUnverified((prev) => prev.filter((x) => x.id !== p.id));
+                          try {
+                            await flagPositionOutdated(p.id);
+                            setUnverified((prev) => prev.filter((x) => x.id !== p.id));
+                          } catch (err) {
+                            toast.error(err instanceof Error ? err.message : 'Failed to flag. Please try again.');
+                          }
                         }}
                       >
                         <Flag className="h-4 w-4" />
@@ -130,7 +148,222 @@ export function AdminDashboardPage() {
             <AddMeasureForm />
           </div>
         </TabsContent>
+
+        <TabsContent value="manage" className="mt-6">
+          <ManageCandidatesTab />
+        </TabsContent>
+
+        <TabsContent value="admins" className="mt-6">
+          <ManageAdminsTab currentUserId={profile.id} />
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-6">
+          <ActivityLogTab />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function ManageCandidatesTab() {
+  const [candidates, setCandidates] = useState<Awaited<ReturnType<typeof listCandidatesForAdmin>>>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ first_name: string; last_name: string; party: string; photo_url: string | null }>({ first_name: '', last_name: '', party: '', photo_url: null });
+  const [saving, setSaving] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setCandidates(await listCandidatesForAdmin());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load candidates.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  function startEdit(c: (typeof candidates)[number]) {
+    setEditingId(c.id);
+    setDraft({ first_name: c.first_name, last_name: c.last_name, party: c.party ?? '', photo_url: c.photo_url });
+  }
+
+  async function saveEdit(id: string) {
+    setSaving(true);
+    try {
+      await updateCandidate(id, draft);
+      toast.success('Candidate updated.');
+      setEditingId(null);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save changes.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return;
+    try {
+      await deleteCandidate(id);
+      toast.success('Candidate deleted.');
+      setCandidates((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete candidate.');
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading candidates…" />;
+
+  return (
+    <div className="space-y-3">
+      {candidates.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No candidates yet.</p>
+      ) : (
+        candidates.map((c) => (
+          <Card key={c.id} className="p-4">
+            {editingId === c.id ? (
+              <div className="space-y-3">
+                <PhotoUpload candidateId={c.id} currentUrl={draft.photo_url} onUploaded={(url) => setDraft((d) => ({ ...d, photo_url: url || null }))} />
+                <div className="grid grid-cols-2 gap-3">
+                  <Input value={draft.first_name} onChange={(e) => setDraft((d) => ({ ...d, first_name: e.target.value }))} placeholder="First name" />
+                  <Input value={draft.last_name} onChange={(e) => setDraft((d) => ({ ...d, last_name: e.target.value }))} placeholder="Last name" />
+                </div>
+                <Input value={draft.party} onChange={(e) => setDraft((d) => ({ ...d, party: e.target.value }))} placeholder="Party" />
+                <div className="flex gap-2">
+                  <Button size="sm" disabled={saving} onClick={() => saveEdit(c.id)}>{saving ? 'Saving…' : 'Save'}</Button>
+                  <Button size="sm" variant="outline" disabled={saving} onClick={() => setEditingId(null)}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-secondary">
+                    {c.photo_url && <img src={c.photo_url} alt="" className="h-full w-full object-cover" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{c.first_name} {c.last_name}</p>
+                    <p className="text-xs text-muted-foreground">{c.party || 'No party listed'}{c.is_demo ? ' · Demo data' : ''}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => startEdit(c)}>
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => handleDelete(c.id, `${c.first_name} ${c.last_name}`)}>
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+        ))
+      )}
+    </div>
+  );
+}
+
+function ManageAdminsTab({ currentUserId }: { currentUserId: string }) {
+  const [profiles, setProfiles] = useState<Awaited<ReturnType<typeof listProfilesForAdmin>>>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setProfiles(await listProfilesForAdmin());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load users.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function toggleAdmin(id: string, next: boolean) {
+    setBusyId(id);
+    try {
+      await setAdminRole(id, next);
+      toast.success(next ? 'Admin access granted.' : 'Admin access revoked.');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update admin role.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading users…" />;
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Grant or revoke admin access. You cannot remove your own admin status here as a safety measure.
+      </p>
+      {profiles.map((p) => (
+        <Card key={p.id} className="p-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{p.full_name || 'Unnamed user'}</p>
+            <p className="text-xs text-muted-foreground">{p.is_admin ? 'Admin' : 'Standard user'}</p>
+          </div>
+          {p.is_admin ? (
+            <Button
+              size="sm" variant="outline" disabled={busyId === p.id || p.id === currentUserId}
+              className="gap-1.5 text-warning border-warning/30 hover:bg-warning/10"
+              onClick={() => toggleAdmin(p.id, false)}
+            >
+              <ShieldOff className="h-3.5 w-3.5" /> Revoke admin
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" disabled={busyId === p.id} className="gap-1.5" onClick={() => toggleAdmin(p.id, true)}>
+              <ShieldCheckIcon className="h-3.5 w-3.5" /> Make admin
+            </Button>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ActivityLogTab() {
+  const [entries, setEntries] = useState<Awaited<ReturnType<typeof getAuditLog>>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setEntries(await getAuditLog());
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to load activity log.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <LoadingState message="Loading activity…" />;
+
+  return (
+    <div className="space-y-2">
+      {entries.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No admin activity recorded yet.</p>
+      ) : (
+        entries.map((e) => (
+          <Card key={e.id} className="p-3 flex items-start gap-3">
+            <ScrollText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium">{e.action.replace(/_/g, ' ')}</p>
+              <p className="text-xs text-muted-foreground">
+                {e.target_table ? `${e.target_table}${e.target_id ? ` · ${e.target_id}` : ''} · ` : ''}
+                {new Date(e.created_at).toLocaleString()}
+              </p>
+            </div>
+          </Card>
+        ))
+      )}
     </div>
   );
 }
@@ -150,14 +383,23 @@ function AddCandidateForm() {
   const [lastName, setLastName] = useState('');
   const [party, setParty] = useState('');
   const [bio, setBio] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    const { addCandidate } = await import('@/services/admin');
-    await addCandidate({ first_name: firstName, last_name: lastName, party, bio });
-    setFirstName(''); setLastName(''); setParty(''); setBio('');
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    try {
+      const { addCandidate } = await import('@/services/admin');
+      await addCandidate({ first_name: firstName, last_name: lastName, party, bio, photo_url: photoUrl });
+      setFirstName(''); setLastName(''); setParty(''); setBio(''); setPhotoUrl(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add candidate. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -166,6 +408,7 @@ function AddCandidateForm() {
         <Plus className="h-4 w-4" /> Add Candidate
       </h3>
       <div className="space-y-3">
+        <PhotoUpload candidateId="new" currentUrl={photoUrl} onUploaded={(url) => setPhotoUrl(url || null)} />
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-xs">First Name</Label>
@@ -184,8 +427,8 @@ function AddCandidateForm() {
           <Label className="text-xs">Bio</Label>
           <Input value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Brief biography…" />
         </div>
-        <Button onClick={handleSave} disabled={!firstName || !lastName} size="sm" className="w-full">
-          {saved ? 'Added!' : 'Add Candidate'}
+        <Button onClick={handleSave} disabled={!firstName || !lastName || saving} size="sm" className="w-full">
+          {saving ? 'Saving…' : saved ? 'Added!' : 'Add Candidate'}
         </Button>
       </div>
     </Card>
@@ -198,13 +441,21 @@ function AddSourceForm() {
   const [publisher, setPublisher] = useState('');
   const [sourceType, setSourceType] = useState('news');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    const { addSource } = await import('@/services/admin');
-    await addSource({ title, url, publisher, source_type: sourceType });
-    setTitle(''); setUrl(''); setPublisher('');
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    try {
+      const { addSource } = await import('@/services/admin');
+      await addSource({ title, url, publisher, source_type: sourceType });
+      setTitle(''); setUrl(''); setPublisher('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add source. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -238,8 +489,8 @@ function AddSourceForm() {
             <option value="opinion">Opinion</option>
           </select>
         </div>
-        <Button onClick={handleSave} disabled={!title} size="sm" className="w-full">
-          {saved ? 'Added!' : 'Add Source'}
+        <Button onClick={handleSave} disabled={!title || saving} size="sm" className="w-full">
+          {saving ? 'Saving…' : saved ? 'Added!' : 'Add Source'}
         </Button>
       </div>
     </Card>
@@ -250,13 +501,21 @@ function AddElectionForm() {
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    const { addElection } = await import('@/services/admin');
-    await addElection({ name, election_date: date, description: '' });
-    setName(''); setDate('');
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    try {
+      const { addElection } = await import('@/services/admin');
+      await addElection({ name, election_date: date, description: '' });
+      setName(''); setDate('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add election. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -273,8 +532,8 @@ function AddElectionForm() {
           <Label className="text-xs">Election Date</Label>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
-        <Button onClick={handleSave} disabled={!name || !date} size="sm" className="w-full">
-          {saved ? 'Added!' : 'Add Election'}
+        <Button onClick={handleSave} disabled={!name || !date || saving} size="sm" className="w-full">
+          {saving ? 'Saving…' : saved ? 'Added!' : 'Add Election'}
         </Button>
       </div>
     </Card>
@@ -286,17 +545,28 @@ function AddMeasureForm() {
   const [measureType, setMeasureType] = useState('amendment');
   const [summary, setSummary] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    const { addBallotMeasure } = await import('@/services/admin');
-    // Use the first election
-    const { supabase } = await import('@/lib/supabase');
-    const { data } = await supabase.from('elections').select('id').order('election_date', { ascending: false }).limit(1).maybeSingle();
-    if (!data) return;
-    await addBallotMeasure({ election_id: data.id, title, measure_type: measureType, summary });
-    setTitle(''); setSummary('');
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    try {
+      const { addBallotMeasure } = await import('@/services/admin');
+      // Use the first election
+      const { supabase } = await import('@/lib/supabase');
+      const { data } = await supabase.from('elections').select('id').order('election_date', { ascending: false }).limit(1).maybeSingle();
+      if (!data) {
+        toast.error('Create an election first, then add a ballot measure.');
+        return;
+      }
+      await addBallotMeasure({ election_id: data.id, title, measure_type: measureType, summary });
+      setTitle(''); setSummary('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add ballot measure. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -321,8 +591,8 @@ function AddMeasureForm() {
           <Label className="text-xs">Summary</Label>
           <Input value={summary} onChange={(e) => setSummary(e.target.value)} />
         </div>
-        <Button onClick={handleSave} disabled={!title} size="sm" className="w-full">
-          {saved ? 'Added!' : 'Add Measure'}
+        <Button onClick={handleSave} disabled={!title || saving} size="sm" className="w-full">
+          {saving ? 'Saving…' : saved ? 'Added!' : 'Add Measure'}
         </Button>
       </div>
     </Card>
