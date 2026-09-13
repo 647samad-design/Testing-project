@@ -12,7 +12,10 @@ import {
   listCandidatesForAdmin, updateCandidate, deleteCandidate,
   listProfilesForAdmin, setAdminRole, getAuditLog,
   listPendingSubmissions, approveSubmission, rejectSubmission,
+  bulkImportCandidates,
 } from '@/services/admin';
+import Papa from 'papaparse';
+import { Upload as UploadIcon } from 'lucide-react';
 import type { VerificationStatus } from '@/types';
 import { Navigate } from 'react-router-dom';
 import { LoadingState } from '@/components/shared/StateComponents';
@@ -72,6 +75,7 @@ export function AdminDashboardPage() {
           <TabsTrigger value="submissions">Content Submissions</TabsTrigger>
           <TabsTrigger value="add">Add Content</TabsTrigger>
           <TabsTrigger value="manage">Manage Candidates</TabsTrigger>
+          <TabsTrigger value="import">Import Candidates</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
@@ -159,6 +163,10 @@ export function AdminDashboardPage() {
           <ManageCandidatesTab />
         </TabsContent>
 
+        <TabsContent value="import" className="mt-6">
+          <ImportCandidatesTab />
+        </TabsContent>
+
         <TabsContent value="admins" className="mt-6">
           <ManageAdminsTab currentUserId={profile.id} />
         </TabsContent>
@@ -239,6 +247,129 @@ function SubmissionsTab() {
             </div>
           </Card>
         ))
+      )}
+    </div>
+  );
+}
+
+type ImportRow = { first_name: string; last_name: string; party?: string; bio?: string; photo_url?: string };
+
+function ImportCandidatesTab() {
+  const [rows, setRows] = useState<ImportRow[]>([]);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  function parseRows(raw: unknown[]): { valid: ImportRow[]; errors: string[] } {
+    const valid: ImportRow[] = [];
+    const errs: string[] = [];
+    raw.forEach((r, i) => {
+      const row = r as Record<string, string>;
+      const first_name = (row.first_name || row.firstName || '').trim();
+      const last_name = (row.last_name || row.lastName || '').trim();
+      if (!first_name || !last_name) {
+        errs.push(`Row ${i + 1}: missing first_name or last_name — skipped.`);
+        return;
+      }
+      valid.push({
+        first_name,
+        last_name,
+        party: (row.party || '').trim() || undefined,
+        bio: (row.bio || '').trim() || undefined,
+        photo_url: (row.photo_url || row.photoUrl || '').trim() || undefined,
+      });
+    });
+    return { valid, errors: errs };
+  }
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setRows([]);
+    setErrors([]);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = String(reader.result);
+        let raw: unknown[];
+        if (file.name.endsWith('.json')) {
+          const parsed = JSON.parse(text);
+          raw = Array.isArray(parsed) ? parsed : [parsed];
+        } else {
+          const result = Papa.parse(text, { header: true, skipEmptyLines: true });
+          raw = result.data as unknown[];
+        }
+        const { valid, errors: rowErrors } = parseRows(raw);
+        setRows(valid);
+        setErrors(rowErrors);
+        if (valid.length === 0 && rowErrors.length === 0) {
+          setErrors(['No rows found in file.']);
+        }
+      } catch (err) {
+        setErrors([err instanceof Error ? `Could not parse file: ${err.message}` : 'Could not parse file.']);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  async function handleImport() {
+    if (rows.length === 0) return;
+    setImporting(true);
+    try {
+      const { inserted } = await bulkImportCandidates(rows);
+      toast.success(`Imported ${inserted} candidate${inserted === 1 ? '' : 's'}.`);
+      setRows([]);
+      setFileName(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Import failed. No candidates were added.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-5">
+        <h3 className="font-semibold mb-2 flex items-center gap-2">
+          <UploadIcon className="h-4 w-4" /> Import Candidates from CSV or JSON
+        </h3>
+        <p className="text-sm text-muted-foreground mb-3">
+          Columns: <code>first_name, last_name, party, bio, photo_url</code> (party/bio/photo_url optional).
+          Photo URLs must already be hosted somewhere public — this doesn't fetch or copy images for you.
+        </p>
+        <input
+          type="file"
+          accept=".csv,.json"
+          onChange={handleFile}
+          className="text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm"
+        />
+        {fileName && <p className="mt-2 text-xs text-muted-foreground">Loaded: {fileName}</p>}
+      </Card>
+
+      {errors.length > 0 && (
+        <Card className="p-4 border-destructive/30">
+          {errors.map((e, i) => <p key={i} className="text-xs text-destructive">{e}</p>)}
+        </Card>
+      )}
+
+      {rows.length > 0 && (
+        <Card className="p-4">
+          <p className="text-sm font-medium mb-3">{rows.length} candidate{rows.length === 1 ? '' : 's'} ready to import</p>
+          <div className="max-h-64 overflow-y-auto space-y-1.5">
+            {rows.slice(0, 25).map((r, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm border-b border-border/50 pb-1.5">
+                <span className="font-medium">{r.first_name} {r.last_name}</span>
+                <span className="text-muted-foreground text-xs">{r.party || 'No party'}</span>
+              </div>
+            ))}
+            {rows.length > 25 && <p className="text-xs text-muted-foreground pt-1">…and {rows.length - 25} more</p>}
+          </div>
+          <Button onClick={handleImport} disabled={importing} className="mt-4">
+            {importing ? 'Importing…' : `Import ${rows.length} Candidate${rows.length === 1 ? '' : 's'}`}
+          </Button>
+        </Card>
       )}
     </div>
   );

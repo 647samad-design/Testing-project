@@ -129,6 +129,32 @@ export async function deleteCandidate(id: string): Promise<void> {
   await logAdminAction('delete_candidate', 'candidates', id);
 }
 
+/** Bulk-inserts candidates (from a CSV/JSON import) in one request and writes
+ * a single audit log entry summarizing the import, rather than one per row. */
+export async function bulkImportCandidates(rows: Array<{
+  first_name: string;
+  last_name: string;
+  party?: string;
+  bio?: string;
+  photo_url?: string | null;
+}>): Promise<{ inserted: number }> {
+  const payload = rows.map((r) => ({
+    first_name: r.first_name,
+    last_name: r.last_name,
+    party: r.party || null,
+    bio: r.bio || null,
+    photo_url: r.photo_url || null,
+    is_demo: false,
+  }));
+  const { data, error } = await supabase.from('candidates').insert(payload).select('id');
+  if (error) throw error;
+  await logAdminAction('bulk_import_candidates', 'candidates', undefined, {
+    count: data?.length ?? 0,
+    names: rows.map((r) => `${r.first_name} ${r.last_name}`),
+  });
+  return { inserted: data?.length ?? 0 };
+}
+
 export async function addElection(election: {
   name: string;
   election_date: string;
