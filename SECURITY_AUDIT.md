@@ -3,9 +3,25 @@ _Pass performed Sept 13, 2026. This is a code-level review of the migrations in 
 full penetration test — a professional security review is still recommended before handling real
 election data at scale (see "Recommended before launch" below)._
 
-## 🔴 Critical finding — fixed in this batch
+## 🔴 Critical finding — fixed in this batch (found via live testing, Sept 14)
 
-**Privilege escalation re-opened via `profiles.role`.**
+**`is_admin()` was uncallable by regular users, breaking almost every RLS policy in the app.**
+`20260815031241_revoke_execute_on_security_definer_functions.sql` revoked EXECUTE on
+`is_admin()` from `anon`/`authenticated`, on the incorrect assumption that RLS policy
+expressions run with the table owner's privileges. They don't — they run as part of the
+querying role's own query, so that role still needs EXECUTE on any function the policy
+calls, SECURITY DEFINER or not. Since nearly every policy in the schema calls `is_admin()`,
+this broke almost all reads/writes for real users (confirmed live: `permission denied for
+function is_admin`, SQL state 42501, on `profiles`, `advertisements`, and others).
+
+**Fix applied:** `20260913000500_fix_is_admin_execute_permission.sql` re-grants EXECUTE on
+`is_admin()` to `anon` and `authenticated`. Safe to do — the function takes no arguments and
+only ever reports the caller's own admin status.
+
+**Action needed from you:** run this migration on your live project — this is the one
+actually causing the 403 errors you're seeing right now.
+
+## 🔴 Critical finding — fixed in this batch (role-column privilege escalation)
 The original `is_admin` privilege-escalation bug (Aug 15) was correctly patched by revoking
 column-level UPDATE/INSERT on `profiles.is_admin` from regular users. When a `role` column was
 added later (Aug 22) with a trigger that auto-syncs `is_admin` from `role`, the matching
