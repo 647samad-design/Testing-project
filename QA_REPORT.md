@@ -96,12 +96,37 @@ always failed with a 400 "could not find relationship" error. Fixed by
 fetching the follow rows and the target rows (candidates or issues)
 separately and merging them in JS, in `src/services/social.ts`.
 
-## Still open (by design — needs your input, not more coding)
+## 🔴 Found & fixed (Sept 14) — "invite build teams" was never actually built
+The client's confirmed pricing decision (Option B) explicitly said Candidate
+Management should unlock the ability to "invite build teams." The backend
+functions (`inviteTeamMember`, `getTeamMembers`, etc. in `social.ts`) existed,
+but **no UI anywhere in the app** called them — there was no way for a
+candidate to actually invite anyone. Worse, the underlying database rule for
+who's allowed to invite (`insert_campaign_team` RLS policy) only checked that
+the caller had a *verified claim*, not that they'd paid for Management — a
+free-tier candidate could already invite a team through the API even before
+any UI existed for it.
 
+**Fixed:**
+- New **"Team"** tab in the Candidate Portal — shows an upgrade prompt if the
+  candidate doesn't have an active Management subscription, or an invite
+  form + team member list if they do.
+- Migration `20260913000700_gate_team_invites_behind_management.sql` adds a
+  real database-level check (`has_active_management()`) so the paywall can't
+  be bypassed by calling the API directly, regardless of what UI exists.
+
+
+
+
+## Still open (by design — needs your input, not more coding)
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
 - Legal pages need an actual lawyer pass before launch.
 - Candidate photo *sourcing* from Ballotpedia/FL DOS at scale — infrastructure is
   ready (upload + review queue), but bulk-importing real people's photos/data from
   external sites needs a data-use decision, not just code.
-- A "Billing" view on the Account page (see above).
+- ~~A "Billing" view on the Account page~~ — done.
+- "Launch campaigns" (the other half of the client's Management-tier promise,
+  alongside team invites) still has no dedicated feature/page — team invites
+  are now built, but there's no "campaign" object anywhere in the schema to
+  attach a launch flow to. Worth a scoping conversation before building it.

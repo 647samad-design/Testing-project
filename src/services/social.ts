@@ -294,11 +294,13 @@ export async function inviteTeamMember(candidateId: string, email: string, role:
 }
 
 export async function updateTeamMemberRole(id: string, role: TeamRole): Promise<void> {
-  await supabase.from('campaign_team').update({ role }).eq('id', id);
+  const { error } = await supabase.from('campaign_team').update({ role }).eq('id', id);
+  if (error) throw error;
 }
 
 export async function revokeTeamMember(id: string): Promise<void> {
-  await supabase.from('campaign_team').update({ status: 'revoked' }).eq('id', id);
+  const { error } = await supabase.from('campaign_team').update({ status: 'revoked' }).eq('id', id);
+  if (error) throw error;
 }
 
 // ─── Analytics ───

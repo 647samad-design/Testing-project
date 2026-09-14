@@ -65,7 +65,7 @@ Per your last instruction. Also outside what I can do directly (infra/DNS step, 
 ## Still open — needs your input, not more code
 - [ ] Stripe secret key + 5 price IDs → Supabase Edge Function secrets
 - [ ] AP Elections API key → same
-- [ ] Apply the 7 new SQL migrations to your live Supabase project (up to `20260913000600`)
+- [ ] Apply the 8 new SQL migrations to your live Supabase project (up to `20260913000700`)
 - [ ] Lawyer review of the 3 legal pages
 - [x] ~~A "Billing" view on the Account page~~ — done, see `/account` → Billing tab
 - [ ] Real candidate photo sourcing from Ballotpedia / FL DOS at scale (upload infra is ready; bulk-pulling real people's data is a separate data-use decision)

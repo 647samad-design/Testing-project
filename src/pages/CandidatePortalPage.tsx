@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles } from 'lucide-react';
+import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,10 @@ import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { useAuth } from '@/hooks/use-auth';
 import { getMyClaimedCandidates, submitCandidateContent, submitQuestionnaireResponse, submitEvent } from '@/services/candidate-portal';
+import { getTeamMembers, inviteTeamMember, revokeTeamMember } from '@/services/social';
+import { getMyManagedCandidates } from '@/services/stripe';
+import type { CampaignTeamMember, TeamRole } from '@/types';
+import { toast } from 'sonner';
 
 interface ClaimedCandidate {
   candidate_id: string;
@@ -21,7 +25,7 @@ export function CandidatePortalPage() {
   const { user } = useAuth();
   const [claimed, setClaimed] = useState<ClaimedCandidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -111,6 +115,7 @@ export function CandidatePortalPage() {
                   { id: 'questionnaire', label: 'Questionnaire', icon: MessageSquare },
                   { id: 'events', label: 'Events', icon: Calendar },
                   { id: 'quiz', label: 'Issue Quiz', icon: Sparkles },
+                  { id: 'team', label: 'Team', icon: Users },
                 ] as const).map((tab) => (
                   <button
                     key={tab.id}
@@ -312,11 +317,149 @@ export function CandidatePortalPage() {
                     </Link>
                   </Card>
                 )}
+                {activeTab === 'team' && (
+                  <TeamTab candidateId={verifiedClaim.candidate_id} />
+                )}
               </div>
             </>
           )}
         </>
       )}
+    </div>
+  );
+}
+
+const TEAM_ROLES: { value: TeamRole; label: string }[] = [
+  { value: 'campaign_manager', label: 'Campaign Manager' },
+  { value: 'social_manager', label: 'Social Media Manager' },
+  { value: 'volunteer_manager', label: 'Volunteer Manager' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'volunteer', label: 'Volunteer' },
+];
+
+function TeamTab({ candidateId }: { candidateId: string }) {
+  const [hasManagement, setHasManagement] = useState<boolean | null>(null);
+  const [members, setMembers] = useState<CampaignTeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<TeamRole>('volunteer');
+  const [inviting, setInviting] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const managed = await getMyManagedCandidates();
+      const active = managed.some((m) => m.candidate_id === candidateId && (m.status === 'active' || m.is_comped));
+      setHasManagement(active);
+      if (active) setMembers(await getTeamMembers(candidateId));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load team info.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, [candidateId]);
+
+  async function handleInvite() {
+    if (!email.trim()) return;
+    setInviting(true);
+    try {
+      await inviteTeamMember(candidateId, email.trim(), role);
+      toast.success(`Invited ${email}.`);
+      setEmail('');
+      setMembers(await getTeamMembers(candidateId));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send invite.');
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  async function handleRevoke(id: string) {
+    try {
+      await revokeTeamMember(id);
+      toast.success('Access revoked.');
+      setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, status: 'revoked' } : m)));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to revoke access.');
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading team…" />;
+
+  if (!hasManagement) {
+    return (
+      <Card className="p-6 rounded-2xl text-center">
+        <Users className="h-8 w-8 mx-auto text-muted-foreground" />
+        <h3 className="mt-3 font-bold text-lg">Team invites are a Candidate Management feature</h3>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+          Upgrade to Candidate Management to invite a campaign manager, staff, and volunteers to help run your profile.
+        </p>
+        <Button
+          className="mt-4 rounded-xl gap-1.5"
+          onClick={async () => {
+            try {
+              const { startCheckout } = await import('@/services/stripe');
+              await startCheckout('candidate_management', candidateId);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : 'Could not start checkout.');
+            }
+          }}
+        >
+          <Sparkles className="h-4 w-4" /> Upgrade to Management — $299
+        </Button>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-6 rounded-2xl">
+        <h3 className="font-bold text-lg flex items-center gap-2"><Users className="h-5 w-5" /> Invite a Team Member</h3>
+        <div className="mt-4 flex flex-col sm:flex-row gap-2">
+          <Input
+            type="email"
+            placeholder="teammate@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="flex-1"
+          />
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as TeamRole)}
+            className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          >
+            {TEAM_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </select>
+          <Button onClick={handleInvite} disabled={!email.trim() || inviting} className="gap-1.5">
+            {inviting ? 'Inviting…' : <><Plus className="h-4 w-4" /> Invite</>}
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="p-6 rounded-2xl">
+        <h3 className="font-bold text-lg mb-3">Team Members</h3>
+        {members.filter((m) => m.status !== 'revoked').length === 0 ? (
+          <p className="text-sm text-muted-foreground">No team members yet — invite someone above.</p>
+        ) : (
+          <div className="space-y-2">
+            {members.filter((m) => m.status !== 'revoked').map((m) => (
+              <div key={m.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <div>
+                  <p className="font-medium">{m.invited_email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {TEAM_ROLES.find((r) => r.value === m.role)?.label ?? m.role} · {m.status}
+                  </p>
+                </div>
+                <button onClick={() => handleRevoke(m.id)} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
