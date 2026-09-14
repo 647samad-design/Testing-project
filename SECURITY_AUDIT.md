@@ -3,6 +3,21 @@ _Pass performed Sept 13, 2026. This is a code-level review of the migrations in 
 full penetration test — a professional security review is still recommended before handling real
 election data at scale (see "Recommended before launch" below)._
 
+## 🔴 Critical finding — fixed in this batch (subscription self-write fraud, found Sept 14)
+
+**Any signed-in user could grant themselves a free paid subscription.**
+`subscriptions` had INSERT/UPDATE RLS policies checking only row ownership
+(`auth.uid() = user_id`) — not which values were being written. A user could
+run `UPDATE subscriptions SET plan = 'pro_yearly', status = 'active' WHERE
+user_id = auth.uid()` directly from the browser and become "Pro" with no
+Stripe charge ever happening. The Stripe webhook (the only thing that should
+write this table) uses the service role and bypasses RLS entirely, so these
+self-write policies served no legitimate purpose.
+
+**Fix applied:** `20260913000600_fix_subscription_self_write_fraud.sql`
+restricts INSERT/UPDATE on `subscriptions` to admins only. SELECT (reading
+your own plan, used by the new Account → Billing tab) is untouched.
+
 ## 🔴 Critical finding — fixed in this batch (found via live testing, Sept 14)
 
 **`is_admin()` was uncallable by regular users, breaking almost every RLS policy in the app.**
