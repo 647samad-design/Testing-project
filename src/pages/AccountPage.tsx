@@ -20,6 +20,8 @@ import { getLocation, getUserIssues, saveLocation, updateProfile } from '@/servi
 import { getCandidates } from '@/services/candidates';
 import { LoadingState } from '@/components/shared/StateComponents';
 import { JOURNEY_STEPS, getJourneySteps, toggleJourneyStep, uploadProfilePhoto } from '@/services/voter-profile';
+import { getMySubscription, getMyManagedCandidates, openBillingPortal, startCheckout, type MySubscription, type MyManagedCandidate } from '@/services/stripe';
+import { toast } from 'sonner';
 import type { Candidate, Issue, UserLocation, ElectionJourneyStep } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -42,7 +44,7 @@ export function AccountPage() {
   const [civicScore, setCivicScore] = useState(85);
   const [journeySteps, setJourneySteps] = useState<ElectionJourneyStep[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'journey'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'journey' | 'billing'>('dashboard');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -359,7 +361,7 @@ export function AccountPage() {
       </Card>
 
       {/* TABS: Dashboard / Election Journey */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'journey')} className="mb-6">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'journey' | 'billing')} className="mb-6">
         <TabsList className="w-full justify-start overflow-x-auto no-scrollbar">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="journey">
@@ -370,6 +372,7 @@ export function AccountPage() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="billing">Billing</TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD TAB */}
@@ -757,12 +760,135 @@ export function AccountPage() {
             </div>
           </Card>
         </TabsContent>
+
+        {/* BILLING TAB */}
+        <TabsContent value="billing" className="mt-6">
+          <BillingTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────
+
+const PLAN_LABELS: Record<string, string> = {
+  free: 'Free',
+  candidate_monthly: 'Candidate (Monthly)',
+  candidate_yearly: 'Candidate (Yearly)',
+  pro_monthly: 'Pro (Monthly)',
+  pro_yearly: 'Pro (Yearly)',
+  premium_monthly: 'Premium (Monthly)',
+  premium_yearly: 'Premium (Yearly)',
+};
+
+function BillingTab() {
+  const [subscription, setSubscription] = useState<MySubscription | null>(null);
+  const [managedCandidates, setManagedCandidates] = useState<MyManagedCandidate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [sub, managed] = await Promise.all([getMySubscription(), getMyManagedCandidates()]);
+        setSubscription(sub);
+        setManagedCandidates(managed);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to load billing info.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function handleManageBilling() {
+    setPortalLoading(true);
+    try {
+      await openBillingPortal();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not open billing portal.');
+      setPortalLoading(false);
+    }
+  }
+
+  async function handleUpgrade(plan: 'pro_monthly') {
+    try {
+      await startCheckout(plan);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not start checkout.');
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading billing info…" />;
+
+  const planLabel = subscription ? (PLAN_LABELS[subscription.plan] ?? subscription.plan) : 'Free';
+  const isPaid = !!subscription && subscription.plan !== 'free';
+
+  return (
+    <div className="space-y-5">
+      <Card className="p-6 rounded-2xl">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your Plan</p>
+            <h3 className="mt-1 text-2xl font-bold flex items-center gap-2">
+              {planLabel}
+              {isPaid && (
+                <Badge variant={subscription?.status === 'active' ? 'default' : 'destructive'} className="text-xs">
+                  {subscription?.status}
+                </Badge>
+              )}
+            </h3>
+            {isPaid && subscription?.current_period_end && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {subscription.cancel_at_period_end ? 'Cancels' : 'Renews'} on{' '}
+                {new Date(subscription.current_period_end).toLocaleDateString()}
+              </p>
+            )}
+            {!isPaid && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                You're on the free plan — core ballot info is always free.
+              </p>
+            )}
+          </div>
+
+          {isPaid ? (
+            <Button variant="outline" className="rounded-xl gap-1.5" disabled={portalLoading} onClick={handleManageBilling}>
+              {portalLoading ? 'Opening…' : 'Manage Billing'}
+            </Button>
+          ) : (
+            <Button className="rounded-xl gap-1.5" onClick={() => handleUpgrade('pro_monthly')}>
+              <Sparkles className="h-4 w-4" /> Upgrade to Pro
+            </Button>
+          )}
+        </div>
+      </Card>
+
+      {managedCandidates.length > 0 && (
+        <Card className="p-6 rounded-2xl">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+            Candidate Management
+          </p>
+          <div className="space-y-3">
+            {managedCandidates.map((c) => (
+              <div key={c.candidate_id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <span className="font-medium">{c.first_name} {c.last_name}</span>
+                <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                  {c.is_comped ? 'Comped' : c.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Need to update your payment method, download an invoice, or cancel? Use "Manage Billing" above —
+        it opens Stripe's secure billing portal.
+      </p>
+    </div>
+  );
+}
 
 function BriefingItem({
   icon: Icon, color, bg, title, desc, link,
