@@ -44,29 +44,44 @@ export async function getFollowingIds(followableType: FollowableType): Promise<s
 }
 
 export async function getFollowedCandidates(): Promise<(Follow & { candidate?: Candidate })[]> {
-  const { data, error } = await supabase
+  // `follows.followable_id` is polymorphic (can point at candidates OR issues),
+  // so it has no real foreign key — PostgREST can't auto-join via `candidates!inner(...)`
+  // (that was causing a 400 "could not find relationship" error). Fetch the
+  // follow rows and the candidates separately, then merge them in JS instead.
+  const { data: followRows, error: followError } = await supabase
     .from('follows')
-    .select(`
-      *,
-      candidate:candidates!inner(id, first_name, last_name, party, photo_url, bio, website_url)
-    `)
+    .select('*')
     .eq('followable_type', 'candidate')
     .order('created_at', { ascending: false });
-  if (error || !data) return [];
-  return data as unknown as (Follow & { candidate?: Candidate })[];
+  if (followError || !followRows || followRows.length === 0) return [];
+
+  const candidateIds = followRows.map((f: Follow) => f.followable_id);
+  const { data: candidates } = await supabase
+    .from('candidates')
+    .select('id, first_name, last_name, party, photo_url, bio, website_url')
+    .in('id', candidateIds);
+
+  const candidateById = new Map((candidates ?? []).map((c) => [c.id as string, c as unknown as Candidate]));
+  return followRows.map((f: Follow) => ({ ...f, candidate: candidateById.get(f.followable_id) }));
 }
 
 export async function getFollowedIssues(): Promise<(Follow & { issue?: Issue })[]> {
-  const { data, error } = await supabase
+  // Same polymorphic-relationship issue as getFollowedCandidates() above.
+  const { data: followRows, error: followError } = await supabase
     .from('follows')
-    .select(`
-      *,
-      issue:issues!inner(id, name, slug, description, color)
-    `)
+    .select('*')
     .eq('followable_type', 'issue')
     .order('created_at', { ascending: false });
-  if (error || !data) return [];
-  return data as unknown as (Follow & { issue?: Issue })[];
+  if (followError || !followRows || followRows.length === 0) return [];
+
+  const issueIds = followRows.map((f: Follow) => f.followable_id);
+  const { data: issues } = await supabase
+    .from('issues')
+    .select('id, name, slug, description, color')
+    .in('id', issueIds);
+
+  const issueById = new Map((issues ?? []).map((i) => [i.id as string, i as unknown as Issue]));
+  return followRows.map((f: Follow) => ({ ...f, issue: issueById.get(f.followable_id) }));
 }
 
 export async function getFollowerCount(followableType: FollowableType, followableId: string): Promise<number> {

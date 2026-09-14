@@ -87,6 +87,17 @@ shape exists in `src/services/advertising.ts:84` (`.from('advertisers')
 .select('*').maybeSingle()` with no filter) — not touched in this pass since
 it predates this work, but worth the same fix later.
 
+## 🔴 Found & fixed live (Sept 14) — broken "follows" queries
+`getFollowedCandidates()` and `getFollowedIssues()` (Feed page) used PostgREST's
+embedded-resource syntax (`candidates!inner(...)`) on `follows.followable_id`.
+That column is polymorphic (can point at a candidate OR an issue), so it has
+no real foreign key — PostgREST can't auto-detect the join, and the query
+always failed with a 400 "could not find relationship" error. Fixed by
+fetching the follow rows and the target rows (candidates or issues)
+separately and merging them in JS, in `src/services/social.ts`.
+
+## Still open (by design — needs your input, not more coding)
+
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
 - Legal pages need an actual lawyer pass before launch.
