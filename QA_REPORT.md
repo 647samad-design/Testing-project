@@ -60,7 +60,34 @@ dedicated "Billing" tab as the next piece of work.
   in the codebase.
 - Build, typecheck, and lint all pass with no new warnings from this batch of work.
 
-## Still open (by design — needs your input, not more coding)
+## 🔴 Found & fixed while re-reviewing the Billing tab (Sept 14)
+`getMySubscription()` and `getMyManagedCandidates()` (used by the new Account
+→ Billing tab) queried their tables with no explicit `user_id`/ownership
+filter, relying only on RLS to scope results to "my own" row. That's correct
+for a regular user, but an **admin's** RLS policy is intentionally broader
+(`is_admin() OR own row`) — so an admin opening their own Billing tab would
+have pulled back *every* user's subscription row. `getMySubscription()` uses
+`.maybeSingle()`, which throws if more than one row comes back, so this would
+have crashed the Billing tab for any admin as soon as a second real
+subscription existed in the database. `getMyManagedCandidates()` had the
+matching bug — an admin would see every claimed candidate's management
+status, not just their own.
+
+**Fixed:** both functions now explicitly resolve the current user's id first
+and filter by it, regardless of what RLS would additionally allow. Added 4
+tests (`stripe.test.ts`) asserting the filter is always applied and that an
+unauthenticated call fails fast instead of silently over-fetching.
+
+**Pattern to watch for going forward:** any query written for a "my own
+stuff" screen should filter explicitly by the current user's id in the
+client code, not rely solely on RLS — because RLS for admins is often
+intentionally wider, "correct for security" and "correct for a personal
+dashboard" aren't the same thing. One pre-existing example of this same
+shape exists in `src/services/advertising.ts:84` (`.from('advertisers')
+.select('*').maybeSingle()` with no filter) — not touched in this pass since
+it predates this work, but worth the same fix later.
+
+
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
 - Legal pages need an actual lawyer pass before launch.
 - Candidate photo *sourcing* from Ballotpedia/FL DOS at scale — infrastructure is

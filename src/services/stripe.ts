@@ -56,11 +56,19 @@ export type MySubscription = {
   cancel_at_period_end: boolean;
 };
 
-/** The signed-in user's own voter subscription (Free/Candidate/Pro), if any. */
+/** The signed-in user's own voter subscription (Free/Candidate/Pro), if any.
+ * Explicitly filters by the current user's id rather than relying only on
+ * RLS — an admin's RLS policy is intentionally broader ("own row OR is_admin"),
+ * so without this filter an admin viewing their own billing page would pull
+ * back every user's subscription row and `.maybeSingle()` would throw. */
 export async function getMySubscription(): Promise<MySubscription | null> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) throw new Error('Not signed in.');
+
   const { data, error } = await supabase
     .from('subscriptions')
     .select('plan, status, current_period_end, cancel_at_period_end')
+    .eq('user_id', userData.user.id)
     .maybeSingle();
   if (error) throw error;
   return data;
@@ -75,11 +83,30 @@ export type MyManagedCandidate = {
   current_period_end: string | null;
 };
 
-/** Candidate Management subscriptions tied to profiles this user has verified-claimed. */
+/** Candidate Management subscriptions tied to profiles this user has verified-claimed.
+ * Explicitly scopes to the current user's own verified claims first, for the
+ * same reason as getMySubscription() above — an admin's RLS visibility here is
+ * intentionally broader (all candidates), and without this filter an admin
+ * would see every claimed candidate's management status on their own account
+ * page, not just their own. */
 export async function getMyManagedCandidates(): Promise<MyManagedCandidate[]> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) throw new Error('Not signed in.');
+
+  const { data: claims, error: claimsError } = await supabase
+    .from('candidate_claims')
+    .select('candidate_id')
+    .eq('user_id', userData.user.id)
+    .eq('status', 'verified');
+  if (claimsError) throw claimsError;
+
+  const candidateIds = (claims ?? []).map((c) => c.candidate_id);
+  if (candidateIds.length === 0) return [];
+
   const { data, error } = await supabase
     .from('candidate_management_subscriptions')
-    .select('candidate_id, status, is_comped, current_period_end, candidates(first_name, last_name)');
+    .select('candidate_id, status, is_comped, current_period_end, candidates(first_name, last_name)')
+    .in('candidate_id', candidateIds);
   if (error) throw error;
   return (data ?? []).map((row: any) => ({
     candidate_id: row.candidate_id,
