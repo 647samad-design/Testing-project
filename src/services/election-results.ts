@@ -127,12 +127,14 @@ export async function markAllElectionNotificationsRead(): Promise<void> {
 
 export async function triggerNewsFetch(): Promise<{ success: boolean; articlesAdded: number; error?: string }> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) return { success: false, articlesAdded: 0, error: 'Please sign in as an admin first.' };
 
   const url = `${supabaseUrl}/functions/v1/civic-news?action=fetch`;
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${anonKey}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });
@@ -152,7 +154,9 @@ export async function triggerNewsFetch(): Promise<{ success: boolean; articlesAd
 
 export async function triggerElectionFetch(date?: string, state?: string): Promise<{ success: boolean; racesProcessed: number; newWinnersCalled: number; error?: string }> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) return { success: false, racesProcessed: 0, newWinnersCalled: 0, error: 'Please sign in as an admin first.' };
   const params = new URLSearchParams({ action: 'fetch' });
   if (date) params.set('date', date);
   if (state) params.set('state', state);
@@ -160,7 +164,7 @@ export async function triggerElectionFetch(date?: string, state?: string): Promi
   const url = `${supabaseUrl}/functions/v1/ap-elections?${params}`;
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${anonKey}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
   });

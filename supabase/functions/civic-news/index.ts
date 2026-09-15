@@ -7,6 +7,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+/** Returns a 401/403 Response if the caller isn't a signed-in admin, or null if they are. */
+async function requireAdmin(
+  req: Request,
+  supabaseUrl: string,
+  adminClient: ReturnType<typeof createClient>
+): Promise<Response | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "Missing Authorization header" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const callerClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData } = await callerClient.auth.getUser();
+  if (!userData?.user) {
+    return new Response(
+      JSON.stringify({ error: "Not authenticated" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+  if (!profile?.is_admin) {
+    return new Response(
+      JSON.stringify({ error: "Admin access required" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  return null;
+}
+
 interface NewsSource {
   name: string;
   rssUrl: string;
@@ -100,6 +138,12 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     if (action === "fetch") {
+      // Writes to the DB and hits external RSS feeds — restrict to admins so
+      // this can't be spammed by anyone who finds the URL (it previously had
+      // no auth check of any kind).
+      const adminCheck = await requireAdmin(req, supabaseUrl, supabase);
+      if (adminCheck) return adminCheck;
+
       const maxPerSource = parseInt(url.searchParams.get("max") ?? "3", 10);
       let totalInserted = 0;
 

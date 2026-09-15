@@ -14,8 +14,9 @@ import {
   listPendingSubmissions, approveSubmission, rejectSubmission,
   bulkImportCandidates,
 } from '@/services/admin';
+import { triggerNewsFetch, triggerElectionFetch } from '@/services/election-results';
 import Papa from 'papaparse';
-import { Upload as UploadIcon } from 'lucide-react';
+import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
 import type { VerificationStatus } from '@/types';
 import { Navigate } from 'react-router-dom';
 import { LoadingState } from '@/components/shared/StateComponents';
@@ -74,6 +75,7 @@ export function AdminDashboardPage() {
           <TabsTrigger value="review">Review Claims</TabsTrigger>
           <TabsTrigger value="submissions">Content Submissions</TabsTrigger>
           <TabsTrigger value="add">Add Content</TabsTrigger>
+          <TabsTrigger value="datafeeds">Data Feeds</TabsTrigger>
           <TabsTrigger value="manage">Manage Candidates</TabsTrigger>
           <TabsTrigger value="import">Import Candidates</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
@@ -157,6 +159,10 @@ export function AdminDashboardPage() {
             <AddElectionForm />
             <AddMeasureForm />
           </div>
+        </TabsContent>
+
+        <TabsContent value="datafeeds" className="mt-6">
+          <DataFeedsTab />
         </TabsContent>
 
         <TabsContent value="manage" className="mt-6">
@@ -371,6 +377,84 @@ function ImportCandidatesTab() {
           </Button>
         </Card>
       )}
+    </div>
+  );
+}
+
+function DataFeedsTab() {
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [electionLoading, setElectionLoading] = useState(false);
+  const [newsResult, setNewsResult] = useState<string | null>(null);
+  const [electionResult, setElectionResult] = useState<string | null>(null);
+
+  async function handleNewsRefresh() {
+    setNewsLoading(true);
+    setNewsResult(null);
+    try {
+      const result = await triggerNewsFetch();
+      if (result.success) {
+        setNewsResult(`✅ Added ${result.articlesAdded} new article${result.articlesAdded === 1 ? '' : 's'}.`);
+      } else {
+        toast.error(result.error ?? 'News fetch failed.');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'News fetch failed.');
+    } finally {
+      setNewsLoading(false);
+    }
+  }
+
+  async function handleElectionRefresh() {
+    setElectionLoading(true);
+    setElectionResult(null);
+    try {
+      const result = await triggerElectionFetch();
+      if (result.success) {
+        setElectionResult(`✅ Processed ${result.racesProcessed} race${result.racesProcessed === 1 ? '' : 's'}, ${result.newWinnersCalled} new winner${result.newWinnersCalled === 1 ? '' : 's'} called.`);
+      } else {
+        toast.error(result.error ?? 'Election data fetch failed.');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Election data fetch failed.');
+    } finally {
+      setElectionLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-5">
+        <h3 className="font-semibold mb-2">AP Elections Results</h3>
+        <p className="text-sm text-muted-foreground mb-3">
+          Pulls live/certified race results from the AP Elections API and posts winner
+          announcements to the feed. Requires <code>AP_ELECTIONS_API_KEY</code> to be set as an
+          Edge Function secret — if it's missing, this will show a clear error instead of failing silently.
+        </p>
+        <Button onClick={handleElectionRefresh} disabled={electionLoading} size="sm" className="gap-1.5">
+          <RefreshCw className={`h-3.5 w-3.5 ${electionLoading ? 'animate-spin' : ''}`} />
+          {electionLoading ? 'Fetching…' : 'Refresh Election Results'}
+        </Button>
+        {electionResult && <p className="mt-2 text-sm">{electionResult}</p>}
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-semibold mb-2">Civic News</h3>
+        <p className="text-sm text-muted-foreground mb-3">
+          Pulls recent headlines from AP News, Reuters, and CNN's public RSS feeds into the feed.
+          No API key required for this one.
+        </p>
+        <Button onClick={handleNewsRefresh} disabled={newsLoading} size="sm" className="gap-1.5">
+          <RefreshCw className={`h-3.5 w-3.5 ${newsLoading ? 'animate-spin' : ''}`} />
+          {newsLoading ? 'Fetching…' : 'Refresh Civic News'}
+        </Button>
+        {newsResult && <p className="mt-2 text-sm">{newsResult}</p>}
+      </Card>
+
+      <p className="text-xs text-muted-foreground">
+        These run on-demand only right now — nothing refreshes automatically yet. For production,
+        consider setting up a scheduled job (Supabase Cron) to call these on a timer instead of
+        relying on someone clicking the button.
+      </p>
     </div>
   );
 }

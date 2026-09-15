@@ -7,6 +7,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+/** Returns a 401/403 Response if the caller isn't a signed-in admin, or null if they are. */
+async function requireAdmin(
+  req: Request,
+  supabaseUrl: string,
+  adminClient: ReturnType<typeof createClient>
+): Promise<Response | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "Missing Authorization header" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const callerClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData } = await callerClient.auth.getUser();
+  if (!userData?.user) {
+    return new Response(
+      JSON.stringify({ error: "Not authenticated" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+  if (!profile?.is_admin) {
+    return new Response(
+      JSON.stringify({ error: "Admin access required" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  return null;
+}
+
 interface APCandidate {
   candidateID: string;
   firstName: string;
@@ -58,6 +96,12 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     if (action === "fetch") {
+      // Hits AP's paid/quota-limited API and writes to the DB — restrict to
+      // admins so this can't be spammed by anyone who finds the URL (it
+      // previously had no auth check of any kind).
+      const adminCheck = await requireAdmin(req, supabaseUrl, supabase);
+      if (adminCheck) return adminCheck;
+
       if (!apApiKey) {
         return new Response(
           JSON.stringify({ error: "AP_ELECTIONS_API_KEY secret is not configured. Add it in your Supabase project settings." }),
