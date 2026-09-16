@@ -24,9 +24,13 @@ export async function unfollow(followableType: FollowableType, followableId: str
 }
 
 export async function isFollowing(followableType: FollowableType, followableId: string): Promise<boolean> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) return false;
+
   const { data, error } = await supabase
     .from('follows')
     .select('id')
+    .eq('user_id', userData.user.id)
     .eq('followable_type', followableType)
     .eq('followable_id', followableId)
     .maybeSingle();
@@ -35,9 +39,13 @@ export async function isFollowing(followableType: FollowableType, followableId: 
 }
 
 export async function getFollowingIds(followableType: FollowableType): Promise<string[]> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) return [];
+
   const { data, error } = await supabase
     .from('follows')
     .select('followable_id')
+    .eq('user_id', userData.user.id)
     .eq('followable_type', followableType);
   if (error || !data) return [];
   return data.map((f: { followable_id: string }) => f.followable_id);
@@ -48,9 +56,13 @@ export async function getFollowedCandidates(): Promise<(Follow & { candidate?: C
   // so it has no real foreign key — PostgREST can't auto-join via `candidates!inner(...)`
   // (that was causing a 400 "could not find relationship" error). Fetch the
   // follow rows and the candidates separately, then merge them in JS instead.
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) return [];
+
   const { data: followRows, error: followError } = await supabase
     .from('follows')
     .select('*')
+    .eq('user_id', userData.user.id)
     .eq('followable_type', 'candidate')
     .order('created_at', { ascending: false });
   if (followError || !followRows || followRows.length === 0) return [];
@@ -67,9 +79,13 @@ export async function getFollowedCandidates(): Promise<(Follow & { candidate?: C
 
 export async function getFollowedIssues(): Promise<(Follow & { issue?: Issue })[]> {
   // Same polymorphic-relationship issue as getFollowedCandidates() above.
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) return [];
+
   const { data: followRows, error: followError } = await supabase
     .from('follows')
     .select('*')
+    .eq('user_id', userData.user.id)
     .eq('followable_type', 'issue')
     .order('created_at', { ascending: false });
   if (followError || !followRows || followRows.length === 0) return [];

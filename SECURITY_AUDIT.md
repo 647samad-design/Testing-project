@@ -3,7 +3,30 @@ _Pass performed Sept 13, 2026. This is a code-level review of the migrations in 
 full penetration test — a professional security review is still recommended before handling real
 election data at scale (see "Recommended before launch" below)._
 
-## 🔴 Critical finding — fixed in this batch (subscription self-write fraud, found Sept 14)
+## 🔴 Critical finding — fixed in this batch (public data exposure, found Sept 15)
+
+**Two tables let anyone — including logged-out visitors — read data that should have been private.**
+- `follows`: SELECT policy was `USING (true)` for `anon` AND `authenticated`,
+  exposing every user's follow list (which candidates/issues they follow,
+  tied to their user_id) to anyone via the public REST API. This also caused
+  two real bugs: `isFollowing()` used `.maybeSingle()` with no user filter,
+  which throws as soon as any candidate has more than one follower; and
+  `getFollowingIds()` returned everyone's follows, not just the caller's.
+- `campaign_team`: same `USING (true)` pattern, but worse — this table
+  includes `invited_email`, the personal email address of every candidate's
+  campaign staff/volunteers. Anyone could scrape every campaign team's
+  contact emails with a single unauthenticated API call.
+
+**Fix applied:** `20260913000800_fix_follows_public_exposure.sql` restricts
+both tables to the row's own owner (or an admin, or — for `campaign_team` —
+a fellow active team member of the same candidate). `social.ts` also now
+filters explicitly by the current user's id in `isFollowing()`,
+`getFollowingIds()`, `getFollowedCandidates()`, and `getFollowedIssues()`,
+rather than relying solely on RLS (the same lesson as the earlier Billing tab
+bug — RLS being correct for security doesn't guarantee a "my own stuff" query
+is scoped correctly for every caller).
+
+
 
 **Any signed-in user could grant themselves a free paid subscription.**
 `subscriptions` had INSERT/UPDATE RLS policies checking only row ownership

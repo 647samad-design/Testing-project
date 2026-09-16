@@ -118,10 +118,43 @@ any UI existed for it.
 
 
 
+## 🔴 Found & fixed (Sept 15) — full-app QA pass
+Expanded automated test coverage beyond the initial admin/Stripe/photo-upload
+pass, going through `messaging.ts`, `social.ts`, and `quiz.ts` — the areas
+flagged as untested in the previous QA note (feed/follows, messaging, quiz).
+27 new tests added (`messaging.test.ts`, `social.test.ts`, `quiz.test.ts`),
+bringing the suite to 33 tests. This surfaced a serious, real bug along the
+way: see the "public data exposure" finding in `SECURITY_AUDIT.md` (follows
+and campaign_team tables were readable by anyone, and two `social.ts`
+functions had no user filter — same root cause as the earlier Billing tab
+bug). Both are fixed as part of this pass.
+
+Still not covered by automated tests: feed post creation/moderation,
+notifications, candidate-portal submission flow end-to-end, and most page
+components (these were reviewed manually only). A full app still benefits
+from broader integration/E2E tests before a large-scale launch.
+
+## 🔴 Found & fixed (Sept 15) — legal pages had non-functional styling
+The three legal pages (`Privacy`, `Terms`, `Disclaimer`) used Tailwind's
+`prose` typography classes, but the `@tailwindcss/typography` plugin that
+defines those classes was never installed or registered in
+`tailwind.config.js` — meaning the styling classes were silently doing
+nothing since these pages were first created. Fixed by installing the plugin
+and registering it. Also substantially expanded the legal content itself
+(added a table of contents, defined-terms structure, CCPA/California
+section, cookies section, data retention, security, dispute
+resolution/governing law, and other sections a reviewing attorney would
+expect to see present or explicitly flagged as a placeholder) and improved
+typography (serif display headings, larger reading size, proper heading
+hierarchy) so the pages read as a professional draft rather than a bare
+paragraph dump.
+
+
+
 ## Still open (by design — needs your input, not more coding)
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
-- Legal pages need an actual lawyer pass before launch.
+- Legal pages are now content-complete and properly styled, ready for lawyer review.
 - Candidate photo *sourcing* from Ballotpedia/FL DOS at scale — infrastructure is
   ready (upload + review queue), but bulk-importing real people's photos/data from
   external sites needs a data-use decision, not just code.

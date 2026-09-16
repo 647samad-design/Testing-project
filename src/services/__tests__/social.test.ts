@@ -1,0 +1,110 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { fromMock, getUserMock } = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+  getUserMock: vi.fn(),
+}));
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: { from: fromMock, auth: { getUser: getUserMock } },
+}));
+
+import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues } from '@/services/social';
+
+describe('isFollowing', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('always filters by the current user, never relying on RLS alone', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
+    const eqUserMock = vi.fn().mockReturnThis();
+    const eqTypeMock = vi.fn().mockReturnThis();
+    const eqIdMock = vi.fn();
+    const maybeSingleMock = vi.fn().mockResolvedValue({ data: { id: 'f1' }, error: null });
+
+    fromMock.mockReturnValue({
+      select: () => ({
+        eq: (col: string, val: string) => {
+          if (col === 'user_id') { expect(val).toBe('user-1'); return { eq: eqTypeMock }; }
+          return { eq: eqIdMock };
+        },
+      }),
+    });
+    eqTypeMock.mockReturnValue({ eq: () => ({ maybeSingle: maybeSingleMock }) });
+
+    const result = await isFollowing('candidate', 'cand-1');
+    expect(result).toBe(true);
+  });
+
+  it('returns false without querying anything if nobody is signed in', async () => {
+    getUserMock.mockResolvedValue({ data: { user: null }, error: null });
+    const result = await isFollowing('candidate', 'cand-1');
+    expect(result).toBe(false);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('getFollowingIds', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('filters by the current user id', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
+    const eqTypeMock = vi.fn().mockResolvedValue({ data: [{ followable_id: 'cand-1' }], error: null });
+    const eqUserMock = vi.fn(() => ({ eq: eqTypeMock }));
+    fromMock.mockReturnValue({ select: () => ({ eq: eqUserMock }) });
+
+    const result = await getFollowingIds('candidate');
+
+    expect(eqUserMock).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(result).toEqual(['cand-1']);
+  });
+
+  it('returns an empty list if nobody is signed in', async () => {
+    getUserMock.mockResolvedValue({ data: { user: null }, error: null });
+    const result = await getFollowingIds('candidate');
+    expect(result).toEqual([]);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('getFollowedCandidates / getFollowedIssues', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('getFollowedCandidates scopes to the current user and merges candidate data without an embedded join', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
+
+    const followsEqUser = vi.fn();
+    const followsEqType = vi.fn();
+    const orderMock = vi.fn().mockResolvedValue({
+      data: [{ id: 'f1', user_id: 'user-1', followable_type: 'candidate', followable_id: 'cand-1' }],
+      error: null,
+    });
+    const inMock = vi.fn().mockResolvedValue({ data: [{ id: 'cand-1', first_name: 'Jane', last_name: 'Doe' }], error: null });
+
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'follows') {
+        return { select: () => ({ eq: (col: string, val: string) => {
+          if (col === 'user_id') { followsEqUser(val); return { eq: (c2: string, v2: string) => { followsEqType(v2); return { order: orderMock }; } }; }
+          throw new Error('unexpected column');
+        } }) };
+      }
+      if (table === 'candidates') {
+        return { select: () => ({ in: inMock }) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const result = await getFollowedCandidates();
+
+    expect(followsEqUser).toHaveBeenCalledWith('user-1');
+    expect(followsEqType).toHaveBeenCalledWith('candidate');
+    expect(inMock).toHaveBeenCalledWith('id', ['cand-1']);
+    expect(result[0].candidate?.first_name).toBe('Jane');
+  });
+
+  it('getFollowedIssues returns an empty list without a signed-in user', async () => {
+    getUserMock.mockResolvedValue({ data: { user: null }, error: null });
+    const result = await getFollowedIssues();
+    expect(result).toEqual([]);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+});

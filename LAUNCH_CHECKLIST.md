@@ -36,7 +36,7 @@ Backing functions: `src/services/admin.ts` (`updateCandidate`, `deleteCandidate`
 **Code:** All four "Add" forms and both new tabs in `AdminDashboardPage.tsx` now wrap saves in try/catch with a `toast.error(...)` on failure and a disabled/"Saving…" button state while in flight, instead of failing silently.
 
 ## 7. Legal pages (Privacy, Terms, Disclaimer) — 🟡
-**Code:** `src/pages/legal/PrivacyPolicyPage.tsx`, `TermsOfServicePage.tsx`, `DisclaimerPage.tsx` — routed at `/privacy`, `/terms`, `/disclaimer`, linked from the footer (`src/components/shared/Layout.tsx`). Uses your provided LLC name, Miami address, and Florida jurisdiction.
+**Code:** `src/pages/legal/PrivacyPolicyPage.tsx`, `TermsOfServicePage.tsx`, `DisclaimerPage.tsx` — routed at `/privacy`, `/terms`, `/disclaimer`, linked from the footer (`src/components/shared/Layout.tsx`). Uses your provided LLC name, Miami address, and Florida jurisdiction. Now includes a table of contents, CCPA/California section, cookies, data retention/security, dispute resolution, and other sections a reviewing attorney will expect — plus fixed typography (the `@tailwindcss/typography` plugin was missing, so the styling was previously not rendering at all).
 **What's missing:** an actual attorney review — these are template drafts, and each page says so at the bottom.
 
 ## 8. Full security / RLS audit — ✅
@@ -45,9 +45,9 @@ Backing functions: `src/services/admin.ts` (`updateCandidate`, `deleteCandidate`
 ## 9. Logo + brand identity design — ⏭️ Skipped
 Per your last instruction. Not touched.
 
-## 10. QA / testing pass across the full app — 🟡
-**Code:** Vitest + React Testing Library added (`npm test`), 16 tests in `src/services/__tests__/` and `src/components/shared/__tests__/`, covering the new admin/Stripe/photo-upload code. Full findings and what's *not* covered: `QA_REPORT.md`.
-**What's missing:** this is a starting test suite, not exhaustive manual QA of every existing page/flow (onboarding, quiz, messaging, feed, etc. weren't in scope of this pass).
+## 10. QA / testing pass across the full app — ✅ (initial pass), 🟡 (full coverage)
+**Code:** Vitest + React Testing Library (`npm test`), 33 tests across `src/services/__tests__/` and `src/components/shared/__tests__/`, covering admin actions, Stripe checkout, photo upload, messaging, follows/social, and the onboarding quiz. Full findings: `QA_REPORT.md`.
+**What's missing:** feed post moderation, notifications, and most page-level UI flows are reviewed manually only, not covered by automated tests — worth expanding before a large-scale launch.
 
 ## 11. Custom domain + production deployment — ⏭️ Skipped
 Per your last instruction. Also outside what I can do directly (infra/DNS step, not code).
@@ -65,7 +65,7 @@ Per your last instruction. Also outside what I can do directly (infra/DNS step, 
 ## Still open — needs your input, not more code
 - [ ] Stripe secret key + 5 price IDs → Supabase Edge Function secrets
 - [ ] AP Elections API key → same
-- [ ] Apply the 8 new SQL migrations to your live Supabase project (up to `20260913000700`)
+- [ ] Apply the 9 new SQL migrations to your live Supabase project (up to `20260913000800`)
 - [ ] Lawyer review of the 3 legal pages
 - [x] ~~A "Billing" view on the Account page~~ — done, see `/account` → Billing tab
 - [ ] Real candidate photo sourcing from Ballotpedia / FL DOS at scale (upload infra is ready; bulk-pulling real people's data is a separate data-use decision)
