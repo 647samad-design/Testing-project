@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles, Users, X } from 'lucide-react';
+import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles, Users, X, Megaphone, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { getMyClaimedCandidates, submitCandidateContent, submitQuestionnaireResponse, submitEvent } from '@/services/candidate-portal';
 import { getTeamMembers, inviteTeamMember, revokeTeamMember } from '@/services/social';
 import { getMyManagedCandidates } from '@/services/stripe';
+import {
+  getCampaign, upsertCampaign, getAllCampaignEventsForManagement,
+  addCampaignEvent, updateCampaignEvent, deleteCampaignEvent,
+  type Campaign, type CampaignEvent,
+} from '@/services/campaign';
 import type { CampaignTeamMember, TeamRole } from '@/types';
 import { toast } from 'sonner';
 
@@ -25,7 +30,7 @@ export function CandidatePortalPage() {
   const { user } = useAuth();
   const [claimed, setClaimed] = useState<ClaimedCandidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team' | 'campaign'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -116,6 +121,7 @@ export function CandidatePortalPage() {
                   { id: 'events', label: 'Events', icon: Calendar },
                   { id: 'quiz', label: 'Issue Quiz', icon: Sparkles },
                   { id: 'team', label: 'Team', icon: Users },
+                  { id: 'campaign', label: 'Campaign', icon: Megaphone },
                 ] as const).map((tab) => (
                   <button
                     key={tab.id}
@@ -320,6 +326,9 @@ export function CandidatePortalPage() {
                 {activeTab === 'team' && (
                   <TeamTab candidateId={verifiedClaim.candidate_id} />
                 )}
+                {activeTab === 'campaign' && (
+                  <CampaignManagementTab candidateId={verifiedClaim.candidate_id} />
+                )}
               </div>
             </>
           )}
@@ -455,6 +464,234 @@ function TeamTab({ candidateId }: { candidateId: string }) {
                 <button onClick={() => handleRevoke(m.id)} className="text-muted-foreground hover:text-destructive">
                   <X className="h-4 w-4" />
                 </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+const EMPTY_EVENT_DRAFT = { title: '', description: '', location: '', event_date: '' };
+
+function CampaignManagementTab({ candidateId }: { candidateId: string }) {
+  const [hasManagement, setHasManagement] = useState<boolean | null>(null);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [events, setEvents] = useState<CampaignEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [headline, setHeadline] = useState('');
+  const [message, setMessage] = useState('');
+  const [goalsText, setGoalsText] = useState('');
+  const [isActive, setIsActive] = useState(true);
+
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [eventDraft, setEventDraft] = useState(EMPTY_EVENT_DRAFT);
+  const [savingEvent, setSavingEvent] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const managed = await getMyManagedCandidates();
+      const active = managed.some((m) => m.candidate_id === candidateId && (m.status === 'active' || m.is_comped));
+      setHasManagement(active);
+      if (active) {
+        const [camp, evs] = await Promise.all([
+          getCampaign(candidateId),
+          getAllCampaignEventsForManagement(candidateId),
+        ]);
+        setCampaign(camp);
+        setEvents(evs);
+        setHeadline(camp?.headline ?? '');
+        setMessage(camp?.message ?? '');
+        setGoalsText((camp?.goals ?? []).join('\n'));
+        setIsActive(camp?.is_active ?? true);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load campaign info.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, [candidateId]);
+
+  async function handleSaveCampaign() {
+    setSaving(true);
+    try {
+      const goals = goalsText.split('\n').map((g) => g.trim()).filter(Boolean);
+      await upsertCampaign(candidateId, { headline, message, goals, is_active: isActive });
+      toast.success('Campaign page saved.');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save campaign page.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEditEvent(e?: CampaignEvent) {
+    if (e) {
+      setEditingEventId(e.id);
+      setEventDraft({
+        title: e.title,
+        description: e.description ?? '',
+        location: e.location ?? '',
+        event_date: e.event_date.slice(0, 16),
+      });
+    } else {
+      setEditingEventId('new');
+      setEventDraft(EMPTY_EVENT_DRAFT);
+    }
+  }
+
+  async function handleSaveEvent() {
+    if (!eventDraft.title.trim() || !eventDraft.event_date) return;
+    setSavingEvent(true);
+    try {
+      const payload = {
+        title: eventDraft.title.trim(),
+        description: eventDraft.description.trim() || undefined,
+        location: eventDraft.location.trim() || undefined,
+        event_date: new Date(eventDraft.event_date).toISOString(),
+      };
+      if (editingEventId && editingEventId !== 'new') {
+        await updateCampaignEvent(editingEventId, payload);
+      } else {
+        await addCampaignEvent(candidateId, { ...payload, is_public: true });
+      }
+      toast.success('Event saved.');
+      setEditingEventId(null);
+      setEventDraft(EMPTY_EVENT_DRAFT);
+      setEvents(await getAllCampaignEventsForManagement(candidateId));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save event.');
+    } finally {
+      setSavingEvent(false);
+    }
+  }
+
+  async function handleDeleteEvent(id: string) {
+    if (!window.confirm('Delete this event?')) return;
+    try {
+      await deleteCampaignEvent(id);
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+      toast.success('Event deleted.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete event.');
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading campaign…" />;
+
+  if (!hasManagement) {
+    return (
+      <Card className="p-6 rounded-2xl text-center">
+        <Megaphone className="h-8 w-8 mx-auto text-muted-foreground" />
+        <h3 className="mt-3 font-bold text-lg">Campaign pages are a Candidate Management feature</h3>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+          Upgrade to launch a public campaign page with your message, goals, and events for voters
+          to follow while your race is active.
+        </p>
+        <Button
+          className="mt-4 rounded-xl gap-1.5"
+          onClick={async () => {
+            try {
+              const { startCheckout } = await import('@/services/stripe');
+              await startCheckout('candidate_management', candidateId);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : 'Could not start checkout.');
+            }
+          }}
+        >
+          <Sparkles className="h-4 w-4" /> Upgrade to Management — $299
+        </Button>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-6 rounded-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-lg flex items-center gap-2"><Megaphone className="h-5 w-5" /> Campaign Page</h3>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+            Visible to voters
+          </label>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Headline</Label>
+            <Input value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Fighting for [district]'s future" />
+          </div>
+          <div>
+            <Label className="text-xs">Campaign Message</Label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={4}
+              placeholder="Why you're running…"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Goals (one per line)</Label>
+            <textarea
+              value={goalsText}
+              onChange={(e) => setGoalsText(e.target.value)}
+              rows={3}
+              placeholder={'Lower property taxes\nInvest in local schools'}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <Button onClick={handleSaveCampaign} disabled={saving} className="gap-1.5">
+            {saving ? 'Saving…' : 'Save Campaign Page'}
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="p-6 rounded-2xl">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-lg flex items-center gap-2"><Calendar className="h-5 w-5" /> Events</h3>
+          {editingEventId === null && (
+            <Button size="sm" variant="outline" onClick={() => startEditEvent()} className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> Add Event
+            </Button>
+          )}
+        </div>
+
+        {editingEventId !== null && (
+          <div className="mb-4 space-y-2 rounded-lg border border-border p-4">
+            <Input placeholder="Event title" value={eventDraft.title} onChange={(e) => setEventDraft((d) => ({ ...d, title: e.target.value }))} />
+            <Input type="datetime-local" value={eventDraft.event_date} onChange={(e) => setEventDraft((d) => ({ ...d, event_date: e.target.value }))} />
+            <Input placeholder="Location" value={eventDraft.location} onChange={(e) => setEventDraft((d) => ({ ...d, location: e.target.value }))} />
+            <Input placeholder="Description (optional)" value={eventDraft.description} onChange={(e) => setEventDraft((d) => ({ ...d, description: e.target.value }))} />
+            <div className="flex gap-2">
+              <Button size="sm" disabled={savingEvent || !eventDraft.title.trim() || !eventDraft.event_date} onClick={handleSaveEvent}>
+                {savingEvent ? 'Saving…' : 'Save Event'}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setEditingEventId(null)}>Cancel</Button>
+            </div>
+          </div>
+        )}
+
+        {events.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No events yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {events.map((e) => (
+              <div key={e.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <div>
+                  <p className="font-medium">{e.title}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(e.event_date).toLocaleString()}</p>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => startEditEvent(e)} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => handleDeleteEvent(e.id)} className="p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
               </div>
             ))}
           </div>

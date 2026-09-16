@@ -37,6 +37,9 @@ import {
 import { getFeedPosts, trackProfileView } from '@/services/social';
 import { getTeamMembers } from '@/services/social';
 import type { FeedPost, CampaignTeamMember } from '@/types';
+import { getCampaign, type Campaign as CampaignType } from '@/services/campaign';
+import { CampaignTab } from '@/components/shared/CampaignTab';
+import { Megaphone } from 'lucide-react';
 
 function getPartyClass(party: string | null): string {
   if (!party) return '';
@@ -69,6 +72,7 @@ export function CandidateProfilePage() {
   const [approvedEvents, setApprovedEvents] = useState<CandidateEvent[]>([]);
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [teamMembers, setTeamMembers] = useState<CampaignTeamMember[]>([]);
+  const [campaign, setCampaign] = useState<CampaignType | null>(null);
 
   useEffect(() => {
     if (!candidateId) return;
@@ -76,7 +80,7 @@ export function CandidateProfilePage() {
       setLoading(true);
       setError(null);
       try {
-        const [cand, pos, stmts, votes, judicial, newsData, videoData, socialData, claim, subs, questRes, events, feed, team] = await Promise.all([
+        const [cand, pos, stmts, votes, judicial, newsData, videoData, socialData, claim, subs, questRes, events, feed, team, campaignData] = await Promise.all([
           getCandidate(candidateId!),
           getCandidatePositions(candidateId!),
           getCandidateStatements(candidateId!),
@@ -91,6 +95,7 @@ export function CandidateProfilePage() {
           getApprovedEvents(candidateId!),
           getFeedPosts(candidateId!),
           getTeamMembers(candidateId!),
+          getCampaign(candidateId!),
         ]);
         if (!cand) {
           setError("We couldn't find enough reliable information about this candidate.");
@@ -110,6 +115,7 @@ export function CandidateProfilePage() {
         setApprovedEvents(events);
         setFeedPosts(feed);
         setTeamMembers(team);
+        setCampaign(campaignData);
         // Track profile view for analytics
         trackProfileView(candidateId!).catch(() => {});
       } catch (e) {
@@ -325,6 +331,7 @@ export function CandidateProfilePage() {
       <Tabs defaultValue="about" className="mt-6">
         <TabsList className="w-full justify-start overflow-x-auto no-scrollbar">
           <TabsTrigger value="about">About</TabsTrigger>
+          {campaign && <TabsTrigger value="campaign" className="gap-1"><Megaphone className="h-3.5 w-3.5" /> Campaign</TabsTrigger>}
           <TabsTrigger value="feed">Feed</TabsTrigger>
           <TabsTrigger value="questions">Questions</TabsTrigger>
           <TabsTrigger value="positions">Where They Stand</TabsTrigger>
@@ -367,6 +374,13 @@ export function CandidateProfilePage() {
             <Endorsements candidateId={candidate.id} />
           </div>
         </TabsContent>
+
+        {/* CAMPAIGN */}
+        {campaign && (
+          <TabsContent value="campaign" className="mt-6">
+            <CampaignTab campaign={campaign} />
+          </TabsContent>
+        )}
 
         {/* FEED */}
         <TabsContent value="feed" className="mt-6">
