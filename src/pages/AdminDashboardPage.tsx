@@ -13,6 +13,7 @@ import {
   listProfilesForAdmin, setAdminRole, getAuditLog,
   listPendingSubmissions, approveSubmission, rejectSubmission,
   bulkImportCandidates,
+  compCandidateManagement, revokeCandidateManagement, listActiveManagementCandidateIds,
 } from '@/services/admin';
 import { triggerNewsFetch, triggerElectionFetch } from '@/services/election-results';
 import Papa from 'papaparse';
@@ -461,15 +462,19 @@ function DataFeedsTab() {
 
 function ManageCandidatesTab() {
   const [candidates, setCandidates] = useState<Awaited<ReturnType<typeof listCandidatesForAdmin>>>([]);
+  const [managedIds, setManagedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ first_name: string; last_name: string; party: string; photo_url: string | null }>({ first_name: '', last_name: '', party: '', photo_url: null });
   const [saving, setSaving] = useState(false);
+  const [managementBusyId, setManagementBusyId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
     try {
-      setCandidates(await listCandidatesForAdmin());
+      const [cands, activeIds] = await Promise.all([listCandidatesForAdmin(), listActiveManagementCandidateIds()]);
+      setCandidates(cands);
+      setManagedIds(new Set(activeIds));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load candidates.');
     } finally {
@@ -478,6 +483,33 @@ function ManageCandidatesTab() {
   }
 
   useEffect(() => { load(); }, []);
+
+  async function handleCompManagement(id: string, name: string) {
+    setManagementBusyId(id);
+    try {
+      await compCandidateManagement(id, 'Beta launch — first year free');
+      toast.success(`Granted free Candidate Management to ${name}.`);
+      setManagedIds((prev) => new Set(prev).add(id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to grant Management.');
+    } finally {
+      setManagementBusyId(null);
+    }
+  }
+
+  async function handleRevokeManagement(id: string, name: string) {
+    if (!window.confirm(`Revoke Candidate Management access for ${name}?`)) return;
+    setManagementBusyId(id);
+    try {
+      await revokeCandidateManagement(id);
+      toast.success(`Revoked Management access for ${name}.`);
+      setManagedIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to revoke Management.');
+    } finally {
+      setManagementBusyId(null);
+    }
+  }
 
   function startEdit(c: (typeof candidates)[number]) {
     setEditingId(c.id);
@@ -539,10 +571,19 @@ function ManageCandidatesTab() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{c.first_name} {c.last_name}</p>
-                    <p className="text-xs text-muted-foreground">{c.party || 'No party listed'}{c.is_demo ? ' · Demo data' : ''}</p>
+                    <p className="text-xs text-muted-foreground">{c.party || 'No party listed'}{c.is_demo ? ' · Demo data' : ''}{managedIds.has(c.id) ? ' · Management active' : ''}</p>
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
+                  {managedIds.has(c.id) ? (
+                    <Button size="sm" variant="outline" disabled={managementBusyId === c.id} className="gap-1.5 text-warning border-warning/30" onClick={() => handleRevokeManagement(c.id, `${c.first_name} ${c.last_name}`)}>
+                      Revoke Management
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" disabled={managementBusyId === c.id} className="gap-1.5" onClick={() => handleCompManagement(c.id, `${c.first_name} ${c.last_name}`)}>
+                      Grant Free Management
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => startEdit(c)}>
                     <Pencil className="h-3.5 w-3.5" /> Edit
                   </Button>

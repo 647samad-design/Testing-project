@@ -473,7 +473,7 @@ function TeamTab({ candidateId }: { candidateId: string }) {
   );
 }
 
-const EMPTY_EVENT_DRAFT = { title: '', description: '', location: '', event_date: '' };
+const EMPTY_EVENT_DRAFT = { title: '', description: '', location: '', event_date: '', is_public: true };
 
 function CampaignManagementTab({ candidateId }: { candidateId: string }) {
   const [hasManagement, setHasManagement] = useState<boolean | null>(null);
@@ -540,6 +540,7 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
         description: e.description ?? '',
         location: e.location ?? '',
         event_date: e.event_date.slice(0, 16),
+        is_public: e.is_public,
       });
     } else {
       setEditingEventId('new');
@@ -556,11 +557,12 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
         description: eventDraft.description.trim() || undefined,
         location: eventDraft.location.trim() || undefined,
         event_date: new Date(eventDraft.event_date).toISOString(),
+        is_public: eventDraft.is_public,
       };
       if (editingEventId && editingEventId !== 'new') {
         await updateCampaignEvent(editingEventId, payload);
       } else {
-        await addCampaignEvent(candidateId, { ...payload, is_public: true });
+        await addCampaignEvent(candidateId, payload);
       }
       toast.success('Event saved.');
       setEditingEventId(null);
@@ -669,6 +671,10 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
             <Input type="datetime-local" value={eventDraft.event_date} onChange={(e) => setEventDraft((d) => ({ ...d, event_date: e.target.value }))} />
             <Input placeholder="Location" value={eventDraft.location} onChange={(e) => setEventDraft((d) => ({ ...d, location: e.target.value }))} />
             <Input placeholder="Description (optional)" value={eventDraft.description} onChange={(e) => setEventDraft((d) => ({ ...d, description: e.target.value }))} />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" checked={eventDraft.is_public} onChange={(e) => setEventDraft((d) => ({ ...d, is_public: e.target.checked }))} />
+              Visible to voters
+            </label>
             <div className="flex gap-2">
               <Button size="sm" disabled={savingEvent || !eventDraft.title.trim() || !eventDraft.event_date} onClick={handleSaveEvent}>
                 {savingEvent ? 'Saving…' : 'Save Event'}
@@ -685,7 +691,7 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
             {events.map((e) => (
               <div key={e.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
                 <div>
-                  <p className="font-medium">{e.title}</p>
+                  <p className="font-medium">{e.title}{!e.is_public && ' (Hidden)'}</p>
                   <p className="text-xs text-muted-foreground">{new Date(e.event_date).toLocaleString()}</p>
                 </div>
                 <div className="flex gap-1">

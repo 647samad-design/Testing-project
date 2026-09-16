@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock the Supabase client before importing the service under test, since the
 // real client throws at import time if env vars aren't set (fine in prod/dev,
 // not in a unit test).
-const { rpcMock, singleMock, selectAfterInsertMock, eqMock, updateMock, deleteEqMock, deleteMock, insertMock, fromMock } = vi.hoisted(() => {
+const { rpcMock, singleMock, selectAfterInsertMock, eqMock, updateMock, deleteEqMock, deleteMock, insertMock, upsertMock, fromMock } = vi.hoisted(() => {
   const rpcMock = vi.fn().mockResolvedValue({ data: null, error: null });
   const singleMock = vi.fn().mockResolvedValue({ data: { id: 'new-id' }, error: null });
   const selectAfterInsertMock = vi.fn(() => ({ single: singleMock }));
@@ -12,12 +12,14 @@ const { rpcMock, singleMock, selectAfterInsertMock, eqMock, updateMock, deleteEq
   const deleteEqMock = vi.fn().mockResolvedValue({ error: null });
   const deleteMock = vi.fn(() => ({ eq: deleteEqMock }));
   const insertMock = vi.fn(() => ({ select: selectAfterInsertMock }));
+  const upsertMock = vi.fn().mockResolvedValue({ error: null });
   const fromMock = vi.fn(() => ({
     insert: insertMock,
     update: updateMock,
     delete: deleteMock,
+    upsert: upsertMock,
   }));
-  return { rpcMock, singleMock, selectAfterInsertMock, eqMock, updateMock, deleteEqMock, deleteMock, insertMock, fromMock };
+  return { rpcMock, singleMock, selectAfterInsertMock, eqMock, updateMock, deleteEqMock, deleteMock, insertMock, upsertMock, fromMock };
 });
 
 vi.mock('@/lib/supabase', () => ({
@@ -27,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -94,5 +96,23 @@ describe('admin service', () => {
   it('setAdminRole surfaces an RPC error (e.g. self-demotion block)', async () => {
     rpcMock.mockResolvedValueOnce({ data: null, error: new Error('Admins cannot remove their own admin status') });
     await expect(setAdminRole('user-1', false)).rejects.toThrow('Admins cannot remove their own admin status');
+  });
+
+  it('compCandidateManagement upserts as active+comped and logs the reason', async () => {
+    await compCandidateManagement('cand-1', 'Beta launch — first year free');
+
+    expect(fromMock).toHaveBeenCalledWith('candidate_management_subscriptions');
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ candidate_id: 'cand-1', status: 'active', is_comped: true, comped_reason: 'Beta launch — first year free' }),
+      { onConflict: 'candidate_id' }
+    );
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'comp_candidate_management', p_target_id: 'cand-1' }));
+  });
+
+  it('revokeCandidateManagement sets status to canceled', async () => {
+    await revokeCandidateManagement('cand-1');
+
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'canceled' }));
+    expect(eqMock).toHaveBeenCalledWith('candidate_id', 'cand-1');
   });
 });

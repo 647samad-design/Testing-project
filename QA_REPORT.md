@@ -151,6 +151,26 @@ paragraph dump.
 
 
 
+## 🔴 Found & fixed (Sept 15) — three gaps in the freshly-built Campaign feature
+Re-reviewed the "launch campaigns" feature immediately after building it (same session) and found:
+1. **Campaign visibility didn't track subscription status.** The public read
+   policies on `campaigns`/`campaign_events` only checked the `is_active`
+   flag, never whether the candidate's Management subscription was actually
+   still active — a campaign page would stay publicly visible forever even
+   after cancellation. Fixed in `20260913001000` by requiring
+   `has_active_management()` on the public read side too, not just writes.
+2. **No way to comp free Management access.** The client's stated plan is a
+   free first beta year for all candidates, but there was no admin
+   function or UI to grant Management without a real Stripe charge. Added
+   `compCandidateManagement()` / `revokeCandidateManagement()` and a
+   "Grant Free Management" / "Revoke Management" button in the admin
+   "Manage Candidates" tab.
+3. **No per-event visibility toggle** in the Candidate Portal's event form,
+   even though the schema supported hiding individual events — every new
+   event was hardcoded to `is_public: true`. Added the toggle.
+
+
+
 ## Still open (by design — needs your input, not more coding)
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
@@ -159,7 +179,8 @@ paragraph dump.
   ready (upload + review queue), but bulk-importing real people's photos/data from
   external sites needs a data-use decision, not just code.
 - ~~A "Billing" view on the Account page~~ — done.
-- "Launch campaigns" (the other half of the client's Management-tier promise,
-  alongside team invites) still has no dedicated feature/page — team invites
-  are now built, but there's no "campaign" object anywhere in the schema to
-  attach a launch flow to. Worth a scoping conversation before building it.
+- ~~"Launch campaigns"~~ — done (campaign page + events + RSVP, gated behind Management).
+- The app now has two separate "events" concepts (the original free,
+  admin-moderated `candidate_events` and the new Management-gated
+  `campaign_events`). Kept them separate to avoid changing existing behavior
+  — worth a conversation with the client on whether to consolidate.

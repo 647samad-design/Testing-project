@@ -239,6 +239,46 @@ export async function rejectSubmission(id: string, notes?: string): Promise<void
   const { error } = await supabase.rpc('reject_candidate_submission', { p_submission_id: id, p_notes: notes ?? null });
   if (error) throw error;
 }
+
+/** Grants a candidate free ("comped") Candidate Management access — for the
+ * client's stated beta-year plan (first year free while testing) — without
+ * needing a real Stripe charge. Creates or updates the row with is_comped=true
+ * and status='active' so has_active_management() (used by the paywall on
+ * team invites AND the campaign page) treats it exactly like a paid sub. */
+export async function compCandidateManagement(candidateId: string, reason: string): Promise<void> {
+  const { error } = await supabase
+    .from('candidate_management_subscriptions')
+    .upsert({
+      candidate_id: candidateId,
+      status: 'active',
+      is_comped: true,
+      comped_reason: reason,
+    }, { onConflict: 'candidate_id' });
+  if (error) throw error;
+  await logAdminAction('comp_candidate_management', 'candidate_management_subscriptions', candidateId, { reason });
+}
+
+/** Revokes a comped (or any) Management grant, e.g. when the beta period ends. */
+export async function revokeCandidateManagement(candidateId: string): Promise<void> {
+  const { error } = await supabase
+    .from('candidate_management_subscriptions')
+    .update({ status: 'canceled', canceled_at: new Date().toISOString() })
+    .eq('candidate_id', candidateId);
+  if (error) throw error;
+  await logAdminAction('revoke_candidate_management', 'candidate_management_subscriptions', candidateId);
+}
+
+/** For the admin "Manage Candidates" list: which candidates currently have
+ * active (paid or comped) Candidate Management. */
+export async function listActiveManagementCandidateIds(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('candidate_management_subscriptions')
+    .select('candidate_id')
+    .eq('status', 'active');
+  if (error) return [];
+  return (data ?? []).map((r) => r.candidate_id);
+}
+
 export async function getAuditLog(limit = 50): Promise<Array<{
   id: string; admin_id: string | null; action: string; target_table: string | null;
   target_id: string | null; details: Record<string, unknown> | null; created_at: string;
