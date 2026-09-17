@@ -100,14 +100,17 @@ export async function getFollowedIssues(): Promise<(Follow & { issue?: Issue })[
   return followRows.map((f: Follow) => ({ ...f, issue: issueById.get(f.followable_id) }));
 }
 
+/** Public follower count for a candidate/issue ("42 people follow this").
+ * Goes through a count-only RPC (like the campaign RSVP counts) rather than
+ * a direct table count, because `follows` rows themselves are private
+ * (who follows what) — only the aggregate count is meant to be public. */
 export async function getFollowerCount(followableType: FollowableType, followableId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('follows')
-    .select('*', { count: 'exact', head: true })
-    .eq('followable_type', followableType)
-    .eq('followable_id', followableId);
+  const { data, error } = await supabase.rpc('get_follow_count', {
+    p_followable_type: followableType,
+    p_followable_id: followableId,
+  });
   if (error) return 0;
-  return count ?? 0;
+  return (data as number) ?? 0;
 }
 
 // ─── Feed Posts ───
@@ -266,9 +269,13 @@ export async function rateQuestion(questionId: string, ratingType: RatingType, v
 // ─── Notifications ───
 
 export async function getNotifications(unreadOnly = false): Promise<AppNotification[]> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) return [];
+
   let query = supabase
     .from('notifications')
     .select('*')
+    .eq('user_id', userData.user.id)
     .order('created_at', { ascending: false })
     .limit(50);
   if (unreadOnly) query = query.eq('is_read', false);
@@ -282,7 +289,13 @@ export async function markNotificationRead(id: string): Promise<void> {
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  await supabase.from('notifications').update({ is_read: true }).neq('is_read', true);
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) return;
+  await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('user_id', userData.user.id)
+    .neq('is_read', true);
 }
 
 // ─── Campaign Team ───

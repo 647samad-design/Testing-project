@@ -269,7 +269,32 @@ There was no link to `/admin` anywhere in the UI — an admin had to know and
 type the URL directly. Added a conditional "Admin" link (shown only when
 `profile.is_admin` is true) to both the desktop header and the mobile menu.
 
+## 🔴 Found & fixed (Sept 17) — a regression I introduced myself, plus a notifications bug
+Two more issues while continuing to sweep the app:
+
+1. **Regression from the earlier `follows` privacy fix.** Restricting `follows`
+   SELECT to each user's own rows (correctly fixing the PII leak) broke
+   `getFollowerCount()` — used by `FollowButton` to show "42 people follow
+   this candidate" — because a direct table count now only counts the
+   *current user's own* follow row under the new RLS, not the true public
+   total. Fixed with the same pattern as the campaign RSVP counts: a
+   SECURITY DEFINER RPC (`get_follow_count`) that returns just the count,
+   keeping individual follow records private while the aggregate stays
+   public. This is a good example of why every RLS tightening needs a check
+   for "does anything legitimately need the old broader access, just in
+   aggregate form" before shipping it.
+2. **Notifications had no explicit user filter.** `getNotifications()` and
+   `markAllNotificationsRead()` queried/updated the `notifications` table
+   with no `user_id` filter, relying entirely on RLS. RLS here is strict
+   (`auth.uid() = user_id`, no admin-widening clause) so this wasn't
+   actually exploitable — but fixed anyway for consistency with the pattern
+   used everywhere else, and because relying on "RLS happens to be strict
+   today" is fragile if that policy is ever touched later.
+
+5 new tests. Suite now 67.
+
 ## Still open (by design — needs your input, not more coding)
+
 
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).

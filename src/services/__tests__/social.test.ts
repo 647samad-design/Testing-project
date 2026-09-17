@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { fromMock, getUserMock } = vi.hoisted(() => ({
+const { fromMock, getUserMock, rpcMock } = vi.hoisted(() => ({
   fromMock: vi.fn(),
   getUserMock: vi.fn(),
+  rpcMock: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase', () => ({
-  supabase: { from: fromMock, auth: { getUser: getUserMock } },
+  supabase: { from: fromMock, auth: { getUser: getUserMock }, rpc: rpcMock },
 }));
 
-import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues } from '@/services/social';
+import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead } from '@/services/social';
 
 describe('isFollowing', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -106,5 +107,60 @@ describe('getFollowedCandidates / getFollowedIssues', () => {
     const result = await getFollowedIssues();
     expect(result).toEqual([]);
     expect(fromMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('getFollowerCount', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('goes through the count-only RPC rather than a direct table count (rows are private, counts are public)', async () => {
+    rpcMock.mockResolvedValue({ data: 42, error: null });
+
+    const result = await getFollowerCount('candidate', 'cand-1');
+
+    expect(rpcMock).toHaveBeenCalledWith('get_follow_count', { p_followable_type: 'candidate', p_followable_id: 'cand-1' });
+    expect(result).toBe(42);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 0 instead of throwing on an RPC error', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: new Error('boom') });
+    const result = await getFollowerCount('candidate', 'cand-1');
+    expect(result).toBe(0);
+  });
+});
+
+describe('getNotifications / markAllNotificationsRead', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('getNotifications filters by the current user id explicitly', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
+    const limitMock = vi.fn().mockResolvedValue({ data: [], error: null });
+    const orderMock = vi.fn(() => ({ limit: limitMock }));
+    const eqUserMock = vi.fn(() => ({ order: orderMock }));
+    fromMock.mockReturnValue({ select: () => ({ eq: eqUserMock }) });
+
+    await getNotifications();
+
+    expect(eqUserMock).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+
+  it('getNotifications returns [] without querying if nobody is signed in', async () => {
+    getUserMock.mockResolvedValue({ data: { user: null }, error: null });
+    const result = await getNotifications();
+    expect(result).toEqual([]);
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('markAllNotificationsRead scopes the update to the current user, not every user', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
+    const neqMock = vi.fn().mockResolvedValue({ error: null });
+    const eqUserMock = vi.fn(() => ({ neq: neqMock }));
+    const updateMock = vi.fn(() => ({ eq: eqUserMock }));
+    fromMock.mockReturnValue({ update: updateMock });
+
+    await markAllNotificationsRead();
+
+    expect(eqUserMock).toHaveBeenCalledWith('user_id', 'user-1');
   });
 });
