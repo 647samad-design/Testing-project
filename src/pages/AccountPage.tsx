@@ -26,7 +26,7 @@ import type { Candidate, Issue, UserLocation, ElectionJourneyStep } from '@/type
 import { cn } from '@/lib/utils';
 
 export function AccountPage() {
-  const { user, profile, signOut, isDemo } = useAuth();
+  const { user, profile, signOut, isDemo, loading: authLoading } = useAuth();
   const [fullName, setFullName] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [bio, setBio] = useState('');
@@ -87,6 +87,14 @@ export function AccountPage() {
     load();
   }, [user, profile, isDemo]);
 
+  // IMPORTANT: check authLoading BEFORE deciding the user is signed out.
+  // On a fresh page load — e.g. the full-page redirect back from Stripe
+  // Checkout to /account?checkout=success — the Supabase session hasn't
+  // finished restoring from storage yet, so `user` starts out as null for
+  // a moment even for a signed-in visitor. Redirecting to /signin on that
+  // first render (as this used to do) would bounce a just-paid customer
+  // straight to the sign-in page instead of their account.
+  if (authLoading) return <LoadingState message="Loading your account…" />;
   if (!user) return <Navigate to="/signin" replace />;
   if (loading) return <LoadingState message="Loading your dashboard…" />;
 
