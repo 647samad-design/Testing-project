@@ -255,7 +255,22 @@ invalidates the subscription cache so ad-free/etc. reflect immediately, and
 opens directly on the Billing tab instead of the default Dashboard tab so
 the confirmation is the first thing the user sees.
 
+## 🔴 Found & fixed (Sept 17) — 6 footer links went nowhere
+`About`, `How It Works`, `Methodology`, `Sources`, `Accessibility`, and
+`Contact` were all linked in the footer, but none of those routes existed —
+clicking any of them silently fell through to the wildcard route and
+re-rendered the landing page, with no error and no indication anything was
+wrong. Built real content pages for all 6 (`src/pages/company/`) and
+registered the routes. `Sources` pulls live data from the `sources` table
+rather than being static copy.
+
+## 🔴 Found & fixed (Sept 17) — no way for an admin to reach the Admin Dashboard
+There was no link to `/admin` anywhere in the UI — an admin had to know and
+type the URL directly. Added a conditional "Admin" link (shown only when
+`profile.is_admin` is true) to both the desktop header and the mobile menu.
+
 ## Still open (by design — needs your input, not more coding)
+
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
 - Legal pages are now content-complete and properly styled, ready for lawyer review.

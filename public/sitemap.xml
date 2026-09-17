@@ -12,4 +12,10 @@
   <url><loc>https://ballotlens.com/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://ballotlens.com/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://ballotlens.com/disclaimer</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://ballotlens.com/about</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://ballotlens.com/how-it-works</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://ballotlens.com/methodology</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://ballotlens.com/sources</loc><changefreq>weekly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://ballotlens.com/accessibility</loc><changefreq>yearly</changefreq><priority>0.2</priority></url>
+  <url><loc>https://ballotlens.com/contact</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
 </urlset>

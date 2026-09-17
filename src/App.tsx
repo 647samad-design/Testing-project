@@ -25,6 +25,12 @@ import { ContestDetailPage, MeasureDetailPage } from '@/pages/ContestDetailPage'
 import { PrivacyPolicyPage } from '@/pages/legal/PrivacyPolicyPage';
 import { TermsOfServicePage } from '@/pages/legal/TermsOfServicePage';
 import { DisclaimerPage } from '@/pages/legal/DisclaimerPage';
+import { AboutPage } from '@/pages/company/AboutPage';
+import { HowItWorksPage } from '@/pages/company/HowItWorksPage';
+import { MethodologyPage } from '@/pages/company/MethodologyPage';
+import { SourcesPage } from '@/pages/company/SourcesPage';
+import { AccessibilityPage } from '@/pages/company/AccessibilityPage';
+import { ContactPage } from '@/pages/company/ContactPage';
 import { Toaster } from '@/components/ui/sonner';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 
@@ -63,6 +69,12 @@ function App() {
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />
               <Route path="/disclaimer" element={<DisclaimerPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/how-it-works" element={<HowItWorksPage />} />
+              <Route path="/methodology" element={<MethodologyPage />} />
+              <Route path="/sources" element={<SourcesPage />} />
+              <Route path="/accessibility" element={<AccessibilityPage />} />
+              <Route path="/contact" element={<ContactPage />} />
               <Route path="*" element={<LandingPage />} />
             </Routes>
           </main>

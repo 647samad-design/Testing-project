@@ -74,6 +74,14 @@ export function Header() {
 
             {user ? (
               <div className="hidden md:flex items-center gap-2">
+                {profile?.is_admin && (
+                  <Link to="/admin">
+                    <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target">
+                      <ShieldCheck className="h-4 w-4" />
+                      Admin
+                    </Button>
+                  </Link>
+                )}
                 <Link to="/account">
                   <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target">
                     <User className="h-4 w-4" />
@@ -148,6 +156,17 @@ export function Header() {
 
             {user ? (
               <>
+                {profile?.is_admin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition-all touch-target"
+                  >
+                    <ShieldCheck className="h-5 w-5" />
+                    Admin
+                    <ChevronRight className="ml-auto h-4 w-4 opacity-50" />
+                  </Link>
+                )}
                 <Link
                   to="/account"
                   onClick={() => setMobileOpen(false)}
