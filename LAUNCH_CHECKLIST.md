@@ -6,13 +6,15 @@ Legend: ✅ Code complete &nbsp; 🟡 Code complete, needs external input to go 
 ---
 
 ## 1. Stripe / payment integration + subscription gating — 🟡
-**Code:**
-- `supabase/functions/create-checkout-session/index.ts` — creates a Stripe Checkout session for Candidate/Pro/Management plans
+**Code:** `supabase/functions/create-checkout-session/index.ts` — creates a Stripe Checkout session for Candidate/Pro/Management plans
 - `supabase/functions/stripe-webhook/index.ts` — handles subscription created/updated/canceled events, writes to `subscriptions` and `candidate_management_subscriptions`
 - `src/services/stripe.ts` — client function that calls the checkout function and redirects to Stripe
 - `src/pages/PricingPage.tsx` — pricing UI wired to real checkout, monthly/yearly toggle, confirmed prices ($9/$89 Candidate, $29/$289 Pro)
 - `src/pages/CandidatePortalPage.tsx` — "Upgrade to Management — $299" button (Overview tab)
 - `migrations/20260913000100_pricing_tiers_and_candidate_management.sql` — DB schema for new plan tiers + management subscriptions table
+- Live-tested end to end Sept 17 with a real test-mode Stripe account: checkout, webhook, and Billing tab all confirmed working.
+
+**Feature gating status (found during a Sept 17 audit — see QA_REPORT.md):** of the 4 perks listed as Candidate/Pro exclusives on the pricing page, only **ad-free browsing** is actually enforced in code as of this update. "Unlimited watchlist" (free was already unlimited), "email alerts" (no email infrastructure exists), and "priority/limited AI" (no usage limiting exists) are pricing-page copy only — paying today does not unlock them. These need product decisions from you before they can be built (see "Still open" below).
 
 **What's missing before it actually processes money:** your real Stripe secret key + 5 price IDs added as Supabase Edge Function secrets (names listed in `.env.example`). Buttons will show a clear error toast until then — they won't silently fail.
 
@@ -63,9 +65,10 @@ Per your last instruction. Also outside what I can do directly (infra/DNS step, 
 - `Subscription.plan` TypeScript type still only listed the old placeholder pricing — updated to match the real tiers (`src/types/index.ts`).
 
 ## Still open — needs your input, not more code
-- [ ] Stripe secret key + 5 price IDs → Supabase Edge Function secrets
-- [ ] AP Elections API key → same
+- [x] ~~Stripe secret key + 5 price IDs~~ — done, live-tested Sept 17
+- [ ] AP Elections API key → Supabase Edge Function secrets
 - [ ] Apply the 10 new SQL migrations to your live Supabase project (up to `20260913001000`)
 - [ ] Lawyer review of the 3 legal pages
 - [x] ~~A "Billing" view on the Account page~~ — done, see `/account` → Billing tab
 - [ ] Real candidate photo sourcing from Ballotpedia / FL DOS at scale (upload infra is ready; bulk-pulling real people's data is a separate data-use decision)
+- [ ] **Decide the free-tier limits for the 3 unbuilt paid perks**: what's the watchlist cap for free users, what should trigger an email alert and how often, and what's the actual AI usage limit for free vs. paid. Can't build these correctly without your answer — see item 1 above.

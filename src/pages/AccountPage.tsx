@@ -21,6 +21,7 @@ import { getCandidates } from '@/services/candidates';
 import { LoadingState } from '@/components/shared/StateComponents';
 import { JOURNEY_STEPS, getJourneySteps, toggleJourneyStep, uploadProfilePhoto } from '@/services/voter-profile';
 import { getMySubscription, getMyManagedCandidates, openBillingPortal, startCheckout, type MySubscription, type MyManagedCandidate } from '@/services/stripe';
+import { invalidateSubscriptionCache } from '@/services/subscription-cache';
 import { toast } from 'sonner';
 import type { Candidate, Issue, UserLocation, ElectionJourneyStep } from '@/types';
 import { cn } from '@/lib/utils';
@@ -44,7 +45,9 @@ export function AccountPage() {
   const [civicScore, setCivicScore] = useState(85);
   const [journeySteps, setJourneySteps] = useState<ElectionJourneyStep[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'journey' | 'billing'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'journey' | 'billing'>(
+    () => (new URLSearchParams(window.location.search).get('checkout') ? 'billing' : 'dashboard')
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -797,9 +800,37 @@ function BillingTab() {
   const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
+    const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
+
     (async () => {
       try {
-        const [sub, managed] = await Promise.all([getMySubscription(), getMyManagedCandidates()]);
+        // Straight after Stripe redirects back, the webhook that updates our
+        // `subscriptions` row may not have finished processing yet (it's a
+        // separate async call from Stripe to our servers). Rather than show
+        // "Free" for a moment and confuse a customer who just paid, poll
+        // briefly for the plan to change before settling.
+        let sub = await getMySubscription();
+        if (checkoutResult === 'success') {
+          invalidateSubscriptionCache();
+          for (let attempt = 0; attempt < 5 && (!sub || sub.plan === 'free'); attempt++) {
+            await new Promise((r) => setTimeout(r, 1200));
+            invalidateSubscriptionCache();
+            sub = await getMySubscription();
+          }
+          invalidateSubscriptionCache(); // so <AdSlot> etc. also pick up the new plan
+          if (sub && sub.plan !== 'free') {
+            toast.success(`Payment successful! You're now on the ${PLAN_LABELS[sub.plan] ?? sub.plan} plan.`);
+          } else {
+            toast.success("Payment received — it's finishing setup and should appear here shortly. Refresh in a moment if it doesn't.");
+          }
+          // Strip the query param so refreshing the page doesn't re-trigger this.
+          window.history.replaceState({}, '', window.location.pathname);
+        } else if (checkoutResult === 'canceled') {
+          toast('Checkout was canceled — no charge was made.');
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+
+        const managed = await getMyManagedCandidates();
         setSubscription(sub);
         setManagedCandidates(managed);
       } catch (err) {

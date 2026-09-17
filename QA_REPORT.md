@@ -199,8 +199,63 @@ dead code (see earlier finding) so it was left alone.
 
 Suite is now 56 tests, up from 53.
 
-## Still open (by design — needs your input, not more coding)
+## 🔴 Found & fixed (Sept 17) — scroll position bug on navigation
+Clicking any link (e.g. a footer link like "Premium") while scrolled down
+landed on the new page still scrolled to the same position, instead of at
+the top. React Router doesn't reset scroll on navigation by default. Fixed
+with a `ScrollToTop` component that resets `window.scrollTo(0,0)` on every
+route change.
 
+## 🔴 Found & fixed (Sept 17) — paid-tier features were pure marketing copy, not enforced
+The client raised a sharp question: what does a paying user actually get
+that a free user doesn't? Auditing every promise on the Pricing page found:
+- **"Ad-free browsing"** — `AdSlot` had zero subscription check; paid and
+  free users saw identical ads. **Fixed**: paid users (any active
+  Candidate/Pro tier) now skip ad fetching/rendering entirely, via a new
+  `useIsPaidUser()` hook (`src/hooks/use-subscription.ts`) backed by a
+  request-deduped cache (`src/services/subscription-cache.ts`) so multiple
+  `<AdSlot>`s on one page share a single subscription lookup instead of each
+  querying it separately.
+- **"Save unlimited candidates"** — the free tier was *already* unlimited
+  (no cap exists anywhere), so this "paid perk" was meaningless from day
+  one. **Not fixed in this pass** — this is a product decision (should free
+  actually be capped at some number, e.g. 10?), not something to guess at
+  in code without the client weighing in.
+- **"Email alerts when new info is added"** — there is no email-sending
+  infrastructure in the codebase at all (no Resend/SendGrid/etc integration,
+  no edge function for it). This is a fully unbuilt feature, not a gating
+  bug. **Not built in this pass** — needs a real scoping conversation
+  (which email provider, what triggers an alert, digest vs. instant).
+- **"Priority AI research requests" / "Ask BallotLens AI (limited)"** —
+  no rate limiting or tiering exists anywhere for AI usage; free and paid
+  users get identical, unlimited access today. **Not fixed in this pass** —
+  needs a decision on what the free-tier limit actually is (N requests/day?
+  slower model?) before it can be built correctly.
+- **"Advanced candidate comparison tools"** — the Compare page has no
+  plan-based feature differences; reviewed and confirmed no separate
+  "advanced" mode exists to gate.
+
+**Bottom line, stated plainly:** before this fix, a paying customer got
+billing/portal access and nothing else — none of the four other listed
+perks were technically enforced. Ad-free is now real. The other three
+(watchlist cap, email alerts, AI limits) need product decisions from the
+client before they can be built correctly — recommend raising this with
+them directly rather than guessing at limits.
+
+## 🔴 Found & fixed (Sept 17) — no confirmation after a successful payment
+After Stripe redirects back to `/account?checkout=success`, nothing told
+the user their payment went through or which plan they landed on — the
+Billing tab would just show whatever was already loaded, which could still
+briefly say "Free" since the webhook that updates the plan can take a
+second or two to arrive after the redirect. Fixed: the Billing tab now
+detects the `checkout=success` param, briefly polls for the plan to update
+(webhook lag), shows a toast confirming which plan is now active (or a
+graceful "still finishing setup" message if the webhook is unusually slow),
+invalidates the subscription cache so ad-free/etc. reflect immediately, and
+opens directly on the Billing tab instead of the default Dashboard tab so
+the confirmation is the first thing the user sees.
+
+## Still open (by design — needs your input, not more coding)
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
 - Legal pages are now content-complete and properly styled, ready for lawyer review.

@@ -3,6 +3,7 @@ import { Megaphone, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { getActiveAds, trackAdEvent } from '@/services/advertising';
 import { getStoredRegion } from '@/services/elections';
+import { useIsPaidUser } from '@/hooks/use-subscription';
 import type { Advertisement, AdPlacement } from '@/types';
 
 interface AdSlotProps {
@@ -11,10 +12,19 @@ interface AdSlotProps {
 }
 
 export const AdSlot = memo(function AdSlot({ placement, className = '' }: AdSlotProps) {
+  const { isPaid } = useIsPaidUser();
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    // Ad-free browsing is a paid-tier perk (Candidate/Pro) — skip fetching
+    // and rendering ads entirely for paying users, rather than fetching
+    // them and hiding them, so it doesn't cost an impression/DB read either.
+    if (isPaid) {
+      setAds([]);
+      setLoaded(true);
+      return;
+    }
     let cancelled = false;
     async function load() {
       const region = getStoredRegion();
@@ -27,7 +37,7 @@ export const AdSlot = memo(function AdSlot({ placement, className = '' }: AdSlot
     }
     load();
     return () => { cancelled = true; };
-  }, [placement]);
+  }, [placement, isPaid]);
 
   if (!loaded || ads.length === 0) return null;
 

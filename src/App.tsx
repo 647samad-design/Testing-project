@@ -26,11 +26,13 @@ import { PrivacyPolicyPage } from '@/pages/legal/PrivacyPolicyPage';
 import { TermsOfServicePage } from '@/pages/legal/TermsOfServicePage';
 import { DisclaimerPage } from '@/pages/legal/DisclaimerPage';
 import { Toaster } from '@/components/ui/sonner';
+import { ScrollToTop } from '@/components/shared/ScrollToTop';
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-1">
