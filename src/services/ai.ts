@@ -188,15 +188,20 @@ export async function askBallotLensAI(
 export async function assessClaim(claimText: string): Promise<ClaimAssessment> {
   await delay(600);
 
-  // Search existing claims
-  const { data } = await supabase
+  // Search existing claims. Uses .limit(1) rather than .maybeSingle() because
+  // an ILIKE fuzzy match can easily return more than one row once there's
+  // real data — .maybeSingle() would throw a "multiple rows returned" error
+  // in that case instead of just taking the best/first match.
+  const { data: matches } = await supabase
     .from('claims')
     .select(`
       id, claim_text, assessment, explanation,
       candidate:candidates(id, first_name, last_name)
     `)
     .ilike('claim_text', `%${claimText.slice(0, 50)}%`)
-    .maybeSingle();
+    .limit(1);
+
+  const data = matches?.[0];
 
   if (data) {
     const { data: evidenceData } = await supabase

@@ -171,7 +171,36 @@ Re-reviewed the "launch campaigns" feature immediately after building it (same s
 
 
 
+## 🔴 Found & fixed (Sept 15) — final full-codebase sweep
+Did a complete review pass across every remaining service file looking for
+the two bug patterns established earlier in this project (missing
+explicit user-id filters relying only on RLS, and `.maybeSingle()` calls
+that assume at most one row when that isn't actually guaranteed). Found and
+fixed:
+- `advertising.ts`: `getMyAdvertiserProfile()` had no user filter — same
+  root cause as the Billing tab bug. Fixed, with tests.
+- `ai.ts`: `assessClaim()` used `.maybeSingle()` on an ILIKE fuzzy-text
+  search — as soon as two claims in the database had similar wording, this
+  would throw a "multiple rows returned" error instead of just picking the
+  best match. Switched to `.limit(1)`.
+- `voter-profile.ts`: `getJourneySteps()` queried a per-user table with no
+  explicit user filter. RLS on this table happens to be strict enough that
+  it wasn't exploitable in practice, but fixed anyway for consistency and
+  defense-in-depth, matching the pattern used everywhere else in the
+  codebase now.
+
+Also reviewed (found safe, no change needed): `user_issues` queries in
+`districts.ts` rely on RLS with no `is_admin()`-widened policy, so they're
+provably scoped correctly today; `civic.ts`'s `getOfficeDescription()` uses
+an exact-match ILIKE (not a wildcard search) so a multi-row collision is
+much less likely, left as a minor known risk rather than a live bug.
+`ads.ts` has the same missing-filter pattern but the entire file is unused
+dead code (see earlier finding) so it was left alone.
+
+Suite is now 56 tests, up from 53.
+
 ## Still open (by design — needs your input, not more coding)
+
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
 - Legal pages are now content-complete and properly styled, ready for lawyer review.

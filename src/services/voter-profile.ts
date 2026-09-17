@@ -14,9 +14,13 @@ export const JOURNEY_STEPS = [
 
 export async function getJourneySteps(): Promise<ElectionJourneyStep[]> {
   try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) return [];
+
     const { data, error } = await supabase
       .from('election_journey_steps')
       .select('*')
+      .eq('user_id', userData.user.id)
       .order('step_number', { ascending: true });
     if (error) throw error;
     return (data as ElectionJourneyStep[]) ?? [];

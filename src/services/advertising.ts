@@ -81,7 +81,14 @@ export async function trackSponsorEvent(sponsorshipId: string, eventType: 'impre
 
 export async function getMyAdvertiserProfile(): Promise<Advertiser | null> {
   try {
-    const { data, error } = await supabase.from('advertisers').select('*').maybeSingle();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) return null;
+
+    const { data, error } = await supabase
+      .from('advertisers')
+      .select('*')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
     if (error) throw error;
     return data as Advertiser | null;
   } catch {
