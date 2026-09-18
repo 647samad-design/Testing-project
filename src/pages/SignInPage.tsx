@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Scale, Mail, Lock, User as UserIcon, Globe, CheckCircle2, Eye } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, Globe, CheckCircle2, Eye } from 'lucide-react';
+import { BallotLensMark } from '@/components/shared/BallotLensMark';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -57,7 +58,7 @@ export function SignInPage() {
       <div className="text-center mb-8">
         <Link to="/" className="inline-flex items-center gap-2">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-            <Scale className="h-6 w-6 text-primary-foreground" />
+            <BallotLensMark size={24} className="text-primary-foreground" />
           </div>
         </Link>
         <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight">

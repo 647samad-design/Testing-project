@@ -1,5 +1,7 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Scale, Home, FileText, Users, GitCompare, Menu, LogIn, User, LogOut, ChevronRight, Sparkles, ShieldCheck, Megaphone, BookOpen, Search, Globe, Rss } from 'lucide-react';
+import { Home, FileText, Users, GitCompare, Menu, LogIn, User, LogOut, ChevronRight, Sparkles, ShieldCheck, Megaphone, BookOpen, Search, Globe, Rss } from 'lucide-react';
+import { BallotLensMark } from '@/components/shared/BallotLensMark';
+import { NotificationBell } from '@/components/shared/NotificationBell';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -36,7 +38,7 @@ export function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0 touch-target">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shadow-primary/20">
-              <Scale className="h-5 w-5 text-primary-foreground" />
+              <BallotLensMark size={20} className="text-primary-foreground" />
             </div>
             <span className="text-xl font-extrabold tracking-tight text-foreground hidden sm:inline">
               Ballot<span className="text-primary">Lens</span>
@@ -74,6 +76,7 @@ export function Header() {
 
             {user ? (
               <div className="hidden md:flex items-center gap-2">
+                <NotificationBell />
                 {profile?.is_admin && (
                   <Link to="/admin">
                     <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target">
@@ -109,6 +112,7 @@ export function Header() {
             )}
 
             {/* Mobile menu trigger */}
+            {user && <div className="md:hidden"><NotificationBell /></div>}
             <Button
               variant="ghost"
               size="icon"
@@ -128,7 +132,7 @@ export function Header() {
           <SheetHeader className="px-6 pt-6">
             <SheetTitle className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-                <Scale className="h-4 w-4 text-primary-foreground" />
+                <BallotLensMark size={16} className="text-primary-foreground" />
               </div>
               <span className="text-lg font-extrabold">BallotLens</span>
             </SheetTitle>
@@ -276,7 +280,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shadow-primary/20">
-                <Scale className="h-5 w-5 text-primary-foreground" />
+                <BallotLensMark size={20} className="text-primary-foreground" />
               </div>
               <span className="text-xl font-extrabold tracking-tight">
                 Ballot<span className="text-primary">Lens</span>

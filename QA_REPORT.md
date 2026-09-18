@@ -293,7 +293,36 @@ Two more issues while continuing to sweep the app:
 
 5 new tests. Suite now 67.
 
+## ✅ Logo added (Sept 17)
+Replaced the generic placeholder "Scale" (justice scale) icon used everywhere
+as the logo with a proper, distinctive mark: a magnifying lens with a
+checkmark inside, representing the platform's core idea — looking closely at
+your ballot to verify what's on it. `src/components/shared/BallotLensMark.tsx`,
+used consistently in the header, mobile menu, and sign-in page. Updated
+`public/favicon.svg` to match exactly, so the browser tab icon and the
+in-app logo are now the same mark (previously they were two different
+designs). Left the decorative "Scale" icon on the landing page's feature
+grid alone — that one illustrates a concept ("balanced information") in
+marketing copy, not the brand mark itself.
+
+## 🔴 Found & fixed (Sept 17) — notifications were invisible outside the Feed page
+`getNotifications()` existed and worked, but the only place it was ever
+rendered was a section inside the Feed page body. A user browsing their
+ballot, a candidate profile, or anywhere else in the app had no way to know
+they had an unread notification — no badge, no bell, nothing — unless they
+specifically navigated to `/feed` and scrolled to that section. Built a
+persistent `NotificationBell` (`src/components/shared/NotificationBell.tsx`)
+in the header (desktop and mobile) with an unread-count badge, a dropdown
+listing recent notifications, click-to-mark-read, "mark all read", and light
+polling (60s) so a notification created while browsing elsewhere still
+surfaces without a full page reload. The Feed page's own notification
+section was left as-is (not broken, just now a second place to see the same
+data).
+
+3 new tests. Suite now 70.
+
 ## Still open (by design — needs your input, not more coding)
+
 
 
 

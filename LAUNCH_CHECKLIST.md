@@ -44,8 +44,12 @@ Backing functions: `src/services/admin.ts` (`updateCandidate`, `deleteCandidate`
 ## 8. Full security / RLS audit — ✅
 **Full findings:** `SECURITY_AUDIT.md`. Headline: found and fixed a **live privilege-escalation bug** — any user could set their own `profiles.role = 'admin'` and a trigger would silently grant them admin (`migrations/20260913000300_fix_role_column_privilege_escalation.sql`). All 101 tables confirmed to have RLS enabled.
 
-## 9. Logo + brand identity design — ⏭️ Skipped
-Per your last instruction. Not touched.
+## 9. Logo + brand identity design — ✅
+A proper brand mark (magnifying lens + checkmark) replaces the generic
+placeholder icon everywhere, including the favicon. `src/components/shared/BallotLensMark.tsx`,
+`public/favicon.svg`. Note: this is a mark/icon, not a full brand identity
+system (typography guide, color palette documentation, etc.) — if you want
+a more complete brand package, that's a separate, larger design exercise.
 
 ## 10. QA / testing pass across the full app — ✅ (initial pass), 🟡 (full coverage)
 **Code:** Vitest + React Testing Library (`npm test`), 33 tests across `src/services/__tests__/` and `src/components/shared/__tests__/`, covering admin actions, Stripe checkout, photo upload, messaging, follows/social, and the onboarding quiz. Full findings: `QA_REPORT.md`.
