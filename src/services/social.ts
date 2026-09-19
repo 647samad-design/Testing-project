@@ -11,7 +11,15 @@ export async function follow(followableType: FollowableType, followableId: strin
   const { error } = await supabase
     .from('follows')
     .insert({ followable_type: followableType, followable_id: followableId });
-  if (error) throw error;
+  if (error) {
+    // Postgres raises a row-level security violation when a free user hits
+    // the 5-candidate watchlist cap (can_follow_more_candidates() fails).
+    // Surface it as a clear, actionable message instead of a raw DB error.
+    if (followableType === 'candidate' && (error.code === '42501' || /row-level security/i.test(error.message))) {
+      throw new Error('Free accounts can follow up to 5 candidates. Upgrade to Candidate or Pro to follow unlimited candidates.');
+    }
+    throw error;
+  }
 }
 
 export async function unfollow(followableType: FollowableType, followableId: string): Promise<void> {

@@ -8,7 +8,7 @@ import { startCheckout, type CheckoutPlan } from '@/services/stripe';
 import { toast } from 'sonner';
 
 const candidateFeatures = [
-  'Save unlimited candidates to your watchlist',
+  'Follow unlimited candidates to your watchlist',
   'Get email alerts when new info is added',
   'Access advanced candidate comparison tools',
   'See voting records with plain-English summaries',
@@ -18,7 +18,7 @@ const candidateFeatures = [
 
 const proFeatures = [
   ...candidateFeatures,
-  'Priority AI research requests',
+  'Expanded AI Research — up to 100 questions/day',
   'Early access to new tools',
   'Support our nonpartisan mission at the highest tier',
 ];
@@ -35,7 +35,7 @@ type Plan = {
 };
 
 const plans: Plan[] = [
-  { id: 'free', name: 'Free', price: 0, period: 'forever', description: 'Everything you need to research your ballot', features: ['See your full ballot', 'Research candidates', 'Compare positions', 'Follow evidence sources', 'Ask BallotLens AI (limited)'], cta: 'Current Plan', highlight: false },
+  { id: 'free', name: 'Free', price: 0, period: 'forever', description: 'Everything you need to research your ballot', features: ['See your full ballot', 'Research candidates', 'Compare positions', 'Follow evidence sources', 'Ask BallotLens AI — 5 questions/day', 'Follow up to 5 candidates'], cta: 'Current Plan', highlight: false },
   { id: 'candidate_monthly', name: 'Candidate', price: 9, period: '/month', description: 'Advanced tools for engaged voters', features: candidateFeatures, cta: 'Go Candidate', highlight: false },
   { id: 'pro_monthly', name: 'Pro', price: 29, period: '/month', description: 'Everything, for power users', features: proFeatures, cta: 'Go Pro', highlight: true },
 ];

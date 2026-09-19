@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { follow, unfollow, isFollowing, getFollowerCount } from '@/services/social';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { FollowableType } from '@/types';
 
 export function FollowButton({
@@ -46,9 +47,10 @@ export function FollowButton({
       } else {
         await unfollow(followableType, followableId);
       }
-    } catch {
+    } catch (err) {
       setFollowing(!newFollowing);
       setCount((c) => c + (newFollowing ? -1 : 1));
+      toast.error(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     }
   }
 

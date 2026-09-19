@@ -10,7 +10,29 @@ vi.mock('@/lib/supabase', () => ({
   supabase: { from: fromMock, auth: { getUser: getUserMock }, rpc: rpcMock },
 }));
 
-import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead } from '@/services/social';
+import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead, follow } from '@/services/social';
+
+describe('follow — free-tier candidate watchlist limit', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('surfaces a friendly upgrade message when the 5-candidate cap RLS check fails', async () => {
+    fromMock.mockReturnValue({ insert: () => Promise.resolve({ error: { code: '42501', message: 'new row violates row-level security policy' } }) });
+
+    await expect(follow('candidate', 'cand-6')).rejects.toThrow(/Upgrade to Candidate or Pro/);
+  });
+
+  it('does not apply the friendly message to issue follows (no cap on issues)', async () => {
+    fromMock.mockReturnValue({ insert: () => Promise.resolve({ error: { code: '42501', message: 'new row violates row-level security policy' } }) });
+
+    await expect(follow('issue', 'issue-1')).rejects.toThrow('new row violates row-level security policy');
+  });
+
+  it('passes through unrelated errors unchanged', async () => {
+    fromMock.mockReturnValue({ insert: () => Promise.resolve({ error: { code: '23505', message: 'duplicate key' } }) });
+
+    await expect(follow('candidate', 'cand-1')).rejects.toThrow('duplicate key');
+  });
+});
 
 describe('isFollowing', () => {
   beforeEach(() => vi.clearAllMocks());

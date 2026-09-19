@@ -18,6 +18,41 @@ import { getCandidatePositions, getVotingRecord, getCandidateStatements } from '
  * - Invents sources
  * - Produces endorsements
  */
+export interface AiUsageStatus {
+  allowed: boolean;
+  remaining: number;
+  limit: number;
+  isPaid: boolean;
+}
+
+/** Read-only check — does NOT consume a question. Use on page load to show
+ * "3 of 5 questions left today" before the user asks anything. */
+export async function getAiUsageStatus(): Promise<AiUsageStatus | null> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) return null;
+  const { data, error } = await supabase.rpc('get_ai_usage_status', { p_user_id: userData.user.id });
+  if (error || !data) return null;
+  return { allowed: data.allowed, remaining: data.remaining, limit: data.limit, isPaid: data.is_paid };
+}
+
+/** Atomically checks AND consumes one question against today's limit
+ * (5/day free, 100/day paid — client-confirmed). Call this BEFORE actually
+ * asking the AI a question; if `allowed` is false, show an upgrade prompt
+ * instead of calling askBallotLensAI(). */
+export async function consumeAiUsage(): Promise<AiUsageStatus> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) {
+    return { allowed: false, remaining: 0, limit: 5, isPaid: false };
+  }
+  const { data, error } = await supabase.rpc('check_and_increment_ai_usage', { p_user_id: userData.user.id });
+  if (error || !data) {
+    // Fail closed on an unexpected error — don't let a DB hiccup grant free
+    // unlimited AI usage.
+    return { allowed: false, remaining: 0, limit: 5, isPaid: false };
+  }
+  return { allowed: data.allowed, remaining: data.remaining, limit: data.limit, isPaid: data.is_paid };
+}
+
 export async function askBallotLensAI(
   question: string,
   candidateId?: string,

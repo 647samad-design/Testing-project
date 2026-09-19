@@ -17,11 +17,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { getLocation, getUserIssues, saveLocation, updateProfile } from '@/services/districts';
-import { getCandidates } from '@/services/candidates';
 import { LoadingState } from '@/components/shared/StateComponents';
 import { JOURNEY_STEPS, getJourneySteps, toggleJourneyStep, uploadProfilePhoto } from '@/services/voter-profile';
 import { getMySubscription, getMyManagedCandidates, openBillingPortal, startCheckout, type MySubscription, type MyManagedCandidate } from '@/services/stripe';
 import { invalidateSubscriptionCache } from '@/services/subscription-cache';
+import { getFollowedCandidates } from '@/services/social';
 import { toast } from 'sonner';
 import type { Candidate, Issue, UserLocation, ElectionJourneyStep } from '@/types';
 import { cn } from '@/lib/utils';
@@ -75,15 +75,20 @@ export function AccountPage() {
     }
 
     async function load() {
-      const [loc, issues, allCandidates, journey] = await Promise.all([
+      const [loc, issues, followedCandidates, journey] = await Promise.all([
         getLocation(),
         getUserIssues(),
-        getCandidates(),
+        getFollowedCandidates(),
         isDemo ? Promise.resolve([]) : getJourneySteps(),
       ]);
       setLocation(loc);
       setUserIssues(issues);
-      setSavedCandidates(allCandidates.slice(0, 4));
+      // Real "watchlist" — candidates the user has actually followed, not a
+      // slice of every candidate in the database (which is what this used
+      // to show, regardless of what the user had actually saved/followed).
+      setSavedCandidates(
+        followedCandidates.map((f) => f.candidate).filter((c): c is Candidate => !!c)
+      );
       setJourneySteps(journey);
       setLoading(false);
     }

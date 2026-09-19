@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { SourceBadge } from '@/components/shared/SourceBadge';
 import { DemoBanner } from '@/components/shared/DemoBanner';
 import { LoadingState } from '@/components/shared/StateComponents';
-import { askBallotLensAI, assessClaim } from '@/services/ai';
+import { askBallotLensAI, assessClaim, getAiUsageStatus, consumeAiUsage, type AiUsageStatus } from '@/services/ai';
 import { getCandidates } from '@/services/candidates';
+import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 import type { AIResponse, Candidate, ClaimAssessment } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +24,7 @@ const exampleQuestions = [
 ];
 
 export function AskBallotLensPage() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const initialCandidate = searchParams.get('c') ?? undefined;
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -32,14 +35,34 @@ export function AskBallotLensPage() {
   const [mode, setMode] = useState<'ask' | 'claim'>('ask');
   const [claimResult, setClaimResult] = useState<ClaimAssessment | null>(null);
   const [claimInput, setClaimInput] = useState('');
+  const [usage, setUsage] = useState<AiUsageStatus | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     getCandidates().then(setCandidates).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!user) { setUsage(null); return; }
+    getAiUsageStatus().then(setUsage);
+  }, [user]);
+
   async function handleAsk() {
     if (!question.trim()) return;
+
+    if (user) {
+      const result = await consumeAiUsage();
+      setUsage(result);
+      if (!result.allowed) {
+        toast.error(
+          result.isPaid
+            ? "You've used all 100 questions in today's Expanded AI Research allowance. It resets tomorrow."
+            : "You've used today's 5 free questions. Upgrade for Expanded AI Research — up to 100 questions a day."
+        );
+        return;
+      }
+    }
+
     setLoading(true);
     setResponse(null);
     const result = await askBallotLensAI(question, selectedCandidate);
@@ -99,7 +122,17 @@ export function AskBallotLensPage() {
         <div className="space-y-6">
           {/* Question input */}
           <Card className="p-6 rounded-2xl">
-            <label className="text-sm font-semibold text-foreground">Your question</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-foreground">Your question</label>
+              {usage && (
+                <span className={cn(
+                  'text-xs font-medium',
+                  usage.remaining === 0 ? 'text-destructive' : 'text-muted-foreground'
+                )}>
+                  {usage.remaining} of {usage.limit} questions left today
+                </span>
+              )}
+            </div>
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
               <Input
                 placeholder="Ask about a candidate's position, voting record, or sources…"
@@ -113,6 +146,21 @@ export function AskBallotLensPage() {
                 Ask
               </Button>
             </div>
+
+            {usage && !usage.allowed && (
+              <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
+                <p className="font-medium">
+                  {usage.isPaid
+                    ? "You've reached today's 100-question limit."
+                    : "You've used today's 5 free questions."}
+                </p>
+                {!usage.isPaid && (
+                  <Link to="/pricing" className="mt-1 inline-flex items-center gap-1 text-primary font-semibold hover:underline">
+                    <Sparkles className="h-3.5 w-3.5" /> Upgrade for Expanded AI Research — up to 100 questions/day
+                  </Link>
+                )}
+              </div>
+            )}
 
             {/* Candidate selector */}
             <div className="mt-4">
