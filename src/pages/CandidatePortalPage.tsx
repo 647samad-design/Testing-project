@@ -27,7 +27,7 @@ interface ClaimedCandidate {
 }
 
 export function CandidatePortalPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [claimed, setClaimed] = useState<ClaimedCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team' | 'campaign'>('overview');
@@ -50,6 +50,19 @@ export function CandidatePortalPage() {
     }
     load();
   }, [user]);
+
+  // Check authLoading BEFORE deciding the user is signed out — on a fresh
+  // page load the session hasn't finished restoring yet, so `user` starts
+  // null for a moment even for an already-signed-in visitor. Without this,
+  // the page would briefly show "Sign in required" (and its Sign In button)
+  // to someone who is actually already logged in.
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-content px-4 sm:px-6 py-16">
+        <LoadingState message="Loading…" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (

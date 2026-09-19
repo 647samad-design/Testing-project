@@ -18,7 +18,7 @@ import type { Conversation, Message } from '@/types';
 import { cn } from '@/lib/utils';
 
 export function MessagesPage() {
-  const { user, isDemo } = useAuth();
+  const { user, isDemo, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeId = searchParams.get('c');
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -112,6 +112,14 @@ export function MessagesPage() {
       e.preventDefault();
       handleSend();
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-content px-4 sm:px-6 py-8">
+        <LoadingState message="Loading…" />
+      </div>
+    );
   }
 
   if (!user) {

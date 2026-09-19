@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
+import { LoadingState } from '@/components/shared/StateComponents';
 import {
   getSocialFeed, getFollowedCandidates, getFollowedIssues,
   togglePostLike, getNotifications, getFollowerCount,
@@ -39,7 +40,7 @@ const NOTIF_ICONS: Record<string, { icon: typeof Bell; color: string }> = {
 };
 
 export function FeedPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [followedCandidates, setFollowedCandidates] = useState<Candidate[]>([]);
   const [followedIssues, setFollowedIssues] = useState<Issue[]>([]);
@@ -65,6 +66,14 @@ export function FeedPage() {
     }
     load();
   }, [user]);
+
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-content px-4 sm:px-6 py-20">
+        <LoadingState message="Loading…" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (

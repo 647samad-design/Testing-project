@@ -31,6 +31,13 @@ export function CandidateQuizPage() {
         return;
       }
 
+      // Clear any earlier "please sign in" error from a previous run of this
+      // effect where `user` was still null (e.g. on first mount, before the
+      // session finishes restoring) — without this, that message would
+      // never go away even once the real, signed-in user loads a moment
+      // later and a valid claim is found.
+      setError(null);
+
       // Find the candidate this user has a verified claim for
       const { data: claim } = await supabase
         .from('candidate_claims')
