@@ -337,9 +337,11 @@ async function createNotificationsForState(
     is_pinned: false,
   }).select("id").maybeSingle();
 
-  // Send notifications to users in this state
+  // Send in-app notifications (to the bell in the header — notifications
+  // table, NOT user_election_notifications, which nothing in the UI reads)
+  // and instant emails (if the recipient has opted in) to users in this state.
   const { data: usersInState } = await supabase
-    .from("user_locations")
+    .from("locations")
     .select("user_id")
     .eq("state", statePostal);
 
@@ -347,12 +349,39 @@ async function createNotificationsForState(
 
   const notifications = usersInState.map((u: { user_id: string }) => ({
     user_id: u.user_id,
-    race_id: raceId,
-    notification_type: type,
+    type,
     title,
     body,
     is_read: false,
   }));
 
-  await supabase.from("user_election_notifications").insert(notifications);
+  await supabase.from("notifications").insert(notifications);
+
+  // Instant email — only to users who opted into election/followed-content
+  // alerts. Best-effort: a failure here shouldn't block the notifications
+  // above, which is why each send is wrapped and errors are swallowed.
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const userIds = usersInState.map((u: { user_id: string }) => u.user_id);
+  const { data: prefs } = await supabase
+    .from("notification_preferences")
+    .select("user_id, instant_election_reminders, instant_followed_updates")
+    .in("user_id", userIds)
+    .or("instant_election_reminders.eq.true,instant_followed_updates.eq.true");
+
+  for (const pref of prefs ?? []) {
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: (pref as { user_id: string }).user_id,
+          subject: title,
+          html: `<p>${body}</p><p style="color:#888;font-size:12px;">Manage alert preferences at ballotlens.com/account (Notifications tab).</p>`,
+        }),
+      });
+    } catch {
+      // Best-effort — one failed email shouldn't stop the rest.
+    }
+  }
 }

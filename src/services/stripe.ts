@@ -52,8 +52,10 @@ export async function openBillingPortal(): Promise<void> {
 export type MySubscription = {
   plan: string;
   status: string;
+  current_period_start: string | null;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+  created_at: string | null;
 };
 
 /** The signed-in user's own voter subscription (Free/Candidate/Pro), if any.
@@ -67,7 +69,7 @@ export async function getMySubscription(): Promise<MySubscription | null> {
 
   const { data, error } = await supabase
     .from('subscriptions')
-    .select('plan, status, current_period_end, cancel_at_period_end')
+    .select('plan, status, current_period_start, current_period_end, cancel_at_period_end, created_at')
     .eq('user_id', userData.user.id)
     .maybeSingle();
   if (error) throw error;

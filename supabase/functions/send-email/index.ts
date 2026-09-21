@@ -1,0 +1,106 @@
+// Generic transactional email sender used by both instant alerts and the
+// digest job. Uses Resend (resend.com) — needs RESEND_API_KEY as an Edge
+// Function secret, the same pattern as STRIPE_SECRET_KEY / AP_ELECTIONS_API_KEY.
+// Admin-only: this is called by other server-side code (webhooks, the digest
+// job), never directly by a browser, so it authenticates the caller as an
+// admin rather than accepting arbitrary "send email to anyone" requests from
+// the client.
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+};
+
+const FROM_ADDRESS = "BallotLens <notifications@ballotlens.com>";
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
+  }
+  if (req.method !== "POST") {
+    return json({ error: "Method not allowed" }, 405);
+  }
+
+  try {
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      return json({ error: "RESEND_API_KEY is not configured. Add it as an Edge Function secret." }, 503);
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return json({ error: "Missing Authorization header" }, 401);
+
+    const bearerToken = authHeader.replace(/^Bearer\s+/i, "");
+    const isInternalServiceCall = bearerToken === supabaseServiceKey;
+
+    if (!isInternalServiceCall) {
+      // A direct call from the browser (e.g. an admin "send test email"
+      // button) must be an authenticated admin. A call from another Edge
+      // Function or the digest cron job presents the service role key
+      // directly and skips this check — that's how server-to-server calls
+      // within Supabase authenticate themselves, since there's no "signed
+      // in user" for a webhook or scheduled job to be.
+      const callerClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userData } = await callerClient.auth.getUser();
+      if (!userData?.user) return json({ error: "Not authenticated" }, 401);
+
+      const admin = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: profile } = await admin.from("profiles").select("is_admin").eq("id", userData.user.id).maybeSingle();
+      if (!profile?.is_admin) return json({ error: "Admin access required" }, 403);
+    }
+
+    const admin = createClient(supabaseUrl, supabaseServiceKey);
+
+    const body = await req.json().catch(() => ({}));
+    const { userId, subject, html } = body as { userId?: string; subject?: string; html?: string };
+
+    if (!userId || !subject || !html) {
+      return json({ error: "userId, subject, and html are required" }, 400);
+    }
+
+    // Look up the recipient's email — profiles doesn't store it, auth.users does.
+    const { data: authUser, error: authUserError } = await admin.auth.admin.getUserById(userId);
+    if (authUserError || !authUser?.user?.email) {
+      return json({ error: "Could not find an email address for that user" }, 404);
+    }
+
+    const resendResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_ADDRESS,
+        to: authUser.user.email,
+        subject,
+        html,
+      }),
+    });
+
+    if (!resendResponse.ok) {
+      const errText = await resendResponse.text();
+      return json({ error: `Resend API error: ${resendResponse.status}`, detail: errText }, 502);
+    }
+
+    return json({ success: true });
+  } catch (err) {
+    return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
+  }
+});
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}

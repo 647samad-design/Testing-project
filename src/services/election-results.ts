@@ -182,3 +182,22 @@ export async function triggerElectionFetch(date?: string, state?: string): Promi
     error: data.error,
   };
 }
+
+export async function triggerDigestEmails(dryRun = false): Promise<{ success: boolean; sent: number; skippedEmpty: number; usersChecked: number; errors: string[]; error?: string }> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) return { success: false, sent: 0, skippedEmpty: 0, usersChecked: 0, errors: [], error: 'Please sign in as an admin first.' };
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-digest-emails`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dryRun }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return { success: false, sent: 0, skippedEmpty: 0, usersChecked: 0, errors: [], error: data.error ?? `HTTP ${response.status}` };
+  }
+  return { success: true, ...data };
+}

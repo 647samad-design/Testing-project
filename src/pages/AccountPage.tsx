@@ -22,6 +22,7 @@ import { JOURNEY_STEPS, getJourneySteps, toggleJourneyStep, uploadProfilePhoto }
 import { getMySubscription, getMyManagedCandidates, openBillingPortal, startCheckout, type MySubscription, type MyManagedCandidate } from '@/services/stripe';
 import { invalidateSubscriptionCache } from '@/services/subscription-cache';
 import { getFollowedCandidates } from '@/services/social';
+import { getNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from '@/services/notification-preferences';
 import { toast } from 'sonner';
 import type { Candidate, Issue, UserLocation, ElectionJourneyStep } from '@/types';
 import { cn } from '@/lib/utils';
@@ -45,7 +46,7 @@ export function AccountPage() {
   const [civicScore, setCivicScore] = useState(85);
   const [journeySteps, setJourneySteps] = useState<ElectionJourneyStep[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'journey' | 'billing'>(
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'journey' | 'billing' | 'notifications'>(
     () => (new URLSearchParams(window.location.search).get('checkout') ? 'billing' : 'dashboard')
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -377,7 +378,7 @@ export function AccountPage() {
       </Card>
 
       {/* TABS: Dashboard / Election Journey */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'journey' | 'billing')} className="mb-6">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'journey' | 'billing' | 'notifications')} className="mb-6">
         <TabsList className="w-full justify-start overflow-x-auto no-scrollbar">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="journey">
@@ -389,6 +390,7 @@ export function AccountPage() {
             )}
           </TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD TAB */}
@@ -781,6 +783,10 @@ export function AccountPage() {
         <TabsContent value="billing" className="mt-6">
           <BillingTab />
         </TabsContent>
+
+        <TabsContent value="notifications" className="mt-6">
+          <NotificationSettingsTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -797,6 +803,160 @@ const PLAN_LABELS: Record<string, string> = {
   premium_monthly: 'Premium (Monthly)',
   premium_yearly: 'Premium (Yearly)',
 };
+
+const FREE_FEATURES = [
+  'See your full ballot',
+  'Research candidates',
+  'Compare positions',
+  'Follow evidence sources',
+  'Ask BallotLens AI — 5 questions/day',
+  'Follow up to 5 candidates',
+];
+
+const CANDIDATE_FEATURES = [
+  ...FREE_FEATURES.filter((f) => !f.includes('5 candidates')),
+  'Follow unlimited candidates to your watchlist',
+  'Get email alerts when new info is added',
+  'Access advanced candidate comparison tools',
+  'See voting records with plain-English summaries',
+  'Track ballot measures with personalized notes',
+  'Ad-free browsing experience',
+];
+
+const PRO_FEATURES = [
+  ...CANDIDATE_FEATURES,
+  'Expanded AI Research — up to 100 questions/day',
+  'Early access to new tools',
+];
+
+/** What a plan actually unlocks, for the "what you get" list on the Billing
+ * tab — so a user (or admin looking at their account) can see plainly what
+ * access comes with what they've paid for, not just the plan's price. */
+function featuresForPlan(plan: string): string[] {
+  if (plan === 'pro_monthly' || plan === 'pro_yearly') return PRO_FEATURES;
+  if (plan === 'candidate_monthly' || plan === 'candidate_yearly' || plan === 'premium_monthly' || plan === 'premium_yearly') return CANDIDATE_FEATURES;
+  return FREE_FEATURES;
+}
+
+const DIGEST_LABELS: Record<NotificationPreferences['digest_frequency'], string> = {
+  weekly: 'Weekly digest',
+  daily: 'Daily digest',
+  off: 'Off',
+};
+
+function NotificationSettingsTab() {
+  const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getNotificationPreferences().then((p) => { setPrefs(p); setLoading(false); });
+  }, []);
+
+  async function handleChange(updates: Partial<NotificationPreferences>) {
+    if (!prefs) return;
+    const next = { ...prefs, ...updates };
+    setPrefs(next);
+    setSaving(true);
+    try {
+      await updateNotificationPreferences(updates);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save preferences.');
+      setPrefs(prefs); // revert on failure
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading || !prefs) return <LoadingState message="Loading notification settings…" />;
+
+  return (
+    <div className="space-y-5">
+      <Card className="p-6 rounded-2xl">
+        <h3 className="font-bold text-lg">Instant Alerts</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Account security emails (verification, password resets) always send regardless of these settings.
+        </p>
+        <div className="mt-4 space-y-4">
+          <label className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Election reminders</p>
+              <p className="text-xs text-muted-foreground">Registration deadlines and upcoming Election Day reminders.</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={prefs.instant_election_reminders}
+              onChange={(e) => handleChange({ instant_election_reminders: e.target.checked })}
+              className="h-5 w-5 shrink-0 accent-primary"
+            />
+          </label>
+          <label className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Updates on what you follow</p>
+              <p className="text-xs text-muted-foreground">A major update to a candidate, election, or ballot measure you follow.</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={prefs.instant_followed_updates}
+              onChange={(e) => handleChange({ instant_followed_updates: e.target.checked })}
+              className="h-5 w-5 shrink-0 accent-primary"
+            />
+          </label>
+        </div>
+      </Card>
+
+      <Card className="p-6 rounded-2xl">
+        <h3 className="font-bold text-lg">BallotLens Digest</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Everything else — new positions, articles, and profile updates — grouped into one email instead of many.
+        </p>
+        <div className="mt-4">
+          <p className="text-sm font-medium mb-2">Frequency</p>
+          <div className="flex gap-2">
+            {(['weekly', 'daily', 'off'] as const).map((freq) => (
+              <button
+                key={freq}
+                onClick={() => handleChange({ digest_frequency: freq })}
+                className={`rounded-xl border px-3 py-1.5 text-sm transition-colors ${
+                  prefs.digest_frequency === freq ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border text-muted-foreground hover:bg-secondary'
+                }`}
+              >
+                {DIGEST_LABELS[freq]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {prefs.digest_frequency !== 'off' && (
+          <div className="mt-5 space-y-3 border-t border-border pt-4">
+            <p className="text-sm font-medium">Include in digest</p>
+            {[
+              { key: 'digest_candidate_updates' as const, label: 'Candidate updates', desc: 'New positions and profile changes for candidates you follow.' },
+              { key: 'digest_ballot_measure_updates' as const, label: 'Ballot measure updates', desc: 'Changes to ballot measures you follow.' },
+              { key: 'digest_news_updates' as const, label: 'News and article updates', desc: 'Recently added articles and sources.' },
+              { key: 'digest_new_elections' as const, label: 'New elections', desc: 'Upcoming elections and important deadlines.' },
+            ].map((row) => (
+              <label key={row.key} className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm">{row.label}</p>
+                  <p className="text-xs text-muted-foreground">{row.desc}</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={prefs[row.key]}
+                  onChange={(e) => handleChange({ [row.key]: e.target.checked })}
+                  className="h-5 w-5 shrink-0 accent-primary"
+                />
+              </label>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {saving && <p className="text-xs text-muted-foreground">Saving…</p>}
+    </div>
+  );
+}
 
 function BillingTab() {
   const [subscription, setSubscription] = useState<MySubscription | null>(null);
@@ -889,6 +1049,11 @@ function BillingTab() {
                 {new Date(subscription.current_period_end).toLocaleDateString()}
               </p>
             )}
+            {isPaid && subscription?.created_at && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Purchased {new Date(subscription.created_at).toLocaleDateString(undefined, { dateStyle: 'long' })}
+              </p>
+            )}
             {!isPaid && (
               <p className="mt-1 text-sm text-muted-foreground">
                 You're on the free plan — core ballot info is always free.
@@ -906,6 +1071,25 @@ function BillingTab() {
             </Button>
           )}
         </div>
+      </Card>
+
+      <Card className="p-6 rounded-2xl">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+          What's included with {planLabel}
+        </p>
+        <ul className="space-y-2">
+          {featuresForPlan(subscription?.plan ?? 'free').map((feature) => (
+            <li key={feature} className="flex items-start gap-2 text-sm">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+              <span className="text-muted-foreground">{feature}</span>
+            </li>
+          ))}
+        </ul>
+        {!isPaid && (
+          <p className="mt-4 text-xs text-muted-foreground">
+            You won't get Candidate or Pro features until you subscribe — nothing extra unlocks automatically.
+          </p>
+        )}
       </Card>
 
       {managedCandidates.length > 0 && (

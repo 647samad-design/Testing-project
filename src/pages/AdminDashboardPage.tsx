@@ -14,8 +14,9 @@ import {
   listPendingSubmissions, approveSubmission, rejectSubmission,
   bulkImportCandidates,
   compCandidateManagement, revokeCandidateManagement, listActiveManagementCandidateIds,
+  getBillingOverview, type BillingOverview,
 } from '@/services/admin';
-import { triggerNewsFetch, triggerElectionFetch } from '@/services/election-results';
+import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
 import type { VerificationStatus } from '@/types';
@@ -23,7 +24,7 @@ import { Navigate } from 'react-router-dom';
 import { LoadingState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { toast } from 'sonner';
-import { Pencil, Trash2, ShieldOff, ShieldCheck as ShieldCheckIcon, ScrollText } from 'lucide-react';
+import { Pencil, Trash2, ShieldOff, ShieldCheck as ShieldCheckIcon, ScrollText, DollarSign } from 'lucide-react';
 
 export function AdminDashboardPage() {
   const { profile, loading: authLoading } = useAuth();
@@ -77,6 +78,7 @@ export function AdminDashboardPage() {
           <TabsTrigger value="submissions">Content Submissions</TabsTrigger>
           <TabsTrigger value="add">Add Content</TabsTrigger>
           <TabsTrigger value="datafeeds">Data Feeds</TabsTrigger>
+          <TabsTrigger value="billingoverview">Billing</TabsTrigger>
           <TabsTrigger value="manage">Manage Candidates</TabsTrigger>
           <TabsTrigger value="import">Import Candidates</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
@@ -164,6 +166,10 @@ export function AdminDashboardPage() {
 
         <TabsContent value="datafeeds" className="mt-6">
           <DataFeedsTab />
+        </TabsContent>
+
+        <TabsContent value="billingoverview" className="mt-6">
+          <BillingOverviewTab />
         </TabsContent>
 
         <TabsContent value="manage" className="mt-6">
@@ -382,11 +388,119 @@ function ImportCandidatesTab() {
   );
 }
 
+const OVERVIEW_PLAN_LABELS: Record<string, string> = {
+  candidate_monthly: 'Candidate (Monthly)',
+  candidate_yearly: 'Candidate (Yearly)',
+  pro_monthly: 'Pro (Monthly)',
+  pro_yearly: 'Pro (Yearly)',
+  premium_monthly: 'Premium (Monthly, legacy)',
+  premium_yearly: 'Premium (Yearly, legacy)',
+};
+
+function BillingOverviewTab() {
+  const [overview, setOverview] = useState<BillingOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getBillingOverview().then((data) => { setOverview(data); setLoading(false); }).catch((err) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to load billing overview.');
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) return <LoadingState message="Loading billing overview…" />;
+  if (!overview) return <p className="text-sm text-muted-foreground">Could not load billing data.</p>;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-xs text-muted-foreground">Total Users</p>
+          <p className="mt-1 text-2xl font-bold">{overview.totalUsers}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs text-muted-foreground">Free</p>
+          <p className="mt-1 text-2xl font-bold">{overview.freeUsers}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs text-muted-foreground">Paid</p>
+          <p className="mt-1 text-2xl font-bold text-primary">{overview.paidUsers}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs text-muted-foreground">Management (active)</p>
+          <p className="mt-1 text-2xl font-bold">{overview.managementActive}<span className="text-sm font-normal text-muted-foreground"> +{overview.managementComped} comped</span></p>
+        </Card>
+      </div>
+
+      <Card className="p-5">
+        <h3 className="font-semibold mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4" /> Breakdown by Plan</h3>
+        {Object.keys(overview.byPlan).length === 0 ? (
+          <p className="text-sm text-muted-foreground">No paid subscriptions yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {Object.entries(overview.byPlan).map(([plan, count]) => (
+              <div key={plan} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <span>{OVERVIEW_PLAN_LABELS[plan] ?? plan}</span>
+                <span className="font-semibold">{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-semibold mb-3">Recent Subscriptions</h3>
+        {overview.recentSubscriptions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No paid subscriptions yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {overview.recentSubscriptions.map((s) => (
+              <div key={s.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <div>
+                  <p className="font-medium">{s.full_name ?? 'Unnamed user'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {OVERVIEW_PLAN_LABELS[s.plan] ?? s.plan} · {new Date(s.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <span className={`text-xs font-medium rounded-full px-2 py-0.5 ${s.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-secondary text-muted-foreground'}`}>
+                  {s.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 function DataFeedsTab() {
   const [newsLoading, setNewsLoading] = useState(false);
   const [electionLoading, setElectionLoading] = useState(false);
   const [newsResult, setNewsResult] = useState<string | null>(null);
   const [electionResult, setElectionResult] = useState<string | null>(null);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [digestResult, setDigestResult] = useState<string | null>(null);
+
+  async function handleDigestRun(dryRun: boolean) {
+    setDigestLoading(true);
+    setDigestResult(null);
+    try {
+      const result = await triggerDigestEmails(dryRun);
+      if (result.success) {
+        setDigestResult(
+          `✅ ${dryRun ? '(Dry run) ' : ''}Checked ${result.usersChecked} users due today — ${result.sent} sent, ${result.skippedEmpty} skipped (nothing new).` +
+          (result.errors.length > 0 ? ` ${result.errors.length} error(s).` : '')
+        );
+      } else {
+        toast.error(result.error ?? 'Digest run failed.');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Digest run failed.');
+    } finally {
+      setDigestLoading(false);
+    }
+  }
 
   async function handleNewsRefresh() {
     setNewsLoading(true);
@@ -449,6 +563,26 @@ function DataFeedsTab() {
           {newsLoading ? 'Fetching…' : 'Refresh Civic News'}
         </Button>
         {newsResult && <p className="mt-2 text-sm">{newsResult}</p>}
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-semibold mb-2">BallotLens Digest Emails</h3>
+        <p className="text-sm text-muted-foreground mb-3">
+          Sends the digest email to every user who's due today (weekly subscribers get it on
+          Mondays, daily subscribers every day) and has something new to report. Requires{' '}
+          <code>RESEND_API_KEY</code> to be set as an Edge Function secret.
+        </p>
+        <div className="flex gap-2">
+          <Button onClick={() => handleDigestRun(true)} disabled={digestLoading} size="sm" variant="outline" className="gap-1.5">
+            <RefreshCw className={`h-3.5 w-3.5 ${digestLoading ? 'animate-spin' : ''}`} />
+            Preview (dry run)
+          </Button>
+          <Button onClick={() => handleDigestRun(false)} disabled={digestLoading} size="sm" className="gap-1.5">
+            <RefreshCw className={`h-3.5 w-3.5 ${digestLoading ? 'animate-spin' : ''}`} />
+            {digestLoading ? 'Sending…' : 'Send Digest Now'}
+          </Button>
+        </div>
+        {digestResult && <p className="mt-2 text-sm">{digestResult}</p>}
       </Card>
 
       <p className="text-xs text-muted-foreground">

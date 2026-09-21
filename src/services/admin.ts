@@ -279,6 +279,75 @@ export async function listActiveManagementCandidateIds(): Promise<string[]> {
   return (data ?? []).map((r) => r.candidate_id);
 }
 
+export interface BillingOverview {
+  totalUsers: number;
+  freeUsers: number;
+  paidUsers: number;
+  byPlan: Record<string, number>;
+  managementActive: number;
+  managementComped: number;
+  recentSubscriptions: Array<{
+    id: string; plan: string; status: string; created_at: string;
+    current_period_end: string | null; full_name: string | null;
+  }>;
+}
+
+/** Admin-only billing snapshot for the "Billing Overview" tab: how many
+ * users are on each paid tier vs free, and a recent-activity list. Relies
+ * on the admin-widened SELECT policy on `subscriptions` (own row OR is_admin). */
+export async function getBillingOverview(): Promise<BillingOverview> {
+  const [{ count: totalUsers }, { data: subs }, { data: mgmt }] = await Promise.all([
+    supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    supabase.from('subscriptions').select('id, plan, status, created_at, current_period_end, user_id'),
+    supabase.from('candidate_management_subscriptions').select('status, is_comped'),
+  ]);
+
+  const rows = subs ?? [];
+  const byPlan: Record<string, number> = {};
+  let paidUsers = 0;
+  for (const row of rows) {
+    if (row.status === 'active' && row.plan !== 'free') {
+      byPlan[row.plan] = (byPlan[row.plan] ?? 0) + 1;
+      paidUsers++;
+    }
+  }
+
+  const managementRows = mgmt ?? [];
+  const managementActive = managementRows.filter((m) => m.status === 'active' && !m.is_comped).length;
+  const managementComped = managementRows.filter((m) => m.status === 'active' && m.is_comped).length;
+
+  // Attach names for the recent list — fetch profiles for the subscribers involved.
+  const recentUserIds = rows
+    .filter((r) => r.plan !== 'free')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 20)
+    .map((r) => r.user_id);
+
+  const { data: profiles } = recentUserIds.length > 0
+    ? await supabase.from('profiles').select('id, full_name').in('id', recentUserIds)
+    : { data: [] };
+  const nameById = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+
+  const recentSubscriptions = rows
+    .filter((r) => r.plan !== 'free')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 20)
+    .map((r) => ({
+      id: r.id, plan: r.plan, status: r.status, created_at: r.created_at,
+      current_period_end: r.current_period_end, full_name: nameById.get(r.user_id) ?? null,
+    }));
+
+  return {
+    totalUsers: totalUsers ?? 0,
+    freeUsers: (totalUsers ?? 0) - paidUsers,
+    paidUsers,
+    byPlan,
+    managementActive,
+    managementComped,
+    recentSubscriptions,
+  };
+}
+
 export async function getAuditLog(limit = 50): Promise<Array<{
   id: string; admin_id: string | null; action: string; target_table: string | null;
   target_id: string | null; details: Record<string, unknown> | null; created_at: string;
