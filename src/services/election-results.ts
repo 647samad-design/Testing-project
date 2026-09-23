@@ -201,3 +201,22 @@ export async function triggerDigestEmails(dryRun = false): Promise<{ success: bo
   }
   return { success: true, ...data };
 }
+
+export async function triggerElectionReminders(dryRun = false): Promise<{ success: boolean; remindersSent: number; electionsChecked: number; errors: string[]; error?: string }> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) return { success: false, remindersSent: 0, electionsChecked: 0, errors: [], error: 'Please sign in as an admin first.' };
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-election-reminders`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dryRun }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return { success: false, remindersSent: 0, electionsChecked: 0, errors: [], error: data.error ?? `HTTP ${response.status}` };
+  }
+  return { success: true, ...data };
+}

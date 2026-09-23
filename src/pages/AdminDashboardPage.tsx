@@ -16,7 +16,7 @@ import {
   compCandidateManagement, revokeCandidateManagement, listActiveManagementCandidateIds,
   getBillingOverview, type BillingOverview,
 } from '@/services/admin';
-import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails } from '@/services/election-results';
+import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
 import type { VerificationStatus } from '@/types';
@@ -481,6 +481,28 @@ function DataFeedsTab() {
   const [electionResult, setElectionResult] = useState<string | null>(null);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestResult, setDigestResult] = useState<string | null>(null);
+  const [reminderLoading, setReminderLoading] = useState(false);
+  const [reminderResult, setReminderResult] = useState<string | null>(null);
+
+  async function handleReminderRun(dryRun: boolean) {
+    setReminderLoading(true);
+    setReminderResult(null);
+    try {
+      const result = await triggerElectionReminders(dryRun);
+      if (result.success) {
+        setReminderResult(
+          `✅ ${dryRun ? '(Dry run) ' : ''}Checked ${result.electionsChecked} upcoming election(s) — ${result.remindersSent} reminder(s) ${dryRun ? 'would be sent' : 'sent'}.` +
+          (result.errors.length > 0 ? ` ${result.errors.length} error(s).` : '')
+        );
+      } else {
+        toast.error(result.error ?? 'Reminder run failed.');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Reminder run failed.');
+    } finally {
+      setReminderLoading(false);
+    }
+  }
 
   async function handleDigestRun(dryRun: boolean) {
     setDigestLoading(true);
@@ -583,6 +605,26 @@ function DataFeedsTab() {
           </Button>
         </div>
         {digestResult && <p className="mt-2 text-sm">{digestResult}</p>}
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-semibold mb-2">Election Reminders</h3>
+        <p className="text-sm text-muted-foreground mb-3">
+          Sends an instant reminder (email + in-app) for elections in the next 14 days to users
+          who follow a candidate in that race or set an explicit reminder — deduplicated, so it's
+          safe to run repeatedly. Also requires <code>RESEND_API_KEY</code>.
+        </p>
+        <div className="flex gap-2">
+          <Button onClick={() => handleReminderRun(true)} disabled={reminderLoading} size="sm" variant="outline" className="gap-1.5">
+            <RefreshCw className={`h-3.5 w-3.5 ${reminderLoading ? 'animate-spin' : ''}`} />
+            Preview (dry run)
+          </Button>
+          <Button onClick={() => handleReminderRun(false)} disabled={reminderLoading} size="sm" className="gap-1.5">
+            <RefreshCw className={`h-3.5 w-3.5 ${reminderLoading ? 'animate-spin' : ''}`} />
+            {reminderLoading ? 'Sending…' : 'Send Reminders Now'}
+          </Button>
+        </div>
+        {reminderResult && <p className="mt-2 text-sm">{reminderResult}</p>}
       </Card>
 
       <p className="text-xs text-muted-foreground">
