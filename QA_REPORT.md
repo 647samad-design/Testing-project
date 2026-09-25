@@ -321,10 +321,43 @@ data).
 
 3 new tests. Suite now 70.
 
+## 🔴 Found & fixed (Sept 21) — "Election Reminder" toggle did nothing
+`CandidateProfileExtras`' reminder toggle correctly saved to
+`candidate_election_reminders`, but nothing anywhere ever read that table to
+send a reminder — a real gap given the client's email spec explicitly lists
+election reminders as an INSTANT category. Fixed: `send-election-reminders`
+edge function (finds elections in the next 14 days, reminds followers/opted-in
+users, sends email + in-app notification, deduplicated per user+election),
+admin-triggerable from Data Feeds. Migration `20260913001600`.
+
+## 🟡 Found, not fixed — three more orphaned/unbuilt areas (Sept 21)
+Continuing the audit after the client's screenshots revealed the full live
+table list, three more findings, same "exists in the schema, nothing uses
+it" shape as `ads.ts` / `saved_candidates` / `user_election_notifications`:
+
+1. **`saved_races`** — a service function (`saveRace`/`unsaveRace` in
+   `districts.ts`) exists but is never called from any page. Dead code,
+   same as `saved_candidates`. No user-facing impact since nothing links to it.
+2. **API monetization schema** (`api_clients`, `api_keys`, `api_plans`,
+   `api_subscriptions`) — a full "sell API access to third-party developers"
+   data model exists (with seed pricing data even), but zero frontend or
+   service code references any of it. This isn't a bug — it looks like
+   schema laid down for a future product line that was never built. Worth
+   knowing it's there if you want to pursue it, otherwise safe to ignore.
+3. **`content_reports`** — no "report this" mechanism exists anywhere for
+   users to flag false, abusive, or spam content (candidate profiles,
+   messages, feed posts). For a civic platform where election
+   misinformation is a real risk (see the Disclaimer page's prohibited-conduct
+   language), this is a genuine feature gap worth considering before a
+   wide launch — not fixed in this pass since it wasn't explicitly requested
+   and building a moderation queue UI is real scope, not a quick fix.
+
+
+
+
+
+
 ## Still open (by design — needs your input, not more coding)
-
-
-
 
 - Real Stripe/AP Elections/Supabase secrets (see previous message).
 - Legal pages are now content-complete and properly styled, ready for lawyer review.
@@ -337,3 +370,5 @@ data).
   admin-moderated `candidate_events` and the new Management-gated
   `campaign_events`). Kept them separate to avoid changing existing behavior
   — worth a conversation with the client on whether to consolidate.
+- `saved_races`, the API monetization schema, and a content-reporting/
+  moderation feature — see the Sept 21 findings above.
