@@ -109,7 +109,7 @@ export function AdvertisingPage() {
       <section className="mx-auto max-w-content px-4 sm:px-6 py-16">
         <h2 className="text-center text-3xl font-bold tracking-tight">Simple, transparent pricing</h2>
         <p className="mt-3 text-center text-muted-foreground">Admin-configurable. No hidden fees. Cancel anytime.</p>
-        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className={`mt-12 mx-auto grid max-w-5xl gap-5 md:grid-cols-2 ${plans.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
           {plans.map((plan, idx) => (
             <Card key={plan.id} className={`relative p-6 rounded-2xl transition-all hover:shadow-xl ${idx === 1 ? 'border-2 border-primary ring-2 ring-primary/10' : ''}`}>
               {idx === 1 && (
