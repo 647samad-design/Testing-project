@@ -42,12 +42,16 @@ export async function submitFactCheck(
   sourceUrl?: string,
   platform?: FactCheckPlatform,
 ): Promise<FactCheck | null> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) throw new Error('Please sign in to submit a fact check.');
+
   const { data, error } = await supabase
     .from('fact_checks')
     .insert({
       claim_text: claimText,
       source_url: sourceUrl ?? null,
       source_platform: platform ?? null,
+      submitted_by_user_id: userData.user.id,
     })
     .select('*')
     .maybeSingle();
