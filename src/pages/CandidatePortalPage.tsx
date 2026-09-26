@@ -421,7 +421,8 @@ function TeamTab({ candidateId }: { candidateId: string }) {
     }
   }
 
-  async function handleRevoke(id: string) {
+  async function handleRevoke(id: string, memberEmail: string) {
+    if (!window.confirm(`Revoke access for ${memberEmail}? They'll immediately lose access to this campaign.`)) return;
     try {
       await revokeTeamMember(id);
       toast.success('Access revoked.');
@@ -497,7 +498,7 @@ function TeamTab({ candidateId }: { candidateId: string }) {
                     {TEAM_ROLES.find((r) => r.value === m.role)?.label ?? m.role} · {m.status}
                   </p>
                 </div>
-                <button onClick={() => handleRevoke(m.id)} className="text-muted-foreground hover:text-destructive">
+                <button onClick={() => handleRevoke(m.id, m.invited_email ?? 'this team member')} className="text-muted-foreground hover:text-destructive">
                   <X className="h-4 w-4" />
                 </button>
               </div>

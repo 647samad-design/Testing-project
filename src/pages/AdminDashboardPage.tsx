@@ -794,7 +794,11 @@ function ManageAdminsTab({ currentUserId }: { currentUserId: string }) {
 
   useEffect(() => { load(); }, []);
 
-  async function toggleAdmin(id: string, next: boolean) {
+  async function toggleAdmin(id: string, next: boolean, name: string) {
+    const message = next
+      ? `Grant full admin access to ${name}? They'll be able to edit/delete any candidate, manage other admins, and see all platform data.`
+      : `Revoke admin access from ${name}? They'll immediately lose all admin permissions.`;
+    if (!window.confirm(message)) return;
     setBusyId(id);
     try {
       await setAdminRole(id, next);
@@ -824,12 +828,12 @@ function ManageAdminsTab({ currentUserId }: { currentUserId: string }) {
             <Button
               size="sm" variant="outline" disabled={busyId === p.id || p.id === currentUserId}
               className="gap-1.5 text-warning border-warning/30 hover:bg-warning/10"
-              onClick={() => toggleAdmin(p.id, false)}
+              onClick={() => toggleAdmin(p.id, false, p.full_name || 'this user')}
             >
               <ShieldOff className="h-3.5 w-3.5" /> Revoke admin
             </Button>
           ) : (
-            <Button size="sm" variant="outline" disabled={busyId === p.id} className="gap-1.5" onClick={() => toggleAdmin(p.id, true)}>
+            <Button size="sm" variant="outline" disabled={busyId === p.id} className="gap-1.5" onClick={() => toggleAdmin(p.id, true, p.full_name || 'this user')}>
               <ShieldCheckIcon className="h-3.5 w-3.5" /> Make admin
             </Button>
           )}
