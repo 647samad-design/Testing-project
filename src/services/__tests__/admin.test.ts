@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -114,5 +114,39 @@ describe('admin service', () => {
 
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'canceled' }));
     expect(eqMock).toHaveBeenCalledWith('candidate_id', 'cand-1');
+  });
+});
+
+describe('candidate profile claim review — the actual approval queue, previously missing entirely', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('getPendingClaims fetches only pending claims, oldest first', async () => {
+    const orderMock = vi.fn().mockResolvedValue({
+      data: [{ id: 'claim-1', status: 'pending', full_name: 'Jane Doe', candidate: { first_name: 'Jane', last_name: 'Doe' } }],
+      error: null,
+    });
+    const eqPendingMock = vi.fn(() => ({ order: orderMock }));
+    fromMock.mockReturnValueOnce({ select: () => ({ eq: eqPendingMock }) } as unknown as ReturnType<typeof fromMock>);
+
+    const result = await getPendingClaims();
+
+    expect(eqPendingMock).toHaveBeenCalledWith('status', 'pending');
+    expect(result).toHaveLength(1);
+  });
+
+  it('approveClaim sets status to verified and logs the action', async () => {
+    await approveClaim('claim-1');
+
+    expect(fromMock).toHaveBeenCalledWith('candidate_claims');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'verified' }));
+    expect(eqMock).toHaveBeenCalledWith('id', 'claim-1');
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'approve_claim', p_target_id: 'claim-1' }));
+  });
+
+  it('rejectClaim sets status to rejected with admin notes and logs the action', async () => {
+    await rejectClaim('claim-2', 'Could not verify identity');
+
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'rejected', admin_notes: 'Could not verify identity' }));
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'reject_claim', p_target_id: 'claim-2' }));
   });
 });

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { CandidateClaim } from '@/types';
 
 /** Writes one row to `audit_log` via the SECURITY DEFINER `log_admin_action` RPC.
  * Never throws — a logging failure should not block the admin's actual action. */
@@ -20,8 +21,9 @@ export async function getAdminMetrics(): Promise<{
   elections: number;
   ballotContests: number;
   sources: number;
-  verifiedClaims: number;
-  unverifiedClaims: number;
+  verifiedPositions: number;
+  unverifiedPositions: number;
+  pendingProfileClaims: number;
   users: number;
 } | null> {
   const [
@@ -29,8 +31,9 @@ export async function getAdminMetrics(): Promise<{
     { count: elections },
     { count: ballotContests },
     { count: sources },
-    { count: verifiedClaims },
-    { count: unverifiedClaims },
+    { count: verifiedPositions },
+    { count: unverifiedPositions },
+    { count: pendingProfileClaims },
     { count: users },
   ] = await Promise.all([
     supabase.from('candidates').select('*', { count: 'exact', head: true }),
@@ -39,6 +42,7 @@ export async function getAdminMetrics(): Promise<{
     supabase.from('sources').select('*', { count: 'exact', head: true }),
     supabase.from('candidate_positions').select('*', { count: 'exact', head: true }).eq('verification_status', 'verified'),
     supabase.from('candidate_positions').select('*', { count: 'exact', head: true }).neq('verification_status', 'verified'),
+    supabase.from('candidate_claims').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
   ]);
 
@@ -47,8 +51,9 @@ export async function getAdminMetrics(): Promise<{
     elections: elections ?? 0,
     ballotContests: ballotContests ?? 0,
     sources: sources ?? 0,
-    verifiedClaims: verifiedClaims ?? 0,
-    unverifiedClaims: unverifiedClaims ?? 0,
+    verifiedPositions: verifiedPositions ?? 0,
+    unverifiedPositions: unverifiedPositions ?? 0,
+    pendingProfileClaims: pendingProfileClaims ?? 0,
     users: users ?? 0,
   };
 }
@@ -420,4 +425,41 @@ export async function addCandidatePosition(position: {
     ...position,
   });
   if (error) throw error;
+}
+
+export interface PendingClaim extends CandidateClaim {
+  candidate?: { first_name: string; last_name: string; party: string | null };
+}
+
+/** Admin-only: every pending candidate profile claim awaiting review. This
+ * is the actual "claim a profile" approval queue — separate from the
+ * unverified-positions review and the candidate_submissions (bio/photo
+ * edit) review, which are different workflows entirely despite the
+ * similar-sounding name. */
+export async function getPendingClaims(): Promise<PendingClaim[]> {
+  const { data, error } = await supabase
+    .from('candidate_claims')
+    .select('*, candidate:candidates(first_name, last_name, party)')
+    .eq('status', 'pending')
+    .order('submitted_at', { ascending: true });
+  if (error || !data) return [];
+  return data as unknown as PendingClaim[];
+}
+
+export async function approveClaim(claimId: string): Promise<void> {
+  const { error } = await supabase
+    .from('candidate_claims')
+    .update({ status: 'verified', reviewed_at: new Date().toISOString() })
+    .eq('id', claimId);
+  if (error) throw error;
+  await logAdminAction('approve_claim', 'candidate_claims', claimId);
+}
+
+export async function rejectClaim(claimId: string, adminNotes?: string): Promise<void> {
+  const { error } = await supabase
+    .from('candidate_claims')
+    .update({ status: 'rejected', admin_notes: adminNotes ?? null, reviewed_at: new Date().toISOString() })
+    .eq('id', claimId);
+  if (error) throw error;
+  await logAdminAction('reject_claim', 'candidate_claims', claimId);
 }

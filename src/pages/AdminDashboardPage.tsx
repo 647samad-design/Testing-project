@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Vote, FileText, Bookmark, ShieldCheck, AlertCircle, User as UserIcon, BarChart3, Plus, Check, Flag } from 'lucide-react';
+import { Users, Vote, FileText, Bookmark, ShieldCheck, AlertCircle, User as UserIcon, BarChart3, Plus, Check, Flag, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
   bulkImportCandidates,
   compCandidateManagement, revokeCandidateManagement, listActiveManagementCandidateIds,
   getBillingOverview, type BillingOverview,
+  getPendingClaims, approveClaim, rejectClaim, type PendingClaim,
 } from '@/services/admin';
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
@@ -66,15 +67,17 @@ export function AdminDashboardPage() {
           <MetricCard icon={Vote} label="Elections" value={metrics.elections} />
           <MetricCard icon={FileText} label="Contests" value={metrics.ballotContests} />
           <MetricCard icon={Bookmark} label="Sources" value={metrics.sources} />
-          <MetricCard icon={ShieldCheck} label="Verified" value={metrics.verifiedClaims} color="text-success" />
-          <MetricCard icon={AlertCircle} label="Unverified" value={metrics.unverifiedClaims} color="text-warning" />
+          <MetricCard icon={ShieldCheck} label="Verified Positions" value={metrics.verifiedPositions} color="text-success" />
+          <MetricCard icon={AlertCircle} label="Unverified Positions" value={metrics.unverifiedPositions} color="text-warning" />
+          <MetricCard icon={UserIcon} label="Pending Claims" value={metrics.pendingProfileClaims} color="text-warning" />
           <MetricCard icon={UserIcon} label="Users" value={metrics.users} />
         </div>
       )}
 
-      <Tabs defaultValue="review">
+      <Tabs defaultValue="claims">
         <TabsList>
-          <TabsTrigger value="review">Review Claims</TabsTrigger>
+          <TabsTrigger value="claims">Review Claims</TabsTrigger>
+          <TabsTrigger value="review">Verify Positions</TabsTrigger>
           <TabsTrigger value="submissions">Content Submissions</TabsTrigger>
           <TabsTrigger value="add">Add Content</TabsTrigger>
           <TabsTrigger value="datafeeds">Data Feeds</TabsTrigger>
@@ -84,6 +87,13 @@ export function AdminDashboardPage() {
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
+
+        {/* The ACTUAL "claim a candidate profile" approval queue —
+            previously nothing here at all; the tab labeled "Review Claims"
+            showed unverified positions instead, an unrelated workflow. */}
+        <TabsContent value="claims" className="mt-6">
+          <ClaimsReviewTab />
+        </TabsContent>
 
         {/* Review unverified positions */}
         <TabsContent value="review" className="mt-6">
@@ -150,7 +160,6 @@ export function AdminDashboardPage() {
         </TabsContent>
 
         {/* Add content */}
-        <TabsContent value="review" />
         <TabsContent value="submissions" className="mt-6">
           <SubmissionsTab />
         </TabsContent>
@@ -396,6 +405,97 @@ const OVERVIEW_PLAN_LABELS: Record<string, string> = {
   premium_monthly: 'Premium (Monthly, legacy)',
   premium_yearly: 'Premium (Yearly, legacy)',
 };
+
+function ClaimsReviewTab() {
+  const [claims, setClaims] = useState<PendingClaim[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setClaims(await getPendingClaims());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load claims.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleApprove(claim: PendingClaim) {
+    if (!window.confirm(`Verify ${claim.full_name} as the owner of ${claim.candidate?.first_name} ${claim.candidate?.last_name}'s profile? They'll immediately gain full candidate access (bio edits, team invites, campaign tools).`)) return;
+    setBusyId(claim.id);
+    try {
+      await approveClaim(claim.id);
+      toast.success('Claim approved.');
+      setClaims((prev) => prev.filter((c) => c.id !== claim.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to approve claim.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReject(claim: PendingClaim) {
+    const notes = window.prompt('Reason for rejecting (optional, visible to the claimant):') ?? undefined;
+    setBusyId(claim.id);
+    try {
+      await rejectClaim(claim.id, notes);
+      toast.success('Claim rejected.');
+      setClaims((prev) => prev.filter((c) => c.id !== claim.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to reject claim.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading pending claims…" />;
+
+  if (claims.length === 0) {
+    return <p className="text-sm text-muted-foreground py-8 text-center">No pending profile claims to review.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground mb-2">
+        Someone claiming a candidate profile gets full control over it once approved — verify their identity
+        (email, campaign website, notes) before approving.
+      </p>
+      {claims.map((claim) => (
+        <Card key={claim.id} className="p-5 rounded-2xl">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-semibold">
+                {claim.full_name} <span className="font-normal text-muted-foreground">claims to be</span>{' '}
+                {claim.candidate ? `${claim.candidate.first_name} ${claim.candidate.last_name}` : 'Unknown candidate'}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Email: {claim.email}</p>
+              {claim.campaign_website && (
+                <p className="text-sm text-muted-foreground">Website: <a href={claim.campaign_website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{claim.campaign_website}</a></p>
+              )}
+              {claim.office && <p className="text-sm text-muted-foreground">Office: {claim.office}</p>}
+              {claim.verification_notes && (
+                <p className="mt-2 text-sm bg-secondary/50 rounded-lg p-2">{claim.verification_notes}</p>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">Submitted {new Date(claim.submitted_at).toLocaleDateString()}</p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button size="sm" disabled={busyId === claim.id} onClick={() => handleApprove(claim)} className="gap-1.5">
+                <Check className="h-3.5 w-3.5" /> Approve
+              </Button>
+              <Button size="sm" variant="outline" disabled={busyId === claim.id} onClick={() => handleReject(claim)} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
+                <X className="h-3.5 w-3.5" /> Reject
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 function BillingOverviewTab() {
   const [overview, setOverview] = useState<BillingOverview | null>(null);
