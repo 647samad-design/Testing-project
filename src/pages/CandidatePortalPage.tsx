@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles, Users, X, Megaphone, Trash2, Pencil, Award } from 'lucide-react';
+import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles, Users, X, Megaphone, Trash2, Pencil, Award, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { useAuth } from '@/hooks/use-auth';
 import { getMyClaimedCandidates, submitCandidateContent, submitQuestionnaireResponse, submitEvent } from '@/services/candidate-portal';
-import { getTeamMembers, inviteTeamMember, revokeTeamMember, createFeedPost, getFeedPosts as getCandidateFeedPosts, deleteFeedPost } from '@/services/social';
+import { getTeamMembers, inviteTeamMember, revokeTeamMember, createFeedPost, getFeedPosts as getCandidateFeedPosts, deleteFeedPost, getCandidateAnalytics } from '@/services/social';
 import { getMyManagedCandidates } from '@/services/stripe';
 import {
   getCampaign, upsertCampaign, getAllCampaignEventsForManagement,
@@ -33,7 +33,7 @@ export function CandidatePortalPage() {
   const { user, loading: authLoading } = useAuth();
   const [claimed, setClaimed] = useState<ClaimedCandidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team' | 'campaign' | 'extras'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team' | 'campaign' | 'extras' | 'analytics'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -139,6 +139,7 @@ export function CandidatePortalPage() {
                   { id: 'team', label: 'Team', icon: Users },
                   { id: 'campaign', label: 'Campaign', icon: Megaphone },
                   { id: 'extras', label: 'Profile Extras', icon: Award },
+                  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
                 ] as const).map((tab) => (
                   <button
                     key={tab.id}
@@ -356,6 +357,9 @@ export function CandidatePortalPage() {
                 )}
                 {activeTab === 'extras' && (
                   <ProfileExtrasTab candidateId={verifiedClaim.candidate_id} />
+                )}
+                {activeTab === 'analytics' && (
+                  <AnalyticsTab candidateId={verifiedClaim.candidate_id} />
                 )}
               </div>
             </>
@@ -1004,6 +1008,77 @@ function PostUpdateForm({ candidateId }: { candidateId: string }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function AnalyticsTab({ candidateId }: { candidateId: string }) {
+  const [hasManagement, setHasManagement] = useState<boolean | null>(null);
+  const [stats, setStats] = useState<{ profileViews: number; followers: number; questionCount: number; answeredCount: number; postCount: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const managed = await getMyManagedCandidates();
+        const active = managed.some((m) => m.candidate_id === candidateId && (m.status === 'active' || m.is_comped));
+        setHasManagement(active);
+        if (active) setStats(await getCandidateAnalytics(candidateId));
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to load analytics.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [candidateId]);
+
+  if (loading) return <LoadingState message="Loading analytics…" />;
+
+  if (!hasManagement) {
+    return (
+      <Card className="p-8 rounded-2xl text-center">
+        <BarChart3 className="mx-auto h-8 w-8 text-muted-foreground" />
+        <h3 className="mt-3 font-bold text-lg">Analytics is a Management feature</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Upgrade to Candidate Management to see profile views, followers, and engagement stats.
+        </p>
+        <Button
+          size="sm"
+          className="mt-4 rounded-xl gap-1.5"
+          onClick={async () => {
+            try {
+              const { startCheckout } = await import('@/services/stripe');
+              await startCheckout('candidate_management', candidateId);
+            } catch {
+              toast.error('Could not start checkout.');
+            }
+          }}
+        >
+          <Sparkles className="h-3.5 w-3.5" /> Upgrade to Management — $299
+        </Button>
+      </Card>
+    );
+  }
+
+  if (!stats) return <p className="text-sm text-muted-foreground">Could not load analytics.</p>;
+
+  const cards = [
+    { label: 'Profile Views', value: stats.profileViews },
+    { label: 'Followers', value: stats.followers },
+    { label: 'Voter Questions', value: stats.questionCount },
+    { label: 'Questions Answered', value: stats.answeredCount },
+    { label: 'Feed Posts', value: stats.postCount },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      {cards.map((c) => (
+        <Card key={c.label} className="p-5 rounded-2xl">
+          <p className="text-xs text-muted-foreground">{c.label}</p>
+          <p className="mt-1 text-2xl font-bold">{c.value}</p>
+        </Card>
+      ))}
     </div>
   );
 }
