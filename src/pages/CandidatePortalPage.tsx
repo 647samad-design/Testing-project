@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles, Users, X, Megaphone, Trash2, Pencil } from 'lucide-react';
+import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles, Users, X, Megaphone, Trash2, Pencil, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,10 @@ import {
   addCampaignEvent, updateCampaignEvent, deleteCampaignEvent,
   type Campaign, type CampaignEvent,
 } from '@/services/campaign';
-import type { CampaignTeamMember, TeamRole } from '@/types';
+import {
+  getGetToKnow, submitGetToKnow, getFundingSources, submitFundingSource, getEndorsements, submitEndorsement,
+} from '@/services/candidate-profile-extras';
+import type { CampaignTeamMember, TeamRole, CandidateGetToKnow, CandidateFundingSource, CandidateEndorsement, FundingSourceType, EndorserType } from '@/types';
 import { toast } from 'sonner';
 
 interface ClaimedCandidate {
@@ -30,7 +33,7 @@ export function CandidatePortalPage() {
   const { user, loading: authLoading } = useAuth();
   const [claimed, setClaimed] = useState<ClaimedCandidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team' | 'campaign'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team' | 'campaign' | 'extras'>('overview');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -135,6 +138,7 @@ export function CandidatePortalPage() {
                   { id: 'quiz', label: 'Issue Quiz', icon: Sparkles },
                   { id: 'team', label: 'Team', icon: Users },
                   { id: 'campaign', label: 'Campaign', icon: Megaphone },
+                  { id: 'extras', label: 'Profile Extras', icon: Award },
                 ] as const).map((tab) => (
                   <button
                     key={tab.id}
@@ -341,6 +345,9 @@ export function CandidatePortalPage() {
                 )}
                 {activeTab === 'campaign' && (
                   <CampaignManagementTab candidateId={verifiedClaim.candidate_id} />
+                )}
+                {activeTab === 'extras' && (
+                  <ProfileExtrasTab candidateId={verifiedClaim.candidate_id} />
                 )}
               </div>
             </>
@@ -711,6 +718,205 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
                   <button onClick={() => startEditEvent(e)} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button>
                   <button onClick={() => handleDeleteEvent(e.id)} className="p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+const FUNDING_SOURCE_TYPES: { value: FundingSourceType; label: string }[] = [
+  { value: 'individuals', label: 'Individual donors' },
+  { value: 'pac', label: 'PAC' },
+  { value: 'organization', label: 'Organization' },
+  { value: 'self_funded', label: 'Self-funded' },
+  { value: 'other', label: 'Other' },
+];
+
+const ENDORSER_TYPES: { value: EndorserType; label: string }[] = [
+  { value: 'organization', label: 'Organization' },
+  { value: 'elected_official', label: 'Elected Official' },
+  { value: 'union', label: 'Union' },
+  { value: 'community_group', label: 'Community Group' },
+  { value: 'other', label: 'Other' },
+];
+
+function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
+  const [getToKnow, setGetToKnow] = useState<CandidateGetToKnow[]>([]);
+  const [funding, setFunding] = useState<CandidateFundingSource[]>([]);
+  const [endorsements, setEndorsements] = useState<CandidateEndorsement[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [gtkQuestion, setGtkQuestion] = useState('');
+  const [gtkAnswer, setGtkAnswer] = useState('');
+  const [savingGtk, setSavingGtk] = useState(false);
+
+  const [fundType, setFundType] = useState<FundingSourceType>('individuals');
+  const [fundPercentage, setFundPercentage] = useState('');
+  const [fundLabel, setFundLabel] = useState('');
+  const [savingFund, setSavingFund] = useState(false);
+
+  const [endorserName, setEndorserName] = useState('');
+  const [endorserType, setEndorserType] = useState<EndorserType>('organization');
+  const [endorserTitle, setEndorserTitle] = useState('');
+  const [savingEndorsement, setSavingEndorsement] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [gtk, fund, end] = await Promise.all([
+        getGetToKnow(candidateId),
+        getFundingSources(candidateId),
+        getEndorsements(candidateId),
+      ]);
+      setGetToKnow(gtk);
+      setFunding(fund);
+      setEndorsements(end);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load profile extras.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, [candidateId]);
+
+  async function handleSubmitGtk() {
+    if (!gtkQuestion.trim() || !gtkAnswer.trim()) return;
+    setSavingGtk(true);
+    const result = await submitGetToKnow(candidateId, gtkQuestion.trim(), gtkAnswer.trim(), getToKnow.length);
+    setSavingGtk(false);
+    if (result.success) {
+      toast.success('Submitted for review.');
+      setGtkQuestion(''); setGtkAnswer('');
+      load();
+    } else {
+      toast.error(result.error ?? 'Failed to submit.');
+    }
+  }
+
+  async function handleSubmitFunding() {
+    const pct = parseFloat(fundPercentage);
+    if (!fundPercentage || isNaN(pct)) return;
+    setSavingFund(true);
+    const result = await submitFundingSource(candidateId, {
+      source_type: fundType,
+      percentage: pct,
+      amount_dollars: null,
+      source_label: fundLabel.trim() || null,
+      report_date: null,
+    });
+    setSavingFund(false);
+    if (result.success) {
+      toast.success('Submitted for review.');
+      setFundPercentage(''); setFundLabel('');
+      load();
+    } else {
+      toast.error(result.error ?? 'Failed to submit.');
+    }
+  }
+
+  async function handleSubmitEndorsement() {
+    if (!endorserName.trim()) return;
+    setSavingEndorsement(true);
+    const result = await submitEndorsement(candidateId, {
+      endorser_name: endorserName.trim(),
+      endorser_type: endorserType,
+      endorser_title: endorserTitle.trim() || null,
+      endorser_logo_url: null,
+      endorsement_date: null,
+      display_order: endorsements.length,
+    });
+    setSavingEndorsement(false);
+    if (result.success) {
+      toast.success('Submitted for review.');
+      setEndorserName(''); setEndorserTitle('');
+      load();
+    } else {
+      toast.error(result.error ?? 'Failed to submit.');
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading profile extras…" />;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Everything here goes through admin review before it appears on your public profile —
+        approved items are shown; pending ones are only visible to you here.
+      </p>
+
+      <Card className="p-6 rounded-2xl">
+        <h3 className="font-bold text-lg mb-2">Get to Know You (Q&amp;A)</h3>
+        <div className="space-y-2 mb-4">
+          <Input placeholder="Question (e.g. What's your favorite local spot?)" value={gtkQuestion} onChange={(e) => setGtkQuestion(e.target.value)} />
+          <Input placeholder="Your answer" value={gtkAnswer} onChange={(e) => setGtkAnswer(e.target.value)} />
+          <Button size="sm" onClick={handleSubmitGtk} disabled={savingGtk || !gtkQuestion.trim() || !gtkAnswer.trim()}>
+            {savingGtk ? 'Submitting…' : 'Submit'}
+          </Button>
+        </div>
+        {getToKnow.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing submitted yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {getToKnow.map((g) => (
+              <div key={g.id} className="text-sm border-b border-border/50 pb-2 last:border-0">
+                <p className="font-medium">{g.question} <span className="text-xs font-normal text-muted-foreground">({g.status})</span></p>
+                <p className="text-muted-foreground">{g.answer}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-6 rounded-2xl">
+        <h3 className="font-bold text-lg mb-2">Funding Sources</h3>
+        <div className="space-y-2 mb-4">
+          <select value={fundType} onChange={(e) => setFundType(e.target.value as FundingSourceType)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            {FUNDING_SOURCE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          <Input type="number" placeholder="Percentage (e.g. 40)" value={fundPercentage} onChange={(e) => setFundPercentage(e.target.value)} />
+          <Input placeholder="Label (optional, e.g. 'Local small businesses')" value={fundLabel} onChange={(e) => setFundLabel(e.target.value)} />
+          <Button size="sm" onClick={handleSubmitFunding} disabled={savingFund || !fundPercentage}>
+            {savingFund ? 'Submitting…' : 'Submit'}
+          </Button>
+        </div>
+        {funding.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing submitted yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {funding.map((f) => (
+              <div key={f.id} className="flex justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <span>{FUNDING_SOURCE_TYPES.find((t) => t.value === f.source_type)?.label} {f.source_label ? `— ${f.source_label}` : ''}</span>
+                <span className="font-medium">{f.percentage}% <span className="text-xs font-normal text-muted-foreground">({f.status})</span></span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-6 rounded-2xl">
+        <h3 className="font-bold text-lg mb-2">Endorsements</h3>
+        <div className="space-y-2 mb-4">
+          <Input placeholder="Endorser name" value={endorserName} onChange={(e) => setEndorserName(e.target.value)} />
+          <select value={endorserType} onChange={(e) => setEndorserType(e.target.value as EndorserType)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            {ENDORSER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          <Input placeholder="Title (optional, e.g. 'Mayor of...')" value={endorserTitle} onChange={(e) => setEndorserTitle(e.target.value)} />
+          <Button size="sm" onClick={handleSubmitEndorsement} disabled={savingEndorsement || !endorserName.trim()}>
+            {savingEndorsement ? 'Submitting…' : 'Submit'}
+          </Button>
+        </div>
+        {endorsements.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nothing submitted yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {endorsements.map((e) => (
+              <div key={e.id} className="text-sm border-b border-border/50 pb-2 last:border-0">
+                <p className="font-medium">{e.endorser_name}{e.endorser_title ? `, ${e.endorser_title}` : ''}</p>
+                <p className="text-xs text-muted-foreground">{ENDORSER_TYPES.find((t) => t.value === e.endorser_type)?.label} · {e.status}</p>
               </div>
             ))}
           </div>
