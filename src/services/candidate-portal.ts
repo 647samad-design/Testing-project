@@ -42,6 +42,20 @@ export async function submitCandidateClaim(
       status: 'pending',
     });
     if (error) throw error;
+
+    // Previously nothing told an admin a claim was waiting — they had to
+    // remember to periodically check the Review Claims tab. A delayed
+    // review can block a candidate from managing their own profile during
+    // a critical campaign window, so this is worth an immediate alert.
+    try {
+      await supabase.rpc('notify_admins_of_pending_review', {
+        p_title: 'New candidate claim to review',
+        p_body: `${data.full_name} has claimed a candidate profile and is waiting for verification.`,
+      });
+    } catch {
+      // Best-effort — the claim itself already submitted successfully.
+    }
+
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Failed to submit claim' };
@@ -106,6 +120,16 @@ export async function submitCandidateContent(
       status: 'pending',
     });
     if (error) throw error;
+
+    try {
+      await supabase.rpc('notify_admins_of_pending_review', {
+        p_title: 'New candidate content submission',
+        p_body: `A candidate submitted a "${fieldName}" update for review.`,
+      });
+    } catch {
+      // Best-effort — the submission itself already succeeded.
+    }
+
     return { success: true };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Failed to submit' };
