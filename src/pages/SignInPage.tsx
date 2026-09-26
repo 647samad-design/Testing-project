@@ -34,7 +34,11 @@ export function SignInPage() {
         setError(error);
         setLoading(false);
       } else {
-        navigate('/onboarding');
+        // Returning users go straight to the app — only first-time signups
+        // should see the onboarding quiz. Previously this sent EVERY
+        // sign-in (not just new signups) to /onboarding, forcing already
+        // set-up users through the welcome quiz again on every single login.
+        navigate('/');
       }
     } else {
       const { error } = await signUp(email, password, fullName, language);

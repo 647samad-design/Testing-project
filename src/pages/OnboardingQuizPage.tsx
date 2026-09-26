@@ -34,7 +34,11 @@ export function OnboardingQuizPage() {
       }));
       await saveUserQuizAnswers(user.id, answerList, 'onboarding');
 
-      // Mark onboarding as completed
+      // Touch the profile's updated_at as a lightweight signal that this
+      // user has been through onboarding at least once. There's no
+      // dedicated "onboarding_completed" flag — this page is also reachable
+      // any time from the Account page as a "retake the quiz" action, so a
+      // hard completion flag isn't needed to gate access to it.
       await supabase
         .from('profiles')
         .update({ updated_at: new Date().toISOString() })
