@@ -406,8 +406,12 @@ function TeamTab({ candidateId }: { candidateId: string }) {
     if (!email.trim()) return;
     setInviting(true);
     try {
-      await inviteTeamMember(candidateId, email.trim(), role);
-      toast.success(`Invited ${email}.`);
+      const result = await inviteTeamMember(candidateId, email.trim(), role);
+      if (result.linkedImmediately) {
+        toast.success(`${email} already has a BallotLens account — they've been added and notified by email.`);
+      } else {
+        toast.success(`Invited ${email}. They don't have a BallotLens account yet — let them know to sign up with this exact email address, and they'll automatically get access.`);
+      }
       setEmail('');
       setMembers(await getTeamMembers(candidateId));
     } catch (err) {

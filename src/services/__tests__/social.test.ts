@@ -1,16 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { fromMock, getUserMock, rpcMock } = vi.hoisted(() => ({
+const { fromMock, getUserMock, rpcMock, invokeMock } = vi.hoisted(() => ({
   fromMock: vi.fn(),
   getUserMock: vi.fn(),
   rpcMock: vi.fn(),
+  invokeMock: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase', () => ({
-  supabase: { from: fromMock, auth: { getUser: getUserMock }, rpc: rpcMock },
+  supabase: { from: fromMock, auth: { getUser: getUserMock }, rpc: rpcMock, functions: { invoke: invokeMock } },
 }));
 
-import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead, follow, createFeedPost } from '@/services/social';
+import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead, follow, createFeedPost, inviteTeamMember } from '@/services/social';
 
 describe('createFeedPost — author attribution (was always NULL, breaking own-post delete)', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -198,5 +199,38 @@ describe('getNotifications / markAllNotificationsRead', () => {
     await markAllNotificationsRead();
 
     expect(eqUserMock).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+});
+
+describe('inviteTeamMember — the actual point of the $299 Management team feature', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('goes through the invite_team_member RPC rather than a direct table insert, and notifies the invitee immediately when they already have an account', async () => {
+    rpcMock.mockResolvedValue({ data: { id: 'row-1', linked_immediately: true, user_id: 'existing-user-1' }, error: null });
+    invokeMock.mockResolvedValue({ data: { success: true }, error: null });
+
+    const result = await inviteTeamMember('cand-1', 'staffer@example.com', 'campaign_manager');
+
+    expect(rpcMock).toHaveBeenCalledWith('invite_team_member', {
+      p_candidate_id: 'cand-1', p_email: 'staffer@example.com', p_role: 'campaign_manager',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('send-team-invite-notification', expect.objectContaining({
+      body: { candidateId: 'cand-1', userId: 'existing-user-1', role: 'campaign_manager' },
+    }));
+    expect(result).toEqual({ linkedImmediately: true });
+  });
+
+  it('reports linkedImmediately: false and does not try to notify anyone when the invitee has no account yet', async () => {
+    rpcMock.mockResolvedValue({ data: { id: 'row-2', linked_immediately: false, user_id: null }, error: null });
+
+    const result = await inviteTeamMember('cand-1', 'newcomer@example.com', 'volunteer');
+
+    expect(result).toEqual({ linkedImmediately: false });
+    expect(invokeMock).not.toHaveBeenCalled();
+  });
+
+  it('throws if the RPC rejects (e.g. caller is not authorized for this candidate)', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: new Error('Not authorized to invite team members for this candidate') });
+    await expect(inviteTeamMember('cand-1', 'x@example.com', 'volunteer')).rejects.toThrow('Not authorized');
   });
 });

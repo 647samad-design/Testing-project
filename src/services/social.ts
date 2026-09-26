@@ -320,16 +320,28 @@ export async function getTeamMembers(candidateId: string): Promise<CampaignTeamM
   return data as CampaignTeamMember[];
 }
 
-export async function inviteTeamMember(candidateId: string, email: string, role: TeamRole): Promise<void> {
-  const { error } = await supabase
-    .from('campaign_team')
-    .insert({
-      candidate_id: candidateId,
-      invited_email: email,
-      role,
-      status: 'pending',
-    });
+export async function inviteTeamMember(candidateId: string, email: string, role: TeamRole): Promise<{ linkedImmediately: boolean }> {
+  const { data, error } = await supabase.rpc('invite_team_member', {
+    p_candidate_id: candidateId,
+    p_email: email,
+    p_role: role,
+  });
   if (error) throw error;
+
+  // If the invitee already has an account, the invite is activated
+  // immediately (see the RPC) — let them know right away rather than
+  // leaving them to discover it on their own.
+  if (data?.linked_immediately && data?.user_id) {
+    try {
+      await supabase.functions.invoke('send-team-invite-notification', {
+        body: { candidateId, userId: data.user_id, role },
+      });
+    } catch {
+      // Best-effort — the invite itself already succeeded.
+    }
+  }
+
+  return { linkedImmediately: !!data?.linked_immediately };
 }
 
 export async function updateTeamMemberRole(id: string, role: TeamRole): Promise<void> {
