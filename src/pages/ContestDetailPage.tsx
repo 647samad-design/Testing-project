@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { ArrowLeft, GitCompare } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { CandidateCard } from '@/components/shared/CandidateCard';
@@ -74,6 +75,11 @@ export function ContestDetailPage() {
     }
     load();
   }, [contestId]);
+
+  usePageMeta({
+    title: contest?.office_name,
+    description: contest ? `Candidates, positions, and voting records for ${contest.office_name}.` : undefined,
+  });
 
   if (loading) return <LoadingState message="Loading contest…" />;
   if (!contest) return <EmptyState title="Contest not found" description="This contest may not exist or has been removed." />;
@@ -173,6 +179,11 @@ export function MeasureDetailPage() {
     }
     load();
   }, [measureId]);
+
+  usePageMeta({
+    title: measure?.title,
+    description: measure?.summary ?? undefined,
+  });
 
   if (loading) return <LoadingState message="Loading measure…" />;
   if (!measure) return <EmptyState title="Measure not found" description="This ballot measure may not exist or has been removed." />;

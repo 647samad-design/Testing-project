@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/use-auth';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { getIssues, getUserIssues, selectIssue, deselectIssue, createCustomIssue } from '@/services/districts';
 import { DemoBanner } from '@/components/shared/DemoBanner';
 import { IssueFollowButton } from '@/components/shared/FollowButton';
@@ -22,6 +23,7 @@ import type { Issue } from '@/types';
 import { cn } from '@/lib/utils';
 
 export function IssuesPage() {
+  usePageMeta({ title: 'Issues', description: 'Select the issues you care about most.' });
   const { user, loading: authLoading } = useAuth();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import type { AIResponse, Candidate, ClaimAssessment } from '@/types';
 import { cn } from '@/lib/utils';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 const exampleQuestions = [
   'What has Alex Morgan said about healthcare?',
@@ -24,6 +25,7 @@ const exampleQuestions = [
 ];
 
 export function AskBallotLensPage() {
+  usePageMeta({ title: 'Ask BallotLens AI', description: 'Get sourced answers about candidates, positions, and voting records.' });
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const initialCandidate = searchParams.get('c') ?? undefined;

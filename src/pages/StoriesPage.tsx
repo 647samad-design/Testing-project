@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { ArrowLeft, Clock, Calendar, BookOpen, TrendingUp, Heart, Scale, Vote, type LucideProps } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -213,6 +214,12 @@ export function StoryDetailPage() {
     }
     load();
   }, [slug]);
+
+  usePageMeta({
+    title: story?.title,
+    description: story?.excerpt ?? undefined,
+    image: story?.hero_image_url ?? undefined,
+  });
 
   if (loading) return <LoadingState message="Loading story…" />;
   if (!story) return <EmptyState title="Story not found" description="This story may have been removed." icon={<BookOpen className="h-10 w-10" />} />;

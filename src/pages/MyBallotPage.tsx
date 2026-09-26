@@ -13,6 +13,7 @@ import { getVoterBallot, getVoterDistricts } from '@/services/elections';
 import { getLocation } from '@/services/districts';
 import { useAuth } from '@/hooks/use-auth';
 import type { BallotContest, BallotMeasure, Election, DistrictResult } from '@/types';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 const levelOrder = ['federal', 'state', 'local', 'judicial'] as const;
 const levelLabels: Record<string, string> = {
@@ -23,6 +24,7 @@ const levelLabels: Record<string, string> = {
 };
 
 export function MyBallotPage() {
+  usePageMeta({ title: 'My Ballot', description: 'See your personalized ballot with every race and measure for your address.' });
   const navigate = useNavigate();
   const { user } = useAuth();
   const { contestId } = useParams();

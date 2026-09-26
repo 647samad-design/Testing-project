@@ -11,6 +11,7 @@ import { LoadingState, EmptyState, ErrorState } from '@/components/shared/StateC
 import { getStoredRegion } from '@/services/elections';
 import { getAllRegionCandidates, buildRegionBallot, getAllStatesCandidates, getAllStatesBallots, ALL_REGION_CONFIGS, type RegionConfig } from '@/services/regions';
 import type { Candidate, BallotContest } from '@/types';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 type ViewMode = 'district' | 'all';
 
@@ -23,6 +24,7 @@ const levelLabels: Record<string, { label: string; icon: React.ComponentType<{ c
 };
 
 export function CandidatesPage() {
+  usePageMeta({ title: 'Candidates', description: 'Browse and research candidates running in your area.' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');

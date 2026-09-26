@@ -35,6 +35,7 @@ import {
   GetToKnowMe, WhoFundsMe, Endorsements,
 } from '@/components/shared/CandidateProfileExtras';
 import { getFeedPosts, trackProfileView } from '@/services/social';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { getTeamMembers } from '@/services/social';
 import type { FeedPost, CampaignTeamMember } from '@/types';
 import { getCampaign, type Campaign as CampaignType } from '@/services/campaign';
@@ -52,8 +53,7 @@ function getPartyClass(party: string | null): string {
 
 export function CandidateProfilePage() {
   const { candidateId } = useParams<{ candidateId: string }>();
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
-  const [positions, setPositions] = useState<CandidatePosition[]>([]);
+  const [candidate, setCandidate] = useState<Candidate | null>(null);  const [positions, setPositions] = useState<CandidatePosition[]>([]);
   const [statements, setStatements] = useState<CandidateStatement[]>([]);
   const [votingRecords, setVotingRecords] = useState<VotingRecord[]>([]);
   const [judicialRecord, setJudicialRecord] = useState<JudicialRecord | null>(null);
@@ -131,6 +131,16 @@ export function CandidateProfilePage() {
     setDrawerPosition(pos);
     setDrawerOpen(true);
   }
+
+  usePageMeta({
+    title: candidate ? `${candidate.first_name} ${candidate.last_name}${candidate.party ? ` (${candidate.party})` : ''}` : undefined,
+    description: candidate?.bio
+      ? candidate.bio.slice(0, 155)
+      : candidate
+        ? `See ${candidate.first_name} ${candidate.last_name}'s positions, voting record, and cited sources on BallotLens.`
+        : undefined,
+    image: candidate?.photo_url ?? undefined,
+  });
 
   if (loading) return <LoadingState message="Loading candidate profile…" />;
   if (error || !candidate) return <ErrorState message={error ?? 'Candidate not found.'} onRetry={() => window.history.back()} />;

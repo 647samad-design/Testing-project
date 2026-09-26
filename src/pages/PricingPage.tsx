@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
 import { startCheckout, type CheckoutPlan } from '@/services/stripe';
 import { toast } from 'sonner';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 const candidateFeatures = [
   'Follow unlimited candidates to your watchlist',
@@ -46,6 +47,7 @@ const yearlyPlans: Record<string, { id: CheckoutPlan; price: number }> = {
 };
 
 export function PricingPage() {
+  usePageMeta({ title: 'Pricing', description: 'Simple, transparent pricing for voters and candidates.' });
   const { user } = useAuth();
   const navigate = useNavigate();
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');

@@ -8,6 +8,7 @@ import { SponsorBadge } from '@/components/shared/SponsorBadge';
 import { Link } from 'react-router-dom';
 import { ALL_REGION_CONFIGS } from '@/services/regions';
 import type { AdPlan, CandidateServicePlan } from '@/types';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 function formatPrice(price: number): string {
   if (price === 0) return 'Custom';
@@ -33,6 +34,7 @@ const placementOptions = [
 ];
 
 export function AdvertisingPage() {
+  usePageMeta({ title: 'Advertise with BallotLens', description: 'Reach engaged local voters through BallotLens.' });
   const [plans, setPlans] = useState<AdPlan[]>([]);
   const [servicePlans, setServicePlans] = useState<CandidateServicePlan[]>([]);
 

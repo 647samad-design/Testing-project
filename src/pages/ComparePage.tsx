@@ -17,8 +17,10 @@ import { useAuth } from '@/hooks/use-auth';
 import type { Candidate, CandidatePosition, Issue, CandidateTag } from '@/types';
 import { Tag as TagIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 export function ComparePage() {
+  usePageMeta({ title: 'Compare Candidates', description: 'Compare candidates side by side on the issues that matter to you.' });
   const [searchParams] = useSearchParams();
   const initialCandidate = searchParams.get('c');
   const { user } = useAuth();
