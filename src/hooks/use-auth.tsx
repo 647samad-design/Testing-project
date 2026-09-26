@@ -9,8 +9,11 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   isDemo: boolean;
+  isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName: string, language?: LanguageName) => Promise<{ error: string | null }>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
   signInAsDemo: () => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -25,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDemo, setIsDemo] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   async function loadProfile(userId: string) {
     const { data, error } = await supabase
@@ -76,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes — wrap async work to avoid deadlock
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (_event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
@@ -130,6 +135,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const resetPassword: AuthContextValue['resetPassword'] = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/signin?type=recovery`,
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  };
+
+  const updatePassword: AuthContextValue['updatePassword'] = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) return { error: error.message };
+    return { error: null };
+  };
+
   const signInAsDemo = () => {
     localStorage.setItem('ballotlens_demo', 'true');
     setIsDemo(true);
@@ -170,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, loading, isDemo, signIn, signUp, signInAsDemo, signOut, refreshProfile, setLanguage }}
+      value={{ session, user, profile, loading, isDemo, isPasswordRecovery, signIn, signUp, resetPassword, updatePassword, signInAsDemo, signOut, refreshProfile, setLanguage }}
     >
       {children}
     </AuthContext.Provider>

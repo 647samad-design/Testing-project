@@ -10,8 +10,8 @@ import { LANGUAGE_OPTIONS, type LanguageName } from '@/types';
 
 export function SignInPage() {
   const navigate = useNavigate();
-  const { signIn, signUp, signInAsDemo } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const { signIn, signUp, signInAsDemo, resetPassword, updatePassword, isPasswordRecovery } = useAuth();
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -21,6 +21,38 @@ export function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    setLoading(true);
+    const { error } = await resetPassword(email);
+    setLoading(false);
+    if (error) {
+      setError(error);
+    } else {
+      setInfo('Check your email for a link to reset your password.');
+    }
+  }
+
+  async function handleSetNewPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    setLoading(true);
+    const { error } = await updatePassword(newPassword);
+    setLoading(false);
+    if (error) {
+      setError(error);
+    } else {
+      navigate('/account');
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +86,81 @@ export function SignInPage() {
         navigate('/onboarding');
       }
     }
+  }
+
+  if (isPasswordRecovery) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-12 animate-fade-in">
+        <div className="text-center mb-8">
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Set a new password</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Choose a new password for your account.</p>
+        </div>
+        <Card className="p-8 rounded-2xl">
+          <form onSubmit={handleSetNewPassword} className="space-y-4">
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pl-10"
+                  required
+                  minLength={6}
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full rounded-xl" disabled={loading}>
+              {loading ? 'Saving…' : 'Save New Password'}
+            </Button>
+          </form>
+        </Card>
+      </div>
+    );
+  }
+
+  if (mode === 'forgot') {
+    return (
+      <div className="mx-auto max-w-md px-4 py-12 animate-fade-in">
+        <div className="text-center mb-8">
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Reset your password</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Enter your email and we'll send you a reset link.</p>
+        </div>
+        <Card className="p-8 rounded-2xl">
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            {info && <p className="text-sm text-success">{info}</p>}
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full rounded-xl" disabled={loading}>
+              {loading ? 'Sending…' : 'Send Reset Link'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => { setMode('signin'); setError(null); setInfo(null); }}
+              className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+            >
+              Back to sign in
+            </button>
+          </form>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -138,7 +245,18 @@ export function SignInPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              {mode === 'signin' && (
+                <button
+                  type="button"
+                  onClick={() => { setMode('forgot'); setError(null); setInfo(null); }}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
