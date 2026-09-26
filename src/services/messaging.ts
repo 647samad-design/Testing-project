@@ -124,7 +124,67 @@ export async function sendMessage(
     .update({ last_message_at: new Date().toISOString() })
     .eq('id', conversationId);
 
+  // Notify the recipient — previously nobody was told a new message had
+  // arrived unless they happened to already have this exact conversation
+  // open. Best-effort: a notification failure shouldn't block the message
+  // itself from sending.
+  try {
+    await notifyMessageRecipient(conversationId, senderRole, body);
+  } catch {
+    // Notification is best-effort; the message already sent successfully.
+  }
+
   return data as Message;
+}
+
+async function notifyMessageRecipient(
+  conversationId: string,
+  senderRole: 'voter' | 'candidate',
+  body: string
+): Promise<void> {
+  const { data: conv } = await supabase
+    .from('conversations')
+    .select('voter_id, candidate_user_id, candidate_id, candidates(first_name, last_name)')
+    .eq('id', conversationId)
+    .maybeSingle<{
+      voter_id: string;
+      candidate_user_id: string | null;
+      candidate_id: string;
+      candidates: { first_name: string; last_name: string } | null;
+    }>();
+  if (!conv) return;
+
+  // The recipient is whichever side did NOT send this message.
+  const recipientUserId = senderRole === 'voter' ? conv.candidate_user_id : conv.voter_id;
+  if (!recipientUserId) return; // e.g. an unclaimed candidate has no user to notify
+
+  const senderLabel = senderRole === 'voter'
+    ? 'A voter'
+    : conv.candidates
+      ? `${conv.candidates.first_name} ${conv.candidates.last_name}`
+      : 'The candidate';
+
+  const title = `New message from ${senderLabel}`;
+  const preview = body.length > 140 ? `${body.slice(0, 140)}…` : body;
+
+  await supabase.from('notifications').insert({
+    user_id: recipientUserId,
+    type: 'new_message',
+    title,
+    body: preview,
+    is_read: false,
+  });
+
+  // Messages are a direct, personal communication — send an instant email
+  // regardless of digest preferences, the same way a messaging app doesn't
+  // gate DMs behind a "weekly digest" setting.
+  try {
+    await supabase.functions.invoke('send-message-notification', {
+      body: { conversationId, userId: recipientUserId, title, preview },
+    });
+  } catch {
+    // Email is best-effort.
+  }
 }
 
 export async function markConversationRead(conversationId: string, asVoter: boolean): Promise<void> {

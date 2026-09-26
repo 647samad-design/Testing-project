@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { fromMock } = vi.hoisted(() => ({ fromMock: vi.fn() }));
+const { fromMock, invokeMock } = vi.hoisted(() => ({ fromMock: vi.fn(), invokeMock: vi.fn() }));
 
 vi.mock('@/lib/supabase', () => ({
-  supabase: { from: fromMock, auth: { getUser: vi.fn() } },
+  supabase: { from: fromMock, auth: { getUser: vi.fn() }, functions: { invoke: invokeMock } },
 }));
 
 import { getOrCreateConversation, sendMessage, markConversationRead } from '@/services/messaging';
@@ -137,5 +137,87 @@ describe('markConversationRead', () => {
     await markConversationRead('convo-1', false);
 
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ candidate_read_at: expect.any(String) }));
+  });
+});
+
+describe('sendMessage — recipient notification (previously missing entirely)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('notifies the candidate when a voter sends a message', async () => {
+    const notificationInsertMock = vi.fn().mockResolvedValue({ error: null });
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'messages') {
+        return { insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: { id: 'msg-1', body: 'Hi there' }, error: null }) }) }) };
+      }
+      if (table === 'conversations') {
+        return {
+          update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+          select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({
+            data: { voter_id: 'voter-1', candidate_user_id: 'candidate-user-1', candidate_id: 'cand-1', candidates: { first_name: 'Jane', last_name: 'Doe' } },
+            error: null,
+          }) }) }),
+        };
+      }
+      if (table === 'notifications') {
+        return { insert: notificationInsertMock };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+    invokeMock.mockResolvedValue({ data: { success: true }, error: null });
+
+    await sendMessage('convo-1', 'Hi there', 'voter');
+
+    expect(notificationInsertMock).toHaveBeenCalledWith(expect.objectContaining({
+      user_id: 'candidate-user-1',
+      type: 'new_message',
+    }));
+    expect(invokeMock).toHaveBeenCalledWith('send-message-notification', expect.objectContaining({
+      body: expect.objectContaining({ conversationId: 'convo-1', userId: 'candidate-user-1' }),
+    }));
+  });
+
+  it('notifies the voter when the candidate replies', async () => {
+    const notificationInsertMock = vi.fn().mockResolvedValue({ error: null });
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'messages') {
+        return { insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: { id: 'msg-2', body: 'Thanks for reaching out' }, error: null }) }) }) };
+      }
+      if (table === 'conversations') {
+        return {
+          update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+          select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({
+            data: { voter_id: 'voter-1', candidate_user_id: 'candidate-user-1', candidate_id: 'cand-1', candidates: { first_name: 'Jane', last_name: 'Doe' } },
+            error: null,
+          }) }) }),
+        };
+      }
+      if (table === 'notifications') {
+        return { insert: notificationInsertMock };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+    invokeMock.mockResolvedValue({ data: { success: true }, error: null });
+
+    await sendMessage('convo-1', 'Thanks for reaching out', 'candidate');
+
+    expect(notificationInsertMock).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'voter-1', type: 'new_message' }));
+  });
+
+  it('does not fail sending the message if notifying the recipient throws', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'messages') {
+        return { insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: { id: 'msg-3', body: 'hi' }, error: null }) }) }) };
+      }
+      if (table === 'conversations') {
+        return {
+          update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+          select: () => { throw new Error('notification lookup failed'); },
+        };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const result = await sendMessage('convo-1', 'hi', 'voter');
+    expect(result?.id).toBe('msg-3');
   });
 });
