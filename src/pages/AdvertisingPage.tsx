@@ -64,7 +64,7 @@ export function AdvertisingPage() {
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Button size="lg" className="h-14 px-8 rounded-2xl text-base font-bold touch-target shadow-md shadow-primary/20" asChild>
-              <Link to="/signin">Start Advertising <ArrowRight className="ml-2 h-5 w-5" /></Link>
+              <Link to="/contact">Start Advertising <ArrowRight className="ml-2 h-5 w-5" /></Link>
             </Button>
             <Button size="lg" variant="outline" className="h-14 px-8 rounded-2xl text-base font-semibold touch-target" asChild>
               <Link to="/contact">Talk to Our Team</Link>
@@ -130,7 +130,7 @@ export function AdvertisingPage() {
                 ))}
               </ul>
               <Button variant={idx === 1 ? 'default' : 'outline'} className="mt-6 w-full rounded-xl" asChild>
-                <Link to="/signin">Get Started</Link>
+                <Link to="/contact">Get Started</Link>
               </Button>
             </Card>
           ))}
@@ -187,7 +187,7 @@ export function AdvertisingPage() {
                 ))}
               </ul>
               <Button variant="outline" className="mt-6 w-full rounded-xl" asChild>
-                <Link to="/signin">Claim Your Profile</Link>
+                <Link to="/candidates">Claim Your Profile</Link>
               </Button>
             </Card>
           ))}

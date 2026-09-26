@@ -22,7 +22,7 @@ import type { Issue } from '@/types';
 import { cn } from '@/lib/utils';
 
 export function IssuesPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -110,7 +110,7 @@ export function IssuesPage() {
         <p className="mt-2 text-lg text-muted-foreground">
           Select the issues you care about. BallotLens will never infer your political ideology from your selections.
         </p>
-        {!user && (
+        {!authLoading && !user && (
           <div className="mt-3 rounded-lg border border-border bg-secondary/50 p-3">
             <p className="text-sm text-muted-foreground">
               <Link to="/signin" className="font-medium text-primary hover:underline">Sign in</Link> to save your issue selections to your profile. Your selections are always private.

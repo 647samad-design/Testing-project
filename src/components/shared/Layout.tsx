@@ -27,7 +27,7 @@ const mobileNavItems = [
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, profile, signOut, isDemo } = useAuth();
+  const { user, profile, signOut, isDemo, loading: authLoading } = useAuth();
   const location = useLocation();
 
   return (
@@ -73,7 +73,16 @@ export function Header() {
               </Button>
             </Link>
 
-            {user ? (
+            {authLoading ? (
+              // While the session is still restoring (every fresh page load,
+              // including landing back here from an external redirect like
+              // Stripe checkout), don't show either button — showing "Sign
+              // In" here for a split second, on literally every page in the
+              // app, was the single biggest source of "it sent me to sign-in
+              // even though I was logged in" reports: a click during that
+              // flash would do exactly that.
+              <div className="hidden md:block h-9 w-24 rounded-xl bg-secondary/50 animate-pulse" />
+            ) : user ? (
               <div className="hidden md:flex items-center gap-2">
                 <NotificationBell />
                 {profile?.is_admin && (
@@ -157,7 +166,9 @@ export function Header() {
 
             <div className="my-3 border-t border-border" />
 
-            {user ? (
+            {authLoading ? (
+              <div className="h-12 rounded-2xl bg-secondary/50 animate-pulse" />
+            ) : user ? (
               <>
                 {profile?.is_admin && (
                   <Link

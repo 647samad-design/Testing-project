@@ -17,7 +17,7 @@ interface CandidateTagsProps {
 }
 
 export function CandidateTags({ candidateId }: CandidateTagsProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [allTags, setAllTags] = useState<CandidateTag[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState<string | null>(null);
@@ -126,7 +126,9 @@ export function CandidateTags({ candidateId }: CandidateTagsProps) {
         <div className="mt-4">
           <p className="text-sm text-muted-foreground">
             No tags yet.{' '}
-            {user ? (
+            {authLoading ? (
+              ''
+            ) : user ? (
               'Click "Add Tag" to add an informational label.'
             ) : (
               <>

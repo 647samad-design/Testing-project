@@ -15,7 +15,7 @@ interface ClaimProfileButtonProps {
 }
 
 export function ClaimProfileButton({ candidateId, candidateName }: ClaimProfileButtonProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -72,6 +72,8 @@ export function ClaimProfileButton({ candidateId, candidateName }: ClaimProfileB
             </p>
             <Button onClick={() => setOpen(false)} className="mt-4 rounded-xl">Close</Button>
           </div>
+        ) : authLoading ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">Loading…</div>
         ) : !user ? (
           <div className="py-4 text-center">
             <p className="text-sm text-muted-foreground">You need an account to claim a candidate profile.</p>
