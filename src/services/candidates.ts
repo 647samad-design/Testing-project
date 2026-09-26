@@ -295,3 +295,27 @@ export async function compareCandidates(
 
   return result;
 }
+
+/**
+ * Maps candidate_id -> the set of ballot_contest ids they're running in.
+ * Used by the Compare tool to restrict candidate selection to people
+ * actually running against each other — without this, nothing stopped a
+ * user from "comparing" a Governor candidate against a School Board
+ * candidate, which produces a meaningless comparison since they're not on
+ * the same ballot line.
+ */
+export async function getCandidateContestIds(candidateIds: string[]): Promise<Record<string, string[]>> {
+  if (candidateIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('candidate_offices')
+    .select('candidate_id, contest_id')
+    .in('candidate_id', candidateIds);
+  if (error || !data) return {};
+
+  const result: Record<string, string[]> = {};
+  for (const row of data as { candidate_id: string; contest_id: string }[]) {
+    if (!result[row.candidate_id]) result[row.candidate_id] = [];
+    result[row.candidate_id].push(row.contest_id);
+  }
+  return result;
+}

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { VerificationBadge } from '@/components/shared/VerificationBadge';
 import { DemoBanner } from '@/components/shared/DemoBanner';
 import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
-import { getCandidates, compareCandidates } from '@/services/candidates';
+import { getCandidates, compareCandidates, getCandidateContestIds } from '@/services/candidates';
 import { getUserIssues, getIssues } from '@/services/districts';
 import { demoIssues } from '@/services/demo-data';
 import { getTagsForCandidates, tagLabel, tagColor } from '@/services/tags';
@@ -33,6 +33,7 @@ export function ComparePage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [tagsByCandidate, setTagsByCandidate] = useState<Record<string, CandidateTag[]>>({});
+  const [contestIdsByCandidate, setContestIdsByCandidate] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     async function load() {
@@ -54,6 +55,8 @@ export function ComparePage() {
 
       const cands = await getCandidates();
       setAllCandidates(cands);
+      const contestMap = await getCandidateContestIds(cands.map((c) => c.id));
+      setContestIdsByCandidate(contestMap);
       if (initialCandidate) setSelectedIds([initialCandidate]);
       setLoading(false);
     }
@@ -83,8 +86,20 @@ export function ComparePage() {
     });
   }
 
+  // Once at least one candidate is selected, only show others who are
+  // actually running in the same contest (share a ballot_contests row) —
+  // otherwise nothing stopped comparing, say, a Governor candidate against
+  // a School Board candidate, which isn't a meaningful comparison since
+  // they're not on the same ballot line.
+  const selectedContestIds = new Set(selectedIds.flatMap((id) => contestIdsByCandidate[id] ?? []));
+
   const filteredPickerCandidates = allCandidates
     .filter((c) => !selectedIds.includes(c.id))
+    .filter((c) => {
+      if (selectedContestIds.size === 0) return true;
+      const candidateContests = contestIdsByCandidate[c.id] ?? [];
+      return candidateContests.some((cid) => selectedContestIds.has(cid));
+    })
     .filter((c) => {
       if (!pickerSearch.trim()) return true;
       const name = `${c.first_name} ${c.last_name}`.toLowerCase();
@@ -169,7 +184,11 @@ export function ComparePage() {
                 </button>
               ))}
               {filteredPickerCandidates.length === 0 && (
-                <p className="col-span-full text-center text-sm text-muted-foreground py-4">No candidates found.</p>
+                <p className="col-span-full text-center text-sm text-muted-foreground py-4">
+                  {selectedContestIds.size > 0 && !pickerSearch.trim()
+                    ? "No other candidates found running in the same race."
+                    : 'No candidates found.'}
+                </p>
               )}
             </div>
           </div>
