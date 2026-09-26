@@ -10,7 +10,21 @@ vi.mock('@/lib/supabase', () => ({
   supabase: { from: fromMock, auth: { getUser: getUserMock }, rpc: rpcMock },
 }));
 
-import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead, follow } from '@/services/social';
+import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead, follow, createFeedPost } from '@/services/social';
+
+describe('createFeedPost — author attribution (was always NULL, breaking own-post delete)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('sets author_user_id to the current user so they can edit/delete their own post later', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
+    const insertMock = vi.fn(() => ({ select: () => ({ maybeSingle: () => Promise.resolve({ data: { id: 'post-1' }, error: null }) }) }));
+    fromMock.mockReturnValue({ insert: insertMock });
+
+    await createFeedPost('cand-1', 'Big rally this weekend!');
+
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ author_user_id: 'user-1', candidate_id: 'cand-1' }));
+  });
+});
 
 describe('follow — free-tier candidate watchlist limit', () => {
   beforeEach(() => vi.clearAllMocks());

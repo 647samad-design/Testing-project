@@ -10,7 +10,7 @@ import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { useAuth } from '@/hooks/use-auth';
 import { getMyClaimedCandidates, submitCandidateContent, submitQuestionnaireResponse, submitEvent } from '@/services/candidate-portal';
-import { getTeamMembers, inviteTeamMember, revokeTeamMember } from '@/services/social';
+import { getTeamMembers, inviteTeamMember, revokeTeamMember, createFeedPost, getFeedPosts as getCandidateFeedPosts, deleteFeedPost } from '@/services/social';
 import { getMyManagedCandidates } from '@/services/stripe';
 import {
   getCampaign, upsertCampaign, getAllCampaignEventsForManagement,
@@ -20,7 +20,7 @@ import {
 import {
   getGetToKnow, submitGetToKnow, getFundingSources, submitFundingSource, getEndorsements, submitEndorsement,
 } from '@/services/candidate-profile-extras';
-import type { CampaignTeamMember, TeamRole, CandidateGetToKnow, CandidateFundingSource, CandidateEndorsement, FundingSourceType, EndorserType } from '@/types';
+import type { CampaignTeamMember, TeamRole, CandidateGetToKnow, CandidateFundingSource, CandidateEndorsement, FundingSourceType, EndorserType, FeedPost } from '@/types';
 import { toast } from 'sonner';
 
 interface ClaimedCandidate {
@@ -185,6 +185,14 @@ export function CandidatePortalPage() {
                           }}
                         />
                       </div>
+                    </div>
+
+                    <div className="mt-6 border-t border-border pt-6">
+                      <Label className="text-sm font-semibold">Post an Update</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Share a campaign update with voters who follow you — appears in their Feed immediately (no review needed, unlike bio/photo edits).
+                      </p>
+                      <PostUpdateForm candidateId={verifiedClaim.candidate_id} />
                     </div>
 
                     <div className="mt-6 border-t border-border pt-6">
@@ -922,6 +930,80 @@ function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
           </div>
         )}
       </Card>
+    </div>
+  );
+}
+
+function PostUpdateForm({ candidateId }: { candidateId: string }) {
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [body, setBody] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setPosts(await getCandidateFeedPosts(candidateId));
+    } catch {
+      // Best-effort — the form still works even if the recent-posts list fails to load.
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, [candidateId]);
+
+  async function handlePost() {
+    if (!body.trim()) return;
+    setPosting(true);
+    try {
+      await createFeedPost(candidateId, body.trim(), 'update');
+      toast.success('Posted to your feed.');
+      setBody('');
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to post update.');
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  async function handleDelete(postId: string) {
+    if (!window.confirm('Delete this post?')) return;
+    try {
+      await deleteFeedPost(postId);
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete post.');
+    }
+  }
+
+  return (
+    <div className="mt-3">
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={3}
+        placeholder="What's happening in your campaign?"
+        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+      />
+      <Button size="sm" className="mt-2 gap-1.5" onClick={handlePost} disabled={posting || !body.trim()}>
+        {posting ? 'Posting…' : 'Post to Feed'}
+      </Button>
+
+      {!loading && posts.length > 0 && (
+        <div className="mt-4 space-y-2 border-t border-border pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recent posts</p>
+          {posts.slice(0, 5).map((p) => (
+            <div key={p.id} className="flex items-start justify-between gap-3 text-sm border-b border-border/50 pb-2 last:border-0">
+              <p className="text-muted-foreground">{p.body}</p>
+              <button onClick={() => handleDelete(p.id)} className="shrink-0 text-muted-foreground hover:text-destructive">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

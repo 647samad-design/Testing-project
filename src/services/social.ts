@@ -197,10 +197,12 @@ export async function createFeedPost(
   postType: FeedPostType = 'update',
   extra?: { image_url?: string; link_url?: string; event_date?: string; event_location?: string; event_start_time?: string; event_end_time?: string }
 ): Promise<FeedPost | null> {
+  const { data: userData } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from('feed_posts')
     .insert({
       candidate_id: candidateId,
+      author_user_id: userData?.user?.id ?? null,
       post_type: postType,
       body,
       ...extra,
