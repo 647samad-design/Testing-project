@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { QuizCard } from '@/components/shared/QuizCard';
-import { fetchQuizQuestions, saveUserQuizAnswers, type QuizQuestion } from '@/services/quiz';
+import { fetchQuizQuestions, saveUserQuizAnswers, getQuizMatches, type QuizQuestion, type QuizMatch } from '@/services/quiz';
 import { supabase } from '@/lib/supabase';
 
 type Phase = 'loading' | 'quiz' | 'saving' | 'done';
@@ -15,6 +15,7 @@ export function OnboardingQuizPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('loading');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [matches, setMatches] = useState<QuizMatch[]>([]);
 
   useEffect(() => {
     // Pick 8 random questions from the pool of 30
@@ -43,6 +44,12 @@ export function OnboardingQuizPage() {
         .from('profiles')
         .update({ updated_at: new Date().toISOString() })
         .eq('id', user.id);
+
+      // This is the actual point of the quiz — previously the answers were
+      // saved and then nothing ever used them. Show who the voter actually
+      // matches with, not just a generic "explore" button.
+      const results = await getQuizMatches(user.id);
+      setMatches(results);
     }
 
     setPhase('done');
@@ -77,6 +84,33 @@ export function OnboardingQuizPage() {
           Your answers help us find candidates who align with your values.
           You can retake the quiz anytime from your account settings.
         </p>
+
+        {matches.length > 0 && (
+          <div className="mb-6 text-left">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground text-center">
+              Your top matches
+            </p>
+            <div className="space-y-2">
+              {matches.slice(0, 3).map((m) => (
+                <Card
+                  key={m.candidate_id}
+                  className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer hover:bg-secondary/40 transition-colors"
+                  onClick={() => navigate(`/candidates/${m.candidate_id}`)}
+                >
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-secondary">
+                    {m.photo_url && <img src={m.photo_url} alt="" className="h-full w-full object-cover" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold truncate">{m.first_name} {m.last_name}</p>
+                    <p className="text-xs text-muted-foreground">{m.party || 'No party listed'}</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-bold text-primary">{m.match_percent}%</span>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2.5">
           <Button
             onClick={() => navigate('/candidates')}
@@ -84,7 +118,7 @@ export function OnboardingQuizPage() {
             size="lg"
           >
             <Users className="h-4 w-4" />
-            Find Your Candidates
+            {matches.length > 0 ? 'See All Candidates' : 'Find Your Candidates'}
           </Button>
           <Button
             onClick={() => navigate('/ballot')}

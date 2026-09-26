@@ -150,3 +150,67 @@ export async function fetchAllQuizQuestions(): Promise<QuizQuestion[]> {
   if (error || !data) return [];
   return data as QuizQuestion[];
 }
+
+export interface QuizMatch {
+  candidate_id: string;
+  first_name: string;
+  last_name: string;
+  party: string | null;
+  photo_url: string | null;
+  match_percent: number;
+  questions_compared: number;
+}
+
+/**
+ * The actual point of the quiz — previously completely missing. Voters and
+ * candidates both answer the same civic_quiz_questions pool and both sides
+ * were saved, but nothing ever compared them: a voter would finish the quiz
+ * and just see generic "explore candidates" buttons, never anything
+ * personalized. This compares the voter's saved answers against every
+ * candidate who has at least a few approved answers, and returns a ranked
+ * match list.
+ *
+ * Only candidates with at least `minOverlap` questions in common with the
+ * voter are included, so a candidate who only answered one question doesn't
+ * show up as a false "100% match" on a single coincidental agreement.
+ */
+export async function getQuizMatches(userId: string, minOverlap = 3): Promise<QuizMatch[]> {
+  const userAnswers = await getUserQuizAnswers(userId);
+  if (userAnswers.length === 0) return [];
+  const userAnswerMap = new Map(userAnswers.map((a) => [a.question_id, a.answer]));
+
+  const { data: candidateAnswers, error } = await supabase
+    .from('candidate_quiz_answers')
+    .select('candidate_id, question_id, answer, candidates(first_name, last_name, party, photo_url)')
+    .eq('status', 'approved')
+    .in('question_id', userAnswers.map((a) => a.question_id));
+  if (error || !candidateAnswers) return [];
+
+  const byCandidate = new Map<string, { matches: number; total: number; info: { first_name: string; last_name: string; party: string | null; photo_url: string | null } }>();
+
+  for (const row of candidateAnswers as unknown as Array<{
+    candidate_id: string; question_id: string; answer: string;
+    candidates: { first_name: string; last_name: string; party: string | null; photo_url: string | null } | null;
+  }>) {
+    const userAnswer = userAnswerMap.get(row.question_id);
+    if (!userAnswer || !row.candidates) continue;
+
+    const existing = byCandidate.get(row.candidate_id) ?? { matches: 0, total: 0, info: row.candidates };
+    existing.total += 1;
+    if (userAnswer === row.answer) existing.matches += 1;
+    byCandidate.set(row.candidate_id, existing);
+  }
+
+  return Array.from(byCandidate.entries())
+    .filter(([, v]) => v.total >= minOverlap)
+    .map(([candidateId, v]) => ({
+      candidate_id: candidateId,
+      first_name: v.info.first_name,
+      last_name: v.info.last_name,
+      party: v.info.party,
+      photo_url: v.info.photo_url,
+      match_percent: Math.round((v.matches / v.total) * 100),
+      questions_compared: v.total,
+    }))
+    .sort((a, b) => b.match_percent - a.match_percent);
+}

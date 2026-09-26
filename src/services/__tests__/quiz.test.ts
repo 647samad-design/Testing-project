@@ -7,7 +7,7 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 import {
-  fetchQuizQuestions, saveUserQuizAnswers, hasUserCompletedQuiz, getPublicCandidateQuizAnswers,
+  fetchQuizQuestions, saveUserQuizAnswers, hasUserCompletedQuiz, getPublicCandidateQuizAnswers, getQuizMatches,
 } from '@/services/quiz';
 
 describe('fetchQuizQuestions', () => {
@@ -91,5 +91,105 @@ describe('getPublicCandidateQuizAnswers', () => {
     expect(eqCandidateMock).toHaveBeenCalledWith('candidate_id', 'cand-1');
     expect(eqStatusMock).toHaveBeenCalledWith('status', 'approved');
     expect(result).toEqual({ q1: 'b' });
+  });
+});
+
+describe('getQuizMatches — the actual point of the quiz, previously never computed', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('computes a match percentage from agreement between voter and candidate answers', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'user_quiz_answers') {
+        return { select: () => ({ eq: () => Promise.resolve({
+          data: [
+            { question_id: 'q1', answer: 'a' },
+            { question_id: 'q2', answer: 'b' },
+            { question_id: 'q3', answer: 'a' },
+          ],
+          error: null,
+        }) }) };
+      }
+      if (table === 'candidate_quiz_answers') {
+        return { select: () => ({ eq: () => ({ in: () => Promise.resolve({
+          data: [
+            { candidate_id: 'cand-1', question_id: 'q1', answer: 'a', candidates: { first_name: 'Jane', last_name: 'Doe', party: 'Independent', photo_url: null } },
+            { candidate_id: 'cand-1', question_id: 'q2', answer: 'a', candidates: { first_name: 'Jane', last_name: 'Doe', party: 'Independent', photo_url: null } },
+            { candidate_id: 'cand-1', question_id: 'q3', answer: 'a', candidates: { first_name: 'Jane', last_name: 'Doe', party: 'Independent', photo_url: null } },
+          ],
+          error: null,
+        }) }) }) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const result = await getQuizMatches('user-1');
+
+    expect(result).toHaveLength(1);
+    expect(result[0].candidate_id).toBe('cand-1');
+    expect(result[0].match_percent).toBe(67); // agreed on q1 and q3, disagreed on q2 -> 2/3
+    expect(result[0].questions_compared).toBe(3);
+  });
+
+  it('excludes a candidate with fewer overlapping questions than minOverlap', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'user_quiz_answers') {
+        return { select: () => ({ eq: () => Promise.resolve({ data: [{ question_id: 'q1', answer: 'a' }], error: null }) }) };
+      }
+      if (table === 'candidate_quiz_answers') {
+        return { select: () => ({ eq: () => ({ in: () => Promise.resolve({
+          data: [{ candidate_id: 'cand-1', question_id: 'q1', answer: 'a', candidates: { first_name: 'Jane', last_name: 'Doe', party: null, photo_url: null } }],
+          error: null,
+        }) }) }) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    // Only 1 question in common, default minOverlap is 3 -> should be excluded.
+    const result = await getQuizMatches('user-1');
+    expect(result).toEqual([]);
+  });
+
+  it('returns an empty list without querying candidates if the voter has no answers yet', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'user_quiz_answers') {
+        return { select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) };
+      }
+      throw new Error(`should not query ${table}`);
+    });
+
+    const result = await getQuizMatches('user-1');
+    expect(result).toEqual([]);
+  });
+
+  it('sorts results by match percentage, highest first', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'user_quiz_answers') {
+        return { select: () => ({ eq: () => Promise.resolve({
+          data: [{ question_id: 'q1', answer: 'a' }, { question_id: 'q2', answer: 'a' }, { question_id: 'q3', answer: 'a' }],
+          error: null,
+        }) }) };
+      }
+      if (table === 'candidate_quiz_answers') {
+        return { select: () => ({ eq: () => ({ in: () => Promise.resolve({
+          data: [
+            // cand-low: agrees on 1 of 3
+            { candidate_id: 'cand-low', question_id: 'q1', answer: 'a', candidates: { first_name: 'Low', last_name: 'Match', party: null, photo_url: null } },
+            { candidate_id: 'cand-low', question_id: 'q2', answer: 'b', candidates: { first_name: 'Low', last_name: 'Match', party: null, photo_url: null } },
+            { candidate_id: 'cand-low', question_id: 'q3', answer: 'b', candidates: { first_name: 'Low', last_name: 'Match', party: null, photo_url: null } },
+            // cand-high: agrees on 3 of 3
+            { candidate_id: 'cand-high', question_id: 'q1', answer: 'a', candidates: { first_name: 'High', last_name: 'Match', party: null, photo_url: null } },
+            { candidate_id: 'cand-high', question_id: 'q2', answer: 'a', candidates: { first_name: 'High', last_name: 'Match', party: null, photo_url: null } },
+            { candidate_id: 'cand-high', question_id: 'q3', answer: 'a', candidates: { first_name: 'High', last_name: 'Match', party: null, photo_url: null } },
+          ],
+          error: null,
+        }) }) }) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const result = await getQuizMatches('user-1');
+    expect(result[0].candidate_id).toBe('cand-high');
+    expect(result[0].match_percent).toBe(100);
+    expect(result[1].candidate_id).toBe('cand-low');
   });
 });
