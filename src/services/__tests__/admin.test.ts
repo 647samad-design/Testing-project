@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -355,5 +355,53 @@ describe('getRevenueSummary — payments.amount is in cents, previously never su
     const result = await getRevenueSummary();
     expect(result.totalCents).toBe(0);
     expect(result.byType).toEqual({});
+  });
+});
+
+describe('candidate-to-race linking — previously the "Add Candidate" form had no way to do this at all', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('linkCandidateToContest inserts into candidate_offices and logs the action', async () => {
+    await linkCandidateToContest('cand-1', 'contest-1');
+
+    expect(fromMock).toHaveBeenCalledWith('candidate_offices');
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ candidate_id: 'cand-1', contest_id: 'contest-1', incumbent: false }));
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'link_candidate_to_contest', p_target_id: 'cand-1' }));
+  });
+
+  it('searchBallotContests filters by office name when a query is given', async () => {
+    const ilikeMock = vi.fn().mockResolvedValue({ data: [{ id: 'c1', office_name: 'City Council' }], error: null });
+    const limitMock = vi.fn(() => ({ ilike: ilikeMock }));
+    const orderMock = vi.fn(() => ({ limit: limitMock }));
+    fromMock.mockReturnValueOnce({ select: () => ({ order: orderMock }) } as unknown as ReturnType<typeof fromMock>);
+
+    const result = await searchBallotContests('council');
+
+    expect(ilikeMock).toHaveBeenCalledWith('office_name', '%council%');
+    expect(result).toHaveLength(1);
+  });
+
+  it('getCandidateContests returns the contests a candidate is linked to', async () => {
+    const eqMock = vi.fn().mockResolvedValue({
+      data: [{ contest: { id: 'c1', office_name: 'Mayor' } }],
+      error: null,
+    });
+    fromMock.mockReturnValueOnce({ select: () => ({ eq: eqMock }) } as unknown as ReturnType<typeof fromMock>);
+
+    const result = await getCandidateContests('cand-1');
+
+    expect(result).toEqual([{ id: 'c1', office_name: 'Mayor' }]);
+  });
+
+  it('unlinkCandidateFromContest deletes the matching candidate_offices row and logs it', async () => {
+    const eq2Mock = vi.fn().mockResolvedValue({ error: null });
+    const eq1Mock = vi.fn(() => ({ eq: eq2Mock }));
+    fromMock.mockReturnValueOnce({ delete: () => ({ eq: eq1Mock }) } as unknown as ReturnType<typeof fromMock>);
+
+    await unlinkCandidateFromContest('cand-1', 'contest-1');
+
+    expect(eq1Mock).toHaveBeenCalledWith('candidate_id', 'cand-1');
+    expect(eq2Mock).toHaveBeenCalledWith('contest_id', 'contest-1');
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'unlink_candidate_from_contest' }));
   });
 });

@@ -24,6 +24,10 @@ import {
 import { getPendingReports, markReportReviewed, type ContentReport } from '@/services/content-reports';
 import { getUnresearchedClaims, assessClaimInLibrary, type UnresearchedClaim } from '@/services/admin';
 import { getRevenueSummary, type RevenueSummary } from '@/services/admin';
+import {
+  searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest,
+  type BallotContestOption,
+} from '@/services/admin';
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
@@ -1070,6 +1074,7 @@ function ManageCandidatesTab() {
   const [draft, setDraft] = useState<{ first_name: string; last_name: string; party: string; photo_url: string | null }>({ first_name: '', last_name: '', party: '', photo_url: null });
   const [saving, setSaving] = useState(false);
   const [managementBusyId, setManagementBusyId] = useState<string | null>(null);
+  const [raceEditId, setRaceEditId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -1189,15 +1194,128 @@ function ManageCandidatesTab() {
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => startEdit(c)}>
                     <Pencil className="h-3.5 w-3.5" /> Edit
                   </Button>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setRaceEditId(raceEditId === c.id ? null : c.id)}>
+                    <Vote className="h-3.5 w-3.5" /> Race
+                  </Button>
                   <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => handleDelete(c.id, `${c.first_name} ${c.last_name}`)}>
                     <Trash2 className="h-3.5 w-3.5" /> Delete
                   </Button>
                 </div>
               </div>
             )}
+            {raceEditId === c.id && (
+              <div className="mt-3 border-t border-border pt-3">
+                <RaceLinkingPanel candidateId={c.id} />
+              </div>
+            )}
           </Card>
         ))
       )}
+    </div>
+  );
+}
+
+function RaceLinkingPanel({ candidateId }: { candidateId: string }) {
+  const [linked, setLinked] = useState<BallotContestOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState<BallotContestOption[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setLinked(await getCandidateContests(candidateId));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, [candidateId]);
+
+  async function handleSearch() {
+    setSearching(true);
+    try {
+      setResults(await searchBallotContests(search));
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function handleLink(contestId: string) {
+    setBusy(true);
+    try {
+      await linkCandidateToContest(candidateId, contestId);
+      toast.success('Linked to race — this candidate will now appear on matching ballots.');
+      setResults([]);
+      setSearch('');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to link candidate to race.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleUnlink(contestId: string) {
+    if (!window.confirm('Remove this candidate from this race? They will no longer appear on matching ballots.')) return;
+    setBusy(true);
+    try {
+      await unlinkCandidateFromContest(candidateId, contestId);
+      toast.success('Removed from race.');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove candidate from race.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (loading) return <p className="text-xs text-muted-foreground">Loading races…</p>;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Running In</p>
+        {linked.length === 0 ? (
+          <p className="text-xs text-destructive">
+            Not linked to any race yet — this candidate will not appear on any voter's ballot until linked below.
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {linked.map((contest) => (
+              <div key={contest.id} className="flex items-center justify-between text-xs bg-secondary/50 rounded-lg px-2.5 py-1.5">
+                <span>{contest.office_name}{contest.election ? ` · ${contest.election.name}` : ''}</span>
+                <button disabled={busy} onClick={() => handleUnlink(contest.id)} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Link to a Race</p>
+        <div className="flex gap-2">
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder="Search office name (e.g. 'City Council')" className="text-xs h-8" />
+          <Button size="sm" onClick={handleSearch} disabled={searching}>Search</Button>
+        </div>
+        {results.length > 0 && (
+          <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
+            {results.map((contest) => (
+              <button
+                key={contest.id}
+                disabled={busy}
+                onClick={() => handleLink(contest.id)}
+                className="w-full text-left text-xs bg-secondary/30 hover:bg-secondary/60 rounded-lg px-2.5 py-1.5 transition-colors"
+              >
+                {contest.office_name}{contest.election ? ` · ${contest.election.name}` : ''}{contest.seat_description ? ` · ${contest.seat_description}` : ''}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

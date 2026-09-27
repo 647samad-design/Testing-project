@@ -691,3 +691,56 @@ export async function getRevenueSummary(): Promise<RevenueSummary> {
     recentPayments: rows.slice(0, 15),
   };
 }
+
+export interface BallotContestOption {
+  id: string; office_name: string; contest_level: string; seat_description: string | null;
+  election?: { name: string } | null;
+}
+
+/** Search existing ballot_contests by office name — used when linking a
+ * candidate to the race they're actually running in. Critical step: a
+ * candidate with no candidate_offices row never appears on anyone's
+ * ballot, no matter how complete their profile is, since "My Ballot"
+ * works entirely by matching a voter's district to ballot_contests and
+ * from there to candidate_offices. */
+export async function searchBallotContests(query: string): Promise<BallotContestOption[]> {
+  let q = supabase
+    .from('ballot_contests')
+    .select('id, office_name, contest_level, seat_description, election:elections(name)')
+    .order('office_name', { ascending: true })
+    .limit(25);
+  if (query.trim()) {
+    q = q.ilike('office_name', `%${query.trim()}%`);
+  }
+  const { data, error } = await q;
+  if (error || !data) return [];
+  return data as unknown as BallotContestOption[];
+}
+
+/** Links a candidate to the specific race (ballot_contest) they're running
+ * in. Without this, a candidate created via the admin "Add Candidate" form
+ * has a profile page but never shows up in anyone's ballot lookup. */
+export async function linkCandidateToContest(candidateId: string, contestId: string, incumbent = false): Promise<void> {
+  const { error } = await supabase.from('candidate_offices').insert({
+    candidate_id: candidateId,
+    contest_id: contestId,
+    incumbent,
+  });
+  if (error) throw error;
+  await logAdminAction('link_candidate_to_contest', 'candidate_offices', candidateId, { contestId });
+}
+
+export async function getCandidateContests(candidateId: string): Promise<BallotContestOption[]> {
+  const { data, error } = await supabase
+    .from('candidate_offices')
+    .select('contest:ballot_contests(id, office_name, contest_level, seat_description, election:elections(name))')
+    .eq('candidate_id', candidateId);
+  if (error || !data) return [];
+  return (data as unknown as { contest: BallotContestOption }[]).map((r) => r.contest).filter(Boolean);
+}
+
+export async function unlinkCandidateFromContest(candidateId: string, contestId: string): Promise<void> {
+  const { error } = await supabase.from('candidate_offices').delete().eq('candidate_id', candidateId).eq('contest_id', contestId);
+  if (error) throw error;
+  await logAdminAction('unlink_candidate_from_contest', 'candidate_offices', candidateId, { contestId });
+}
