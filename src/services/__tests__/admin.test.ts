@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -148,5 +148,33 @@ describe('candidate profile claim review — the actual approval queue, previous
 
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'rejected', admin_notes: 'Could not verify identity' }));
     expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'reject_claim', p_target_id: 'claim-2' }));
+  });
+});
+
+describe('event & questionnaire review — previously had zero admin access at all', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('approveEvent sets status to approved and logs the action', async () => {
+    await approveEvent('event-1');
+    expect(fromMock).toHaveBeenCalledWith('candidate_events');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'approved' }));
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'approve_event', p_target_id: 'event-1' }));
+  });
+
+  it('rejectEvent sets status to rejected and logs the action', async () => {
+    await rejectEvent('event-2', 'Not a real event');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'rejected', admin_notes: 'Not a real event' }));
+  });
+
+  it('approveQuestionnaireResponse sets status to approved and logs the action', async () => {
+    await approveQuestionnaireResponse('resp-1');
+    expect(fromMock).toHaveBeenCalledWith('candidate_questionnaire_responses');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'approved' }));
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'approve_questionnaire_response', p_target_id: 'resp-1' }));
+  });
+
+  it('rejectQuestionnaireResponse sets status to rejected and logs the action', async () => {
+    await rejectQuestionnaireResponse('resp-2');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'rejected' }));
   });
 });

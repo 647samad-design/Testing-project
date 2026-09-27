@@ -463,3 +463,64 @@ export async function rejectClaim(claimId: string, adminNotes?: string): Promise
   if (error) throw error;
   await logAdminAction('reject_claim', 'candidate_claims', claimId);
 }
+
+export interface PendingEvent {
+  id: string; candidate_id: string; title: string; description: string | null;
+  event_date: string; start_time: string | null; end_time: string | null;
+  location_name: string | null; virtual_url: string | null; submitted_at: string;
+  candidate?: { first_name: string; last_name: string };
+}
+
+/** Admin-only: candidate-submitted events awaiting review. Previously there
+ * was no admin RLS access to this table at all — submitted events could
+ * never be approved by anyone, through the app or otherwise. */
+export async function getPendingEvents(): Promise<PendingEvent[]> {
+  const { data, error } = await supabase
+    .from('candidate_events')
+    .select('*, candidate:candidates(first_name, last_name)')
+    .eq('status', 'pending')
+    .order('submitted_at', { ascending: true });
+  if (error || !data) return [];
+  return data as unknown as PendingEvent[];
+}
+
+export async function approveEvent(id: string): Promise<void> {
+  const { error } = await supabase.from('candidate_events').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('approve_event', 'candidate_events', id);
+}
+
+export async function rejectEvent(id: string, notes?: string): Promise<void> {
+  const { error } = await supabase.from('candidate_events').update({ status: 'rejected', admin_notes: notes ?? null, reviewed_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('reject_event', 'candidate_events', id);
+}
+
+export interface PendingQuestionnaireResponse {
+  id: string; candidate_id: string; question: string; answer: string | null; submitted_at: string;
+  candidate?: { first_name: string; last_name: string };
+}
+
+/** Admin-only: candidate Q&A responses awaiting review. Same previously-
+ * missing-admin-access gap as events. */
+export async function getPendingQuestionnaireResponses(): Promise<PendingQuestionnaireResponse[]> {
+  const { data, error } = await supabase
+    .from('candidate_questionnaire_responses')
+    .select('*, candidate:candidates(first_name, last_name)')
+    .eq('status', 'pending')
+    .order('submitted_at', { ascending: true });
+  if (error || !data) return [];
+  return data as unknown as PendingQuestionnaireResponse[];
+}
+
+export async function approveQuestionnaireResponse(id: string): Promise<void> {
+  const { error } = await supabase.from('candidate_questionnaire_responses').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('approve_questionnaire_response', 'candidate_questionnaire_responses', id);
+}
+
+export async function rejectQuestionnaireResponse(id: string, notes?: string): Promise<void> {
+  const { error } = await supabase.from('candidate_questionnaire_responses').update({ status: 'rejected', admin_notes: notes ?? null, reviewed_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('reject_questionnaire_response', 'candidate_questionnaire_responses', id);
+}

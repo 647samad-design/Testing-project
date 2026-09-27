@@ -16,6 +16,8 @@ import {
   compCandidateManagement, revokeCandidateManagement, listActiveManagementCandidateIds,
   getBillingOverview, type BillingOverview,
   getPendingClaims, approveClaim, rejectClaim, type PendingClaim,
+  getPendingEvents, approveEvent, rejectEvent, type PendingEvent,
+  getPendingQuestionnaireResponses, approveQuestionnaireResponse, rejectQuestionnaireResponse, type PendingQuestionnaireResponse,
 } from '@/services/admin';
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
@@ -250,22 +252,172 @@ function SubmissionsTab() {
   if (loading) return <LoadingState message="Loading submissions…" />;
 
   return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <h3 className="font-semibold">Profile Content</h3>
+        <p className="text-sm text-muted-foreground">
+          Content candidates have submitted about themselves (bio, photo, links, etc). Approving a
+          submission for a field like bio or photo publishes it straight to their profile.
+        </p>
+        {subs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No pending submissions.</p>
+        ) : (
+          subs.map((s) => (
+            <Card key={s.id} className="p-4">
+              <p className="text-sm font-medium">{s.field_name.replace(/_/g, ' ')}</p>
+              <p className="mt-1 text-sm text-muted-foreground break-words line-clamp-3">{s.field_value || '(empty)'}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{new Date(s.submitted_at).toLocaleString()}</p>
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" disabled={busyId === s.id} onClick={() => handleApprove(s.id)}>Approve</Button>
+                <Button size="sm" variant="outline" disabled={busyId === s.id} onClick={() => handleReject(s.id)}>Reject</Button>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+
+      <div className="border-t border-border pt-6">
+        <EventsReviewSection />
+      </div>
+
+      <div className="border-t border-border pt-6">
+        <QuestionnaireReviewSection />
+      </div>
+    </div>
+  );
+}
+
+function EventsReviewSection() {
+  const [events, setEvents] = useState<PendingEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setEvents(await getPendingEvents());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load events.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleApprove(id: string) {
+    setBusyId(id);
+    try {
+      await approveEvent(id);
+      toast.success('Event approved and now public.');
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to approve event.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReject(id: string) {
+    setBusyId(id);
+    try {
+      await rejectEvent(id);
+      toast.success('Event rejected.');
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to reject event.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading events…" />;
+
+  return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        Content candidates have submitted about themselves (bio, photo, links, etc). Approving a
-        submission for a field like bio or photo publishes it straight to their profile.
-      </p>
-      {subs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No pending submissions.</p>
+      <h3 className="font-semibold">Candidate Events</h3>
+      {events.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No pending events.</p>
       ) : (
-        subs.map((s) => (
-          <Card key={s.id} className="p-4">
-            <p className="text-sm font-medium">{s.field_name.replace(/_/g, ' ')}</p>
-            <p className="mt-1 text-sm text-muted-foreground break-words line-clamp-3">{s.field_value || '(empty)'}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{new Date(s.submitted_at).toLocaleString()}</p>
+        events.map((e) => (
+          <Card key={e.id} className="p-4">
+            <p className="text-sm font-medium">{e.title}</p>
+            <p className="text-xs text-muted-foreground">
+              {e.candidate ? `${e.candidate.first_name} ${e.candidate.last_name} · ` : ''}{e.event_date}
+              {e.start_time ? ` · ${e.start_time}` : ''}{e.location_name ? ` · ${e.location_name}` : ''}
+            </p>
+            {e.description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{e.description}</p>}
             <div className="mt-3 flex gap-2">
-              <Button size="sm" disabled={busyId === s.id} onClick={() => handleApprove(s.id)}>Approve</Button>
-              <Button size="sm" variant="outline" disabled={busyId === s.id} onClick={() => handleReject(s.id)}>Reject</Button>
+              <Button size="sm" disabled={busyId === e.id} onClick={() => handleApprove(e.id)}>Approve</Button>
+              <Button size="sm" variant="outline" disabled={busyId === e.id} onClick={() => handleReject(e.id)}>Reject</Button>
+            </div>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+}
+
+function QuestionnaireReviewSection() {
+  const [responses, setResponses] = useState<PendingQuestionnaireResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setResponses(await getPendingQuestionnaireResponses());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load responses.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleApprove(id: string) {
+    setBusyId(id);
+    try {
+      await approveQuestionnaireResponse(id);
+      toast.success('Response approved and now public.');
+      setResponses((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to approve response.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReject(id: string) {
+    setBusyId(id);
+    try {
+      await rejectQuestionnaireResponse(id);
+      toast.success('Response rejected.');
+      setResponses((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to reject response.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading responses…" />;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold">Candidate Q&amp;A Responses</h3>
+      {responses.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No pending responses.</p>
+      ) : (
+        responses.map((r) => (
+          <Card key={r.id} className="p-4">
+            <p className="text-sm font-medium">{r.candidate ? `${r.candidate.first_name} ${r.candidate.last_name}` : 'Unknown candidate'}</p>
+            <p className="mt-1 text-sm">{r.question}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{r.answer || '(no answer)'}</p>
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" disabled={busyId === r.id} onClick={() => handleApprove(r.id)}>Approve</Button>
+              <Button size="sm" variant="outline" disabled={busyId === r.id} onClick={() => handleReject(r.id)}>Reject</Button>
             </div>
           </Card>
         ))
