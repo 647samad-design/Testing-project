@@ -11,7 +11,7 @@ import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { useAuth } from '@/hooks/use-auth';
 import { getMyClaimedCandidates, submitCandidateContent, submitQuestionnaireResponse, submitEvent } from '@/services/candidate-portal';
-import { getTeamMembers, inviteTeamMember, revokeTeamMember, createFeedPost, getFeedPosts as getCandidateFeedPosts, deleteFeedPost, getCandidateAnalytics } from '@/services/social';
+import { getTeamMembers, inviteTeamMember, revokeTeamMember, updateTeamMemberRole, createFeedPost, getFeedPosts as getCandidateFeedPosts, deleteFeedPost, getCandidateAnalytics } from '@/services/social';
 import { getMyManagedCandidates } from '@/services/stripe';
 import {
   getCampaign, upsertCampaign, getAllCampaignEventsForManagement,
@@ -435,6 +435,16 @@ function TeamTab({ candidateId }: { candidateId: string }) {
     }
   }
 
+  async function handleRoleChange(id: string, role: TeamRole) {
+    try {
+      await updateTeamMemberRole(id, role);
+      toast.success('Role updated.');
+      setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role } : m)));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update role.');
+    }
+  }
+
   if (loading) return <LoadingState message="Loading team…" />;
 
   if (!hasManagement) {
@@ -495,13 +505,20 @@ function TeamTab({ candidateId }: { candidateId: string }) {
           <div className="space-y-2">
             {members.filter((m) => m.status !== 'revoked').map((m) => (
               <div key={m.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="font-medium">{m.invited_email}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {TEAM_ROLES.find((r) => r.value === m.role)?.label ?? m.role} · {m.status}
-                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <select
+                      value={m.role}
+                      onChange={(e) => handleRoleChange(m.id, e.target.value as TeamRole)}
+                      className="text-xs rounded-md border border-input bg-background px-1.5 py-0.5"
+                    >
+                      {TEAM_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                    </select>
+                    <span className="text-xs text-muted-foreground">· {m.status}</span>
+                  </div>
                 </div>
-                <button onClick={() => handleRevoke(m.id, m.invited_email ?? 'this team member')} className="text-muted-foreground hover:text-destructive">
+                <button onClick={() => handleRevoke(m.id, m.invited_email ?? 'this team member')} className="text-muted-foreground hover:text-destructive shrink-0">
                   <X className="h-4 w-4" />
                 </button>
               </div>
