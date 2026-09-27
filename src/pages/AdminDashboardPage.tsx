@@ -1953,6 +1953,42 @@ function CandidateSearchPicker({ value, onChange }: { value: string; onChange: (
   );
 }
 
+function SourceSearchPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const [query, setQuery] = useState('');
+  const [sources, setSourcesList] = useState<Source[]>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => { getSources().then(setSourcesList); }, []);
+
+  const selected = sources.find((s) => s.id === value);
+  const filtered = sources.filter((s) => s.title.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+
+  return (
+    <div className="relative">
+      <Input
+        value={open ? query : (selected ? selected.title : '')}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => { setOpen(true); setQuery(''); }}
+        placeholder="Search sources by title (optional)…"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card shadow-md max-h-48 overflow-y-auto">
+          {filtered.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => { onChange(s.id); setOpen(false); setQuery(''); }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/50 truncate"
+            >
+              {s.title}{s.publisher ? ` · ${s.publisher}` : ''}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AddVotingRecordForm() {
   const [candidateId, setCandidateId] = useState('');
   const [billName, setBillName] = useState('');
@@ -1961,6 +1997,7 @@ function AddVotingRecordForm() {
   const [voteDate, setVoteDate] = useState('');
   const [chamber, setChamber] = useState('');
   const [description, setDescription] = useState('');
+  const [sourceId, setSourceId] = useState('');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -1971,8 +2008,9 @@ function AddVotingRecordForm() {
       await addVotingRecord({
         candidate_id: candidateId, bill_name: billName.trim(), bill_number: billNumber.trim() || undefined,
         vote, vote_date: voteDate || undefined, chamber: chamber.trim() || undefined, description: description.trim() || undefined,
+        source_id: sourceId || undefined,
       });
-      setBillName(''); setBillNumber(''); setVoteDate(''); setChamber(''); setDescription('');
+      setBillName(''); setBillNumber(''); setVoteDate(''); setChamber(''); setDescription(''); setSourceId('');
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -2018,6 +2056,10 @@ function AddVotingRecordForm() {
         <div>
           <Label className="text-xs">Chamber (optional)</Label>
           <Input value={chamber} onChange={(e) => setChamber(e.target.value)} placeholder="e.g. State Senate" />
+        </div>
+        <div>
+          <Label className="text-xs">Source (optional, but recommended)</Label>
+          <SourceSearchPicker value={sourceId} onChange={setSourceId} />
         </div>
         <div>
           <Label className="text-xs">Description</Label>
