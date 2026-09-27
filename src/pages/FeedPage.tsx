@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { LoadingState } from '@/components/shared/StateComponents';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { ReportButton } from '@/components/shared/ReportButton';
 import {
   getSocialFeed, getFollowedCandidates, getFollowedIssues,
@@ -41,6 +42,7 @@ const NOTIF_ICONS: Record<string, { icon: typeof Bell; color: string }> = {
 };
 
 export function FeedPage() {
+  usePageMeta({ title: 'Feed', noindex: true });
   const { user, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [followedCandidates, setFollowedCandidates] = useState<Candidate[]>([]);

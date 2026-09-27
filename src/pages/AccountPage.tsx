@@ -26,8 +26,10 @@ import { getNotificationPreferences, updateNotificationPreferences, type Notific
 import { toast } from 'sonner';
 import type { Candidate, Issue, UserLocation, ElectionJourneyStep } from '@/types';
 import { cn } from '@/lib/utils';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 export function AccountPage() {
+  usePageMeta({ title: 'Account', noindex: true });
   const { user, profile, signOut, isDemo, loading: authLoading } = useAuth();
   const [fullName, setFullName] = useState('');
   const [zipCode, setZipCode] = useState('');

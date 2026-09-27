@@ -3,5 +3,8 @@ Allow: /
 Disallow: /admin
 Disallow: /account
 Disallow: /messages
+Disallow: /candidate-portal
+Disallow: /advertiser-dashboard
+Disallow: /feed
 
 Sitemap: https://ballotlens.com/sitemap.xml

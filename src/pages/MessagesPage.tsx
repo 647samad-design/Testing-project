@@ -16,8 +16,10 @@ import {
 } from '@/services/messaging';
 import type { Conversation, Message } from '@/types';
 import { cn } from '@/lib/utils';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 export function MessagesPage() {
+  usePageMeta({ title: 'Messages', noindex: true });
   const { user, isDemo, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeId = searchParams.get('c');

@@ -219,6 +219,16 @@ export function StoryDetailPage() {
     title: story?.title,
     description: story?.excerpt ?? undefined,
     image: story?.hero_image_url ?? undefined,
+    structuredData: story ? {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: story.title,
+      description: story.excerpt ?? undefined,
+      image: story.hero_image_url ?? undefined,
+      author: story.author_name ? { '@type': 'Person', name: story.author_name } : undefined,
+      datePublished: story.published_at ?? undefined,
+      publisher: { '@type': 'Organization', name: 'BallotLens' },
+    } : undefined,
   });
 
   if (loading) return <LoadingState message="Loading story…" />;

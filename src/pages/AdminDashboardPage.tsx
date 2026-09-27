@@ -31,8 +31,10 @@ import { LoadingState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { toast } from 'sonner';
 import { Pencil, Trash2, ShieldOff, ShieldCheck as ShieldCheckIcon, ScrollText, DollarSign } from 'lucide-react';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 export function AdminDashboardPage() {
+  usePageMeta({ title: 'Admin', noindex: true });
   const { profile, loading: authLoading } = useAuth();
   const [metrics, setMetrics] = useState<Awaited<ReturnType<typeof getAdminMetrics>> | null>(null);
   const [unverified, setUnverified] = useState<Array<{ id: string; summary: string | null; verification_status: VerificationStatus; candidate: { first_name: string; last_name: string } | null; issue: { name: string } | null }>>([]);

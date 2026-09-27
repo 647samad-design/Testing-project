@@ -22,6 +22,7 @@ import {
 } from '@/services/candidate-profile-extras';
 import type { CampaignTeamMember, TeamRole, CandidateGetToKnow, CandidateFundingSource, CandidateEndorsement, FundingSourceType, EndorserType, FeedPost } from '@/types';
 import { toast } from 'sonner';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 interface ClaimedCandidate {
   candidate_id: string;
@@ -30,6 +31,7 @@ interface ClaimedCandidate {
 }
 
 export function CandidatePortalPage() {
+  usePageMeta({ title: 'Candidate Portal', noindex: true });
   const { user, loading: authLoading } = useAuth();
   const [claimed, setClaimed] = useState<ClaimedCandidate[]>([]);
   const [loading, setLoading] = useState(true);

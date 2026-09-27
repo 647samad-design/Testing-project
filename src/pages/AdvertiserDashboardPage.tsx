@@ -44,7 +44,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export function AdvertiserDashboardPage() {
-  usePageMeta({ title: 'Advertiser Dashboard', description: 'Manage your BallotLens ad campaigns.' });
+  usePageMeta({ title: 'Advertiser Dashboard', description: 'Manage your BallotLens ad campaigns.', noindex: true });
   const { user, loading: authLoading } = useAuth();
   const [advertiser, setAdvertiser] = useState<Advertiser | null>(null);
   const [ads, setAds] = useState<Advertisement[]>([]);

@@ -141,6 +141,15 @@ export function CandidateProfilePage() {
         ? `See ${candidate.first_name} ${candidate.last_name}'s positions, voting record, and cited sources on BallotLens.`
         : undefined,
     image: candidate?.photo_url ?? undefined,
+    structuredData: candidate ? {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: `${candidate.first_name} ${candidate.last_name}`,
+      description: candidate.bio ?? undefined,
+      image: candidate.photo_url ?? undefined,
+      affiliation: candidate.party ?? undefined,
+      url: `https://ballotlens.com/candidates/${candidate.id}`,
+    } : undefined,
   });
 
   if (loading) return <LoadingState message="Loading candidate profile…" />;

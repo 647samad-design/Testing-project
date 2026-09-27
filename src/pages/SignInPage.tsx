@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { LANGUAGE_OPTIONS, type LanguageName } from '@/types';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
 export function SignInPage() {
+  usePageMeta({ title: 'Sign In', noindex: true });
   const navigate = useNavigate();
   const { signIn, signUp, signInAsDemo, resetPassword, updatePassword, isPasswordRecovery } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
