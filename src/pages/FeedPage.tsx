@@ -304,7 +304,7 @@ export function FeedPage() {
                   >
                     <Avatar className="h-9 w-9 border border-border">
                       {c.photo_url ? (
-                        <img src={c.photo_url} alt="" className="h-full w-full object-cover" />
+                        <img src={c.photo_url} alt={`${c.first_name} ${c.last_name}`} className="h-full w-full object-cover" />
                       ) : (
                         <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
                           {c.first_name?.[0]}{c.last_name?.[0]}
@@ -439,7 +439,7 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
               <div className="relative">
                 <Avatar className="h-12 w-12 border-2 border-border">
                   {candidate?.photo_url ? (
-                    <img src={candidate.photo_url} alt="" className="h-full w-full object-cover" />
+                    <img src={candidate.photo_url} alt={`${candidate.first_name} ${candidate.last_name}`} className="h-full w-full object-cover" />
                   ) : (
                     <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
                       {candidate?.first_name?.[0]}{candidate?.last_name?.[0]}
@@ -487,7 +487,7 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
         {/* Image */}
         {post.image_url && (
           <div className="relative rounded-2xl overflow-hidden mb-3 group">
-            <img src={post.image_url} alt="" className="w-full max-h-96 object-cover" />
+            <img src={post.image_url} alt={candidate ? `Photo shared by ${candidate.first_name} ${candidate.last_name}` : 'Post image'} className="w-full max-h-96 object-cover" />
           </div>
         )}
 

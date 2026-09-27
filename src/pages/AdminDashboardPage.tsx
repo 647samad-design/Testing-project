@@ -1124,7 +1124,7 @@ function ManageCandidatesTab() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-secondary">
-                    {c.photo_url && <img src={c.photo_url} alt="" className="h-full w-full object-cover" />}
+                    {c.photo_url && <img src={c.photo_url} alt={`${c.first_name} ${c.last_name}`} className="h-full w-full object-cover" />}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{c.first_name} {c.last_name}</p>

@@ -417,7 +417,7 @@ export function CandidateProfilePage() {
                     <span className="text-xs text-muted-foreground">{new Date(post.created_at).toLocaleDateString()}</span>
                   </div>
                   <p className="text-sm text-foreground whitespace-pre-wrap">{post.body}</p>
-                  {post.image_url && <img src={post.image_url} alt="" className="mt-2 rounded-xl max-h-60 object-cover" />}
+                  {post.image_url && <img src={post.image_url} alt="Post image" className="mt-2 rounded-xl max-h-60 object-cover" />}
                   {post.event_date && (
                     <div className="mt-2 rounded-xl border border-border bg-secondary/30 p-2 text-sm">
                       <span className="font-semibold">{new Date(post.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>

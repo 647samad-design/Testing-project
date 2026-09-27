@@ -484,7 +484,7 @@ export function AccountPage() {
                     >
                       <Avatar className="h-11 w-11 shrink-0 border border-border">
                         {c.photo_url ? (
-                          <img src={c.photo_url} alt="" className="h-full w-full object-cover" />
+                          <img src={c.photo_url} alt={`${c.first_name} ${c.last_name}`} className="h-full w-full object-cover" />
                         ) : (
                           <AvatarFallback className="text-sm font-bold bg-secondary">
                             {c.first_name?.[0]}{c.last_name?.[0]}
@@ -659,7 +659,7 @@ export function AccountPage() {
                   >
                     <Avatar className="h-9 w-9 shrink-0">
                       {c.photo_url ? (
-                        <img src={c.photo_url} alt="" className="h-full w-full object-cover" />
+                        <img src={c.photo_url} alt={`${c.first_name} ${c.last_name}`} className="h-full w-full object-cover" />
                       ) : (
                         <AvatarFallback className="text-xs font-bold bg-secondary">
                           {c.first_name?.[0]}{c.last_name?.[0]}

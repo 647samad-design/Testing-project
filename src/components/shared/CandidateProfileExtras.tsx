@@ -358,7 +358,7 @@ export function Endorsements({ candidateId }: { candidateId: string }) {
           return (
             <div key={e.id} className="flex items-start gap-3 rounded-xl bg-secondary/30 p-3">
               {e.endorser_logo_url ? (
-                <img src={e.endorser_logo_url} alt="" className="h-9 w-9 rounded-lg object-cover shrink-0" />
+                <img src={e.endorser_logo_url} alt={`${e.endorser_name} logo`} className="h-9 w-9 rounded-lg object-cover shrink-0" />
               ) : (
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <Icon className="h-4 w-4 text-primary" />

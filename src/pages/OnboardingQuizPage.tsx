@@ -98,7 +98,7 @@ export function OnboardingQuizPage() {
                   onClick={() => navigate(`/candidates/${m.candidate_id}`)}
                 >
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-secondary">
-                    {m.photo_url && <img src={m.photo_url} alt="" className="h-full w-full object-cover" />}
+                    {m.photo_url && <img src={m.photo_url} alt={`${m.first_name} ${m.last_name}`} className="h-full w-full object-cover" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold truncate">{m.first_name} {m.last_name}</p>
