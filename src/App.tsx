@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Header, Footer } from '@/components/shared/Layout';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { LoadingState } from '@/components/shared/StateComponents';
 import { LandingPage } from '@/pages/LandingPage';
 import { MyBallotPage } from '@/pages/MyBallotPage';
 import { CandidatesPage } from '@/pages/CandidatesPage';
@@ -12,11 +14,8 @@ import { NewsPage } from '@/pages/NewsPage';
 import { AskBallotLensPage } from '@/pages/AskBallotLensPage';
 import { SignInPage } from '@/pages/SignInPage';
 import { AccountPage } from '@/pages/AccountPage';
-import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
 import { AdvertisingPage } from '@/pages/AdvertisingPage';
-import { AdvertiserDashboardPage } from '@/pages/AdvertiserDashboardPage';
 import { StoriesPage, StoryDetailPage } from '@/pages/StoriesPage';
-import { CandidatePortalPage } from '@/pages/CandidatePortalPage';
 import { FeedPage } from '@/pages/FeedPage';
 import { LensThisPage } from '@/pages/LensThisPage';
 import { OnboardingQuizPage } from '@/pages/OnboardingQuizPage';
@@ -36,6 +35,23 @@ import { ContactPage } from '@/pages/company/ContactPage';
 import { Toaster } from '@/components/ui/sonner';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 
+// Code-split the pages only a small subset of visitors ever reach (admins,
+// claimed candidates, advertisers) -- previously every voter's very first
+// page load had to download all of these too, even though the overwhelming
+// majority of visitors are voters who never touch them. This keeps the
+// bundle every voter pays for on their first visit meaningfully smaller.
+const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
+const AdvertiserDashboardPage = lazy(() => import('@/pages/AdvertiserDashboardPage').then((m) => ({ default: m.AdvertiserDashboardPage })));
+const CandidatePortalPage = lazy(() => import('@/pages/CandidatePortalPage').then((m) => ({ default: m.CandidatePortalPage })));
+
+function LazyPageFallback() {
+  return (
+    <div className="mx-auto max-w-content px-4 py-16">
+      <LoadingState message="Loading…" />
+    </div>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -46,6 +62,7 @@ function App() {
           <Header />
           <main className="flex-1">
             <ErrorBoundary>
+              <Suspense fallback={<LazyPageFallback />}>
               <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/ballot" element={<MyBallotPage />} />
@@ -82,6 +99,7 @@ function App() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="*" element={<LandingPage />} />
             </Routes>
+            </Suspense>
             </ErrorBoundary>
           </main>
           <Footer />
