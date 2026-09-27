@@ -14,6 +14,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string, fullName: string, language?: LanguageName) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
+  deleteAccount: () => Promise<{ error: string | null }>;
   signInAsDemo: () => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -149,6 +150,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const deleteAccount: AuthContextValue['deleteAccount'] = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-my-account');
+      if (error) return { error: error.message };
+      if (data?.error) return { error: data.error };
+      await supabase.auth.signOut();
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : 'Failed to delete account.' };
+    }
+  };
+
   const signInAsDemo = () => {
     localStorage.setItem('ballotlens_demo', 'true');
     setIsDemo(true);
@@ -189,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user, profile, loading, isDemo, isPasswordRecovery, signIn, signUp, resetPassword, updatePassword, signInAsDemo, signOut, refreshProfile, setLanguage }}
+      value={{ session, user, profile, loading, isDemo, isPasswordRecovery, signIn, signUp, resetPassword, updatePassword, deleteAccount, signInAsDemo, signOut, refreshProfile, setLanguage }}
     >
       {children}
     </AuthContext.Provider>

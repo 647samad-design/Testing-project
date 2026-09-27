@@ -954,7 +954,71 @@ function NotificationSettingsTab() {
       </Card>
 
       {saving && <p className="text-xs text-muted-foreground">Saving…</p>}
+
+      <DangerZoneCard />
     </div>
+  );
+}
+
+function DangerZoneCard() {
+  const { deleteAccount, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const { error } = await deleteAccount();
+      if (error) {
+        toast.error(error);
+        setDeleting(false);
+        return;
+      }
+      toast.success('Your account has been permanently deleted.');
+      await signOut();
+      window.location.href = '/';
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete account.');
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <Card className="p-6 rounded-2xl border-destructive/30">
+      <h3 className="font-bold text-lg text-destructive">Danger Zone</h3>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Permanently delete your account and all associated data — saved candidates, messages,
+        notes, and any candidate profile claims. This cannot be undone.
+      </p>
+      {!open ? (
+        <Button variant="outline" className="mt-4 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setOpen(true)}>
+          Delete My Account
+        </Button>
+      ) : (
+        <div className="mt-4 space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <p className="text-sm font-medium">
+            Type <span className="font-mono font-bold">DELETE</span> to confirm. This is permanent and cannot be reversed.
+          </p>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="Type DELETE"
+            className="max-w-xs"
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              disabled={confirmText !== 'DELETE' || deleting}
+              onClick={handleDelete}
+            >
+              {deleting ? 'Deleting…' : 'Permanently Delete My Account'}
+            </Button>
+            <Button variant="outline" onClick={() => { setOpen(false); setConfirmText(''); }}>Cancel</Button>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
 
