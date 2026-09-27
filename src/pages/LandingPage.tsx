@@ -406,11 +406,32 @@ export function LandingPage() {
         <p className="mt-3 text-lg text-muted-foreground">
           Enter your address and start researching in seconds.
         </p>
-        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <Button size="lg" onClick={handleFindBallot} disabled={loading} className="h-14 px-8 rounded-2xl text-base font-bold touch-target shadow-md shadow-primary/20">
-            See My Ballot
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+        <div className="mt-8 mx-auto max-w-2xl">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Enter your ZIP code"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleFindBallot()}
+                className="pl-12 h-14 text-base rounded-2xl shadow-sm border-border/60 bg-card"
+                aria-label="Enter your address or ZIP code"
+              />
+            </div>
+            <Button size="lg" onClick={handleFindBallot} disabled={loading} className="h-14 px-8 rounded-2xl text-base font-bold touch-target shadow-md shadow-primary/20">
+              {loading ? 'Finding…' : 'See My Ballot'}
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+          {error && (
+            <p className="mt-3 text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
+        <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <Button size="lg" variant="outline" onClick={() => navigate('/candidates')} className="h-14 px-8 rounded-2xl text-base font-semibold touch-target">
             Explore Candidates
           </Button>
