@@ -22,6 +22,7 @@ import {
   getPendingAds, approveAd, rejectAd, type PendingAd,
 } from '@/services/admin';
 import { getPendingReports, markReportReviewed, type ContentReport } from '@/services/content-reports';
+import { getUnresearchedClaims, assessClaimInLibrary, type UnresearchedClaim } from '@/services/admin';
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
@@ -93,6 +94,7 @@ export function AdminDashboardPage() {
           <TabsTrigger value="import">Import Candidates</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="claimslib">Claims Library</TabsTrigger>
           <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
 
@@ -203,6 +205,10 @@ export function AdminDashboardPage() {
 
         <TabsContent value="reports" className="mt-6">
           <ContentReportsTab />
+        </TabsContent>
+
+        <TabsContent value="claimslib" className="mt-6">
+          <ClaimsLibraryAdminTab />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
@@ -1284,6 +1290,90 @@ function ContentReportsTab() {
           </div>
         </Card>
       ))}
+    </div>
+  );
+}
+
+function ClaimsLibraryAdminTab() {
+  const [claims, setClaims] = useState<UnresearchedClaim[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [draftAssessment, setDraftAssessment] = useState<Record<string, string>>({});
+  const [draftExplanation, setDraftExplanation] = useState<Record<string, string>>({});
+
+  async function load() {
+    setLoading(true);
+    try {
+      setClaims(await getUnresearchedClaims());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load claims.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleAssess(claim: UnresearchedClaim) {
+    const assessment = (draftAssessment[claim.id] ?? 'supported') as 'supported' | 'unsupported' | 'requires_context' | 'insufficient_information';
+    const explanation = draftExplanation[claim.id]?.trim();
+    if (!explanation) {
+      toast.error('Add an explanation before publishing an assessment.');
+      return;
+    }
+    setBusyId(claim.id);
+    try {
+      await assessClaimInLibrary(claim.id, assessment, explanation);
+      toast.success('Claim assessed and published to the Claims Library.');
+      setClaims((prev) => prev.filter((c) => c.id !== claim.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save assessment.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading claims…" />;
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground mb-2">
+        Claims submitted by users, awaiting research. Publishing an assessment here makes it public
+        on the Claims Library page immediately.
+      </p>
+      {claims.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">No unresearched claims right now.</p>
+      ) : (
+        claims.map((claim) => (
+          <Card key={claim.id} className="p-4">
+            <p className="text-sm font-medium">{claim.claim_text}</p>
+            {claim.candidate && (
+              <p className="text-xs text-muted-foreground mt-0.5">Re: {claim.candidate.first_name} {claim.candidate.last_name}</p>
+            )}
+            <div className="mt-3 space-y-2">
+              <select
+                value={draftAssessment[claim.id] ?? 'supported'}
+                onChange={(e) => setDraftAssessment((prev) => ({ ...prev, [claim.id]: e.target.value }))}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="supported">Supported by Evidence</option>
+                <option value="unsupported">Not Supported</option>
+                <option value="requires_context">Requires Context</option>
+              </select>
+              <textarea
+                value={draftExplanation[claim.id] ?? ''}
+                onChange={(e) => setDraftExplanation((prev) => ({ ...prev, [claim.id]: e.target.value }))}
+                placeholder="Explain the assessment with specifics (this is shown publicly)..."
+                rows={3}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              />
+              <Button size="sm" disabled={busyId === claim.id} onClick={() => handleAssess(claim)}>
+                Publish Assessment
+              </Button>
+            </div>
+          </Card>
+        ))
+      )}
     </div>
   );
 }

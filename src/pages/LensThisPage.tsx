@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search, Link2, Send, CheckCircle2, AlertTriangle, XCircle, HelpCircle,
   Info, Sparkles, ClipboardPaste, ExternalLink, ChevronRight, Loader2,
   Newspaper, Mic, Tv, MessageSquare, FileText, Zap, ShieldCheck,
-  TrendingUp, BookOpen, Quote, ArrowRight, Eye,
+  TrendingUp, BookOpen, Quote, ArrowRight, Eye, Scale,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -244,6 +245,9 @@ export function LensThisPage() {
               <p className="text-sm text-muted-foreground mt-0.5">
                 Scan any claim, article, or post — we break down what's fact and what's fiction.
               </p>
+              <Link to="/claims" className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                <Scale className="h-3 w-3" /> Browse the researched Claims Library
+              </Link>
             </div>
           </div>
         </div>

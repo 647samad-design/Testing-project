@@ -620,3 +620,33 @@ export async function rejectAd(id: string, notes?: string): Promise<void> {
   if (error) throw error;
   await logAdminAction('reject_ad', 'advertisements', id);
 }
+
+export interface UnresearchedClaim {
+  id: string; claim_text: string; created_at: string;
+  candidate?: { first_name: string; last_name: string } | null;
+}
+
+/** Admin-only: claims still awaiting research (the default state a
+ * submitted claim starts in). The Claims Library page and its
+ * submitClaim() have existed with a fully correct, already-secure RLS
+ * setup (public read, admin-only update) for a while, but nothing in the
+ * app ever surfaced these for an admin to actually research and assess. */
+export async function getUnresearchedClaims(): Promise<UnresearchedClaim[]> {
+  const { data, error } = await supabase
+    .from('claims')
+    .select('id, claim_text, created_at, candidate:candidates(first_name, last_name)')
+    .eq('assessment', 'insufficient_information')
+    .order('created_at', { ascending: true });
+  if (error || !data) return [];
+  return data as unknown as UnresearchedClaim[];
+}
+
+export async function assessClaimInLibrary(
+  claimId: string,
+  assessment: 'supported' | 'unsupported' | 'requires_context' | 'insufficient_information',
+  explanation: string
+): Promise<void> {
+  const { error } = await supabase.from('claims').update({ assessment, explanation }).eq('id', claimId);
+  if (error) throw error;
+  await logAdminAction('assess_claim', 'claims', claimId, { assessment });
+}

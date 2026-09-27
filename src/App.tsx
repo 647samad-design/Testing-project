@@ -18,6 +18,7 @@ import { AdvertisingPage } from '@/pages/AdvertisingPage';
 import { StoriesPage, StoryDetailPage } from '@/pages/StoriesPage';
 import { FeedPage } from '@/pages/FeedPage';
 import { LensThisPage } from '@/pages/LensThisPage';
+import { ClaimsLibraryPage } from '@/pages/ClaimsLibraryPage';
 import { OnboardingQuizPage } from '@/pages/OnboardingQuizPage';
 import { CandidateQuizPage } from '@/pages/CandidateQuizPage';
 import { PricingPage } from '@/pages/PricingPage';
@@ -85,6 +86,7 @@ function App() {
               <Route path="/stories/:slug" element={<StoryDetailPage />} />
               <Route path="/feed" element={<FeedPage />} />
               <Route path="/lens" element={<LensThisPage />} />
+              <Route path="/claims" element={<ClaimsLibraryPage />} />
               <Route path="/onboarding" element={<OnboardingQuizPage />} />
               <Route path="/candidate-quiz" element={<CandidateQuizPage />} />
               <Route path="/messages" element={<MessagesPage />} />

@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -297,5 +297,28 @@ describe('expireOverdueComps — comped Management previously had no expiration 
     const result = await expireOverdueComps();
 
     expect(result).toEqual({ expiredCount: 0, expiredCandidateNames: [] });
+  });
+});
+
+describe('Claims Library admin research — the library existed with correct RLS but zero UI anywhere', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('getUnresearchedClaims fetches only insufficient_information claims, oldest first', async () => {
+    const orderMock = vi.fn().mockResolvedValue({ data: [{ id: 'claim-1', claim_text: 'Test claim' }], error: null });
+    const eqMock = vi.fn(() => ({ order: orderMock }));
+    fromMock.mockReturnValueOnce({ select: () => ({ eq: eqMock }) } as unknown as ReturnType<typeof fromMock>);
+
+    const result = await getUnresearchedClaims();
+
+    expect(eqMock).toHaveBeenCalledWith('assessment', 'insufficient_information');
+    expect(result).toHaveLength(1);
+  });
+
+  it('assessClaimInLibrary updates assessment + explanation and logs the action', async () => {
+    await assessClaimInLibrary('claim-1', 'supported', 'Verified against three independent sources.');
+
+    expect(fromMock).toHaveBeenCalledWith('claims');
+    expect(updateMock).toHaveBeenCalledWith({ assessment: 'supported', explanation: 'Verified against three independent sources.' });
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'assess_claim', p_target_id: 'claim-1' }));
   });
 });
