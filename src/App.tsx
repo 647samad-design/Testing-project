@@ -13,6 +13,7 @@ import { SignInPage } from '@/pages/SignInPage';
 import { AccountPage } from '@/pages/AccountPage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
 import { AdvertisingPage } from '@/pages/AdvertisingPage';
+import { AdvertiserDashboardPage } from '@/pages/AdvertiserDashboardPage';
 import { StoriesPage, StoryDetailPage } from '@/pages/StoriesPage';
 import { CandidatePortalPage } from '@/pages/CandidatePortalPage';
 import { FeedPage } from '@/pages/FeedPage';
@@ -57,6 +58,7 @@ function App() {
               <Route path="/account" element={<AccountPage />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/advertise" element={<AdvertisingPage />} />
+              <Route path="/advertiser-dashboard" element={<AdvertiserDashboardPage />} />
               <Route path="/candidate-portal" element={<CandidatePortalPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/stories" element={<StoriesPage />} />

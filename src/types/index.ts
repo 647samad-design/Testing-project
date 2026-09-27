@@ -312,6 +312,7 @@ export interface Advertisement {
   end_date: string | null;
   budget: number | null;
   status: AdStatus;
+  admin_notes: string | null;
   impressions: number;
   clicks: number;
   created_at: string;

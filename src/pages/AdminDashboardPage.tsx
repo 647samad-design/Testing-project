@@ -18,6 +18,7 @@ import {
   getPendingClaims, approveClaim, rejectClaim, type PendingClaim,
   getPendingEvents, approveEvent, rejectEvent, type PendingEvent,
   getPendingQuestionnaireResponses, approveQuestionnaireResponse, rejectQuestionnaireResponse, type PendingQuestionnaireResponse,
+  getPendingAds, approveAd, rejectAd, type PendingAd,
 } from '@/services/admin';
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
@@ -283,6 +284,10 @@ function SubmissionsTab() {
       <div className="border-t border-border pt-6">
         <QuestionnaireReviewSection />
       </div>
+
+      <div className="border-t border-border pt-6">
+        <AdReviewSection />
+      </div>
     </div>
   );
 }
@@ -418,6 +423,84 @@ function QuestionnaireReviewSection() {
             <div className="mt-3 flex gap-2">
               <Button size="sm" disabled={busyId === r.id} onClick={() => handleApprove(r.id)}>Approve</Button>
               <Button size="sm" variant="outline" disabled={busyId === r.id} onClick={() => handleReject(r.id)}>Reject</Button>
+            </div>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+}
+
+function AdReviewSection() {
+  const [ads, setAds] = useState<PendingAd[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setAds(await getPendingAds());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load ads.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleApprove(ad: PendingAd) {
+    if (!window.confirm(`Approve "${ad.ad_title}" from ${ad.advertiser?.organization_name ?? 'this advertiser'}? It will immediately start showing to voters.`)) return;
+    setBusyId(ad.id);
+    try {
+      await approveAd(ad.id);
+      toast.success('Ad approved and now live.');
+      setAds((prev) => prev.filter((a) => a.id !== ad.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to approve ad.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleReject(ad: PendingAd) {
+    const notes = window.prompt('Reason for rejecting (visible to the advertiser):') ?? undefined;
+    setBusyId(ad.id);
+    try {
+      await rejectAd(ad.id, notes);
+      toast.success('Ad rejected.');
+      setAds((prev) => prev.filter((a) => a.id !== ad.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to reject ad.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading ads…" />;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold">Advertiser Content Review</h3>
+      <p className="text-sm text-muted-foreground">
+        Ads only reach real voters once approved here — advertisers cannot activate their own ads.
+      </p>
+      {ads.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No pending ads.</p>
+      ) : (
+        ads.map((ad) => (
+          <Card key={ad.id} className="p-4">
+            <p className="text-sm font-medium">{ad.ad_title}</p>
+            <p className="text-xs text-muted-foreground">
+              {ad.advertiser?.organization_name ?? 'Unknown advertiser'} · {ad.placement} · {ad.ad_type}
+            </p>
+            {ad.ad_description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{ad.ad_description}</p>}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Links to: <a href={ad.destination_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{ad.destination_url}</a>
+            </p>
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" disabled={busyId === ad.id} onClick={() => handleApprove(ad)}>Approve</Button>
+              <Button size="sm" variant="outline" disabled={busyId === ad.id} onClick={() => handleReject(ad)}>Reject</Button>
             </div>
           </Card>
         ))

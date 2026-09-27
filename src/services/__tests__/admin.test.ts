@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -176,5 +176,32 @@ describe('event & questionnaire review — previously had zero admin access at a
   it('rejectQuestionnaireResponse sets status to rejected and logs the action', async () => {
     await rejectQuestionnaireResponse('resp-2');
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'rejected' }));
+  });
+});
+
+describe('ad review — advertisers cannot self-activate, real admin approval required', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('getPendingAds fetches only pending ads, oldest first', async () => {
+    const orderMock = vi.fn().mockResolvedValue({ data: [{ id: 'ad-1', ad_title: 'Vote for X', status: 'pending' }], error: null });
+    const eqPendingMock = vi.fn(() => ({ order: orderMock }));
+    fromMock.mockReturnValueOnce({ select: () => ({ eq: eqPendingMock }) } as unknown as ReturnType<typeof fromMock>);
+
+    const result = await getPendingAds();
+
+    expect(eqPendingMock).toHaveBeenCalledWith('status', 'pending');
+    expect(result).toHaveLength(1);
+  });
+
+  it('approveAd sets status to active and logs the action', async () => {
+    await approveAd('ad-1');
+    expect(fromMock).toHaveBeenCalledWith('advertisements');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'active' }));
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'approve_ad', p_target_id: 'ad-1' }));
+  });
+
+  it('rejectAd sets status to rejected with notes and logs the action', async () => {
+    await rejectAd('ad-2', 'Misleading claim');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'rejected', admin_notes: 'Misleading claim' }));
   });
 });

@@ -524,3 +524,33 @@ export async function rejectQuestionnaireResponse(id: string, notes?: string): P
   if (error) throw error;
   await logAdminAction('reject_questionnaire_response', 'candidate_questionnaire_responses', id);
 }
+
+export interface PendingAd {
+  id: string; campaign_name: string; ad_title: string; ad_description: string | null;
+  destination_url: string; placement: string; ad_type: string; submitted_at?: string;
+  advertiser?: { organization_name: string; contact_email: string };
+}
+
+/** Admin-only: advertiser-submitted ads awaiting content review before they
+ * can ever go live to real voters. */
+export async function getPendingAds(): Promise<PendingAd[]> {
+  const { data, error } = await supabase
+    .from('advertisements')
+    .select('*, advertiser:advertisers(organization_name, contact_email)')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true });
+  if (error || !data) return [];
+  return data as unknown as PendingAd[];
+}
+
+export async function approveAd(id: string): Promise<void> {
+  const { error } = await supabase.from('advertisements').update({ status: 'active' }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('approve_ad', 'advertisements', id);
+}
+
+export async function rejectAd(id: string, notes?: string): Promise<void> {
+  const { error } = await supabase.from('advertisements').update({ status: 'rejected', admin_notes: notes ?? null }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('reject_ad', 'advertisements', id);
+}

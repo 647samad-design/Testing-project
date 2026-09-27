@@ -106,9 +106,20 @@ export async function createAdvertiserProfile(input: Partial<Advertiser>): Promi
   }
 }
 
+/** The signed-in advertiser's own ads (any status). Explicitly filters by
+ * their advertiser_id rather than relying only on RLS — without this,
+ * `read_own_ads` OR `public_read_active_ads` together would mix in every
+ * OTHER advertiser's currently-active ads too, since both policies apply
+ * to a plain unfiltered SELECT. */
 export async function getMyAds(): Promise<Advertisement[]> {
   try {
-    const { data, error } = await supabase.from('advertisements').select('*').order('created_at', { ascending: false });
+    const advertiser = await getMyAdvertiserProfile();
+    if (!advertiser) return [];
+    const { data, error } = await supabase
+      .from('advertisements')
+      .select('*')
+      .eq('advertiser_id', advertiser.id)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return (data as Advertisement[]) ?? [];
   } catch {
@@ -124,4 +135,17 @@ export async function createAd(input: Partial<Advertisement>): Promise<Advertise
   } catch {
     return null;
   }
+}
+
+/** Submits a draft ad for admin review — the only status transition an
+ * advertiser can make toward going live; RLS enforces they can never set
+ * status to 'active' or 'rejected' themselves. */
+export async function submitAdForReview(adId: string): Promise<void> {
+  const { error } = await supabase.from('advertisements').update({ status: 'pending' }).eq('id', adId);
+  if (error) throw error;
+}
+
+export async function pauseAd(adId: string): Promise<void> {
+  const { error } = await supabase.from('advertisements').update({ status: 'paused' }).eq('id', adId);
+  if (error) throw error;
 }
