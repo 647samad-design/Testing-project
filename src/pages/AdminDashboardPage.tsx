@@ -31,7 +31,10 @@ import {
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
-import type { VerificationStatus } from '@/types';
+import type { VerificationStatus, Election, Source } from '@/types';
+import { getElections as getElectionsList } from '@/services/elections';
+import { getSources } from '@/services/sources';
+import { deleteElection, deleteSource } from '@/services/admin';
 import { Navigate } from 'react-router-dom';
 import { LoadingState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
@@ -185,6 +188,9 @@ export function AdminDashboardPage() {
             <AddSourceForm />
             <AddElectionForm />
             <AddMeasureForm />
+          </div>
+          <div className="mt-6">
+            <ManageRecordsPanel />
           </div>
         </TabsContent>
 
@@ -1751,21 +1757,27 @@ function AddMeasureForm() {
   const [title, setTitle] = useState('');
   const [measureType, setMeasureType] = useState('amendment');
   const [summary, setSummary] = useState('');
+  const [electionId, setElectionId] = useState('');
+  const [electionsList, setElectionsList] = useState<Election[]>([]);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    getElectionsList().then((els) => {
+      setElectionsList(els);
+      if (els.length > 0) setElectionId(els[0].id);
+    });
+  }, []);
+
   async function handleSave() {
+    if (!electionId) {
+      toast.error('Create an election first, then add a ballot measure.');
+      return;
+    }
     setSaving(true);
     try {
       const { addBallotMeasure } = await import('@/services/admin');
-      // Use the first election
-      const { supabase } = await import('@/lib/supabase');
-      const { data } = await supabase.from('elections').select('id').order('election_date', { ascending: false }).limit(1).maybeSingle();
-      if (!data) {
-        toast.error('Create an election first, then add a ballot measure.');
-        return;
-      }
-      await addBallotMeasure({ election_id: data.id, title, measure_type: measureType, summary });
+      await addBallotMeasure({ election_id: electionId, title, measure_type: measureType, summary });
       setTitle(''); setSummary('');
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -1783,6 +1795,13 @@ function AddMeasureForm() {
       </h3>
       <div className="space-y-3">
         <div>
+          <Label className="text-xs">Election</Label>
+          <select value={electionId} onChange={(e) => setElectionId(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            {electionsList.length === 0 && <option value="">No elections yet — create one first</option>}
+            {electionsList.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+          </select>
+        </div>
+        <div>
           <Label className="text-xs">Title</Label>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
@@ -1798,10 +1817,109 @@ function AddMeasureForm() {
           <Label className="text-xs">Summary</Label>
           <Input value={summary} onChange={(e) => setSummary(e.target.value)} />
         </div>
-        <Button onClick={handleSave} disabled={!title || saving} size="sm" className="w-full">
+        <Button onClick={handleSave} disabled={!title || !electionId || saving} size="sm" className="w-full">
           {saving ? 'Saving…' : saved ? 'Added!' : 'Add Measure'}
         </Button>
       </div>
+    </Card>
+  );
+}
+
+function ManageRecordsPanel() {
+  const [electionsList, setElectionsList] = useState<Election[]>([]);
+  const [sourcesList, setSourcesList] = useState<Source[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [view, setView] = useState<'elections' | 'sources'>('elections');
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [els, srcs] = await Promise.all([getElectionsList(), getSources()]);
+      setElectionsList(els);
+      setSourcesList(srcs);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load records.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleDeleteElection(id: string, name: string) {
+    if (!window.confirm(`Delete election "${name}"? This will also delete any ballot contests and measures tied to it. This cannot be undone.`)) return;
+    setBusyId(id);
+    try {
+      await deleteElection(id);
+      toast.success('Election deleted.');
+      setElectionsList((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete — it may still be referenced elsewhere.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDeleteSource(id: string, title: string) {
+    if (!window.confirm(`Delete source "${title}"? This cannot be undone.`)) return;
+    setBusyId(id);
+    try {
+      await deleteSource(id);
+      toast.success('Source deleted.');
+      setSourcesList((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete — it may still be cited as evidence elsewhere.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading records…" />;
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <Button size="sm" variant={view === 'elections' ? 'default' : 'outline'} onClick={() => setView('elections')}>Elections</Button>
+        <Button size="sm" variant={view === 'sources' ? 'default' : 'outline'} onClick={() => setView('sources')}>Sources</Button>
+      </div>
+      {view === 'elections' ? (
+        electionsList.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No elections yet.</p>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {electionsList.map((e) => (
+              <div key={e.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <div>
+                  <p className="font-medium">{e.name}</p>
+                  <p className="text-xs text-muted-foreground">{e.election_date}</p>
+                </div>
+                <button disabled={busyId === e.id} onClick={() => handleDeleteElection(e.id, e.name)} className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        sourcesList.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No sources yet.</p>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {sourcesList.map((s) => (
+              <div key={s.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{s.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{s.publisher}</p>
+                </div>
+                <button disabled={busyId === s.id} onClick={() => handleDeleteSource(s.id, s.title)} className="shrink-0 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )
+      )}
     </Card>
   );
 }
