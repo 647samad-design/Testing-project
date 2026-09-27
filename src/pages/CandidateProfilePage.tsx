@@ -24,6 +24,7 @@ import type { Candidate, CandidatePosition, CandidateStatement, VotingRecord, Ju
 import { cn } from '@/lib/utils';
 import { ShieldCheck, Calendar, MapPin } from 'lucide-react';
 import { MessageCandidateButton } from '@/components/shared/MessageCandidateButton';
+import { ReportButton } from '@/components/shared/ReportButton';
 import { FollowButton } from '@/components/shared/FollowButton';
 import { VerificationBadges, getVerificationLevels } from '@/components/shared/VerificationBadges';
 import { QuestionsSection } from '@/components/shared/QuestionsSection';
@@ -222,6 +223,7 @@ export function CandidateProfilePage() {
               <ClaimProfileButton candidateId={candidate.id} candidateName={fullName} />
               <FollowButton followableType="candidate" followableId={candidate.id} size="sm" />
               <MessageCandidateButton candidateId={candidate.id} />
+              <ReportButton contentType="candidate" contentId={candidate.id} label="Report inaccuracy" />
             </div>
           </div>
         </div>

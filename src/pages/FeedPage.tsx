@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Rss, Heart, MessageCircle, Calendar, MapPin, ExternalLink, Pin,
   Users, Scale, Bell, Share2, TrendingUp, Flame, Sparkles, Zap,
-  Mic, Vote as VoteIcon, Newspaper, ChevronRight, UserPlus, Bookmark,
+  Mic, Vote as VoteIcon, Newspaper, ChevronRight, UserPlus,
   CheckCircle2, ShieldCheck,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { LoadingState } from '@/components/shared/StateComponents';
+import { ReportButton } from '@/components/shared/ReportButton';
 import {
   getSocialFeed, getFollowedCandidates, getFollowedIssues,
   togglePostLike, getNotifications, getFollowerCount,
@@ -431,8 +432,8 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
                 <TypeIcon className={cn('h-6 w-6', typeStyle.color)} />
               </div>
             </div>
-          ) : (
-            <Link to={candidate ? `/candidates/${candidate.id}` : '#'}>
+          ) : candidate ? (
+            <Link to={`/candidates/${candidate.id}`}>
               <div className="relative">
                 <Avatar className="h-12 w-12 border-2 border-border">
                   {candidate?.photo_url ? (
@@ -445,6 +446,12 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
                 </Avatar>
               </div>
             </Link>
+          ) : (
+            <div className="relative">
+              <Avatar className="h-12 w-12 border-2 border-border">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">?</AvatarFallback>
+              </Avatar>
+            </div>
           )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -546,9 +553,9 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
             <Heart className={cn('h-4 w-4 transition-transform', post.liked_by_me && 'fill-current', likedAnim && 'scale-125')} />
             {post.like_count ?? 0}
           </button>
-          {!isSourcePost && (
+          {!isSourcePost && candidate && (
             <Link
-              to={candidate ? `/candidates/${candidate.id}?tab=questions` : '#'}
+              to={`/candidates/${candidate.id}?tab=questions`}
               className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all touch-target"
             >
               <MessageCircle className="h-4 w-4" />
@@ -562,9 +569,9 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
             <Share2 className="h-4 w-4" />
             Share
           </button>
-          <button className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all touch-target">
-            <Bookmark className="h-4 w-4" />
-          </button>
+          <div className="ml-auto">
+            <ReportButton contentType="feed_post" contentId={post.id} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all touch-target" />
+          </div>
         </div>
       </div>
     </Card>

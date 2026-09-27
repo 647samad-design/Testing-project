@@ -20,6 +20,7 @@ import {
   getPendingQuestionnaireResponses, approveQuestionnaireResponse, rejectQuestionnaireResponse, type PendingQuestionnaireResponse,
   getPendingAds, approveAd, rejectAd, type PendingAd,
 } from '@/services/admin';
+import { getPendingReports, markReportReviewed, type ContentReport } from '@/services/content-reports';
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
@@ -88,6 +89,7 @@ export function AdminDashboardPage() {
           <TabsTrigger value="manage">Manage Candidates</TabsTrigger>
           <TabsTrigger value="import">Import Candidates</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
 
@@ -194,6 +196,10 @@ export function AdminDashboardPage() {
 
         <TabsContent value="admins" className="mt-6">
           <ManageAdminsTab currentUserId={profile.id} />
+        </TabsContent>
+
+        <TabsContent value="reports" className="mt-6">
+          <ContentReportsTab />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
@@ -1172,6 +1178,70 @@ function ManageAdminsTab({ currentUserId }: { currentUserId: string }) {
               <ShieldCheckIcon className="h-3.5 w-3.5" /> Make admin
             </Button>
           )}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ContentReportsTab() {
+  const [reports, setReports] = useState<ContentReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setReports(await getPendingReports());
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load reports.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function handleResolve(id: string, outcome: 'actioned' | 'dismissed') {
+    setBusyId(id);
+    try {
+      await markReportReviewed(id, outcome);
+      toast.success(outcome === 'actioned' ? 'Marked as actioned.' : 'Dismissed.');
+      setReports((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update report.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading reports…" />;
+
+  if (reports.length === 0) {
+    return <p className="text-sm text-muted-foreground py-8 text-center">No pending reports — nothing flagged right now.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground mb-2">
+        Content flagged by users as false, abusive, or spam. "Actioned" means you removed or fixed
+        the content yourself elsewhere — this just tracks that the report was handled.
+      </p>
+      {reports.map((r) => (
+        <Card key={r.id} className="p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">{r.reason} <span className="font-normal text-muted-foreground">— {r.content_type}</span></p>
+              {r.description && <p className="mt-1 text-sm text-muted-foreground">{r.description}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Content ID: {r.content_id} · Reported {new Date(r.created_at).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="shrink-0 flex gap-2">
+              <Button size="sm" disabled={busyId === r.id} onClick={() => handleResolve(r.id, 'actioned')}>Mark Actioned</Button>
+              <Button size="sm" variant="outline" disabled={busyId === r.id} onClick={() => handleResolve(r.id, 'dismissed')}>Dismiss</Button>
+            </div>
+          </div>
         </Card>
       ))}
     </div>
