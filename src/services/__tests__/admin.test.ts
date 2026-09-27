@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -320,5 +320,40 @@ describe('Claims Library admin research — the library existed with correct RLS
     expect(fromMock).toHaveBeenCalledWith('claims');
     expect(updateMock).toHaveBeenCalledWith({ assessment: 'supported', explanation: 'Verified against three independent sources.' });
     expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'assess_claim', p_target_id: 'claim-1' }));
+  });
+});
+
+describe('getRevenueSummary — payments.amount is in cents, previously never summed or shown anywhere', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('sums succeeded payments into total, last-30-days, and by-type breakdowns', async () => {
+    const now = new Date();
+    const recent = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    const old = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
+
+    const orderMock = vi.fn().mockResolvedValue({
+      data: [
+        { id: 'p1', amount: 900, payment_type: 'subscription', description: null, created_at: recent },
+        { id: 'p2', amount: 2500, payment_type: 'advertising', description: null, created_at: old },
+      ],
+      error: null,
+    });
+    const eqMock = vi.fn(() => ({ order: orderMock }));
+    fromMock.mockReturnValueOnce({ select: () => ({ eq: eqMock }) } as unknown as ReturnType<typeof fromMock>);
+
+    const result = await getRevenueSummary();
+
+    expect(eqMock).toHaveBeenCalledWith('status', 'succeeded');
+    expect(result.totalCents).toBe(3400);
+    expect(result.last30DaysCents).toBe(900);
+    expect(result.byType).toEqual({ subscription: 900, advertising: 2500 });
+    expect(result.recentPayments).toHaveLength(2);
+  });
+
+  it('returns all zeros without erroring when there are no succeeded payments yet', async () => {
+    fromMock.mockReturnValueOnce({ select: () => ({ eq: () => ({ order: () => Promise.resolve({ data: [], error: null }) }) }) } as unknown as ReturnType<typeof fromMock>);
+    const result = await getRevenueSummary();
+    expect(result.totalCents).toBe(0);
+    expect(result.byType).toEqual({});
   });
 });

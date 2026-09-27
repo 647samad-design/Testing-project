@@ -23,6 +23,7 @@ import {
 } from '@/services/admin';
 import { getPendingReports, markReportReviewed, type ContentReport } from '@/services/content-reports';
 import { getUnresearchedClaims, assessClaimInLibrary, type UnresearchedClaim } from '@/services/admin';
+import { getRevenueSummary, type RevenueSummary } from '@/services/admin';
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
@@ -661,6 +662,11 @@ const OVERVIEW_PLAN_LABELS: Record<string, string> = {
   premium_yearly: 'Premium (Yearly, legacy)',
 };
 
+/** payments.amount is stored in cents, matching Stripe's native format. */
+function formatCents(cents: number): string {
+  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+}
+
 function ClaimsReviewTab() {
   const [claims, setClaims] = useState<PendingClaim[]>([]);
   const [loading, setLoading] = useState(true);
@@ -754,13 +760,20 @@ function ClaimsReviewTab() {
 
 function BillingOverviewTab() {
   const [overview, setOverview] = useState<BillingOverview | null>(null);
+  const [revenue, setRevenue] = useState<RevenueSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getBillingOverview().then((data) => { setOverview(data); setLoading(false); }).catch((err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to load billing overview.');
-      setLoading(false);
-    });
+    Promise.all([getBillingOverview(), getRevenueSummary()])
+      .then(([overviewData, revenueData]) => {
+        setOverview(overviewData);
+        setRevenue(revenueData);
+        setLoading(false);
+      })
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : 'Failed to load billing overview.');
+        setLoading(false);
+      });
   }, []);
 
   if (loading) return <LoadingState message="Loading billing overview…" />;
@@ -768,6 +781,32 @@ function BillingOverviewTab() {
 
   return (
     <div className="space-y-5">
+      {revenue && (
+        <Card className="p-5 bg-gradient-to-br from-primary/5 to-transparent">
+          <h3 className="font-semibold mb-3 flex items-center gap-2"><DollarSign className="h-4 w-4" /> Total Revenue</h3>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-xs text-muted-foreground">All-Time</p>
+              <p className="mt-1 text-3xl font-bold text-primary">{formatCents(revenue.totalCents)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Last 30 Days</p>
+              <p className="mt-1 text-3xl font-bold">{formatCents(revenue.last30DaysCents)}</p>
+            </div>
+          </div>
+          {Object.keys(revenue.byType).length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border/50 space-y-1.5">
+              {Object.entries(revenue.byType).map(([type, cents]) => (
+                <div key={type} className="flex items-center justify-between text-sm">
+                  <span className="capitalize text-muted-foreground">{type.replace(/_/g, ' ')}</span>
+                  <span className="font-medium">{formatCents(cents)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Total Users</p>

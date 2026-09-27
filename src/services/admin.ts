@@ -650,3 +650,44 @@ export async function assessClaimInLibrary(
   if (error) throw error;
   await logAdminAction('assess_claim', 'claims', claimId, { assessment });
 }
+
+export interface RevenueSummary {
+  totalCents: number;
+  last30DaysCents: number;
+  byType: Record<string, number>;
+  recentPayments: Array<{ id: string; amount: number; payment_type: string; description: string | null; created_at: string }>;
+}
+
+/** Admin-only: actual revenue totals from Stripe payments. payments.amount
+ * (and revenue_transactions.amount_cents) are stored in CENTS, matching
+ * Stripe's native format -- previously nothing in the app summed or
+ * displayed this at all; the Billing Overview only ever counted active
+ * subscriptions by plan, never a dollar figure, even though every payment
+ * has been recorded here (14+ rows) since the Stripe integration went live. */
+export async function getRevenueSummary(): Promise<RevenueSummary> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: allPayments } = await supabase
+    .from('payments')
+    .select('id, amount, payment_type, description, created_at')
+    .eq('status', 'succeeded')
+    .order('created_at', { ascending: false });
+
+  const rows = allPayments ?? [];
+  const totalCents = rows.reduce((sum, p) => sum + p.amount, 0);
+  const last30DaysCents = rows
+    .filter((p) => p.created_at >= thirtyDaysAgo)
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const byType: Record<string, number> = {};
+  for (const p of rows) {
+    byType[p.payment_type] = (byType[p.payment_type] ?? 0) + p.amount;
+  }
+
+  return {
+    totalCents,
+    last30DaysCents,
+    byType,
+    recentPayments: rows.slice(0, 15),
+  };
+}
