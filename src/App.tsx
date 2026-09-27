@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Header, Footer } from '@/components/shared/Layout';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { LandingPage } from '@/pages/LandingPage';
 import { MyBallotPage } from '@/pages/MyBallotPage';
 import { CandidatesPage } from '@/pages/CandidatesPage';
@@ -37,13 +38,15 @@ import { ScrollToTop } from '@/components/shared/ScrollToTop';
 
 function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-1">
-            <Routes>
+            <ErrorBoundary>
+              <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/ballot" element={<MyBallotPage />} />
               <Route path="/ballot/:contestId" element={<ContestDetailPage />} />
@@ -79,12 +82,14 @@ function App() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="*" element={<LandingPage />} />
             </Routes>
+            </ErrorBoundary>
           </main>
           <Footer />
         </div>
         <Toaster />
       </BrowserRouter>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
