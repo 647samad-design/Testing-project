@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, FileText, Calendar, MessageSquare, Loader2, Plus, Sparkles, Users, X, Megaphone, Trash2, Pencil, Award, BarChart3 } from 'lucide-react';
+import { parseDateOnly } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -731,7 +732,7 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
               <div key={e.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
                 <div>
                   <p className="font-medium">{e.title}{!e.is_public && ' (Hidden)'}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(e.event_date).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">{parseDateOnly(e.event_date).toLocaleDateString()}</p>
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => startEditEvent(e)} className="p-1.5 text-muted-foreground hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button>

@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { LoadingState } from '@/components/shared/StateComponents';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { ReportButton } from '@/components/shared/ReportButton';
+import { parseDateOnly } from '@/lib/date-utils';
 import {
   getSocialFeed, getFollowedCandidates, getFollowedIssues,
   togglePostLike, getNotifications, getFollowerCount,
@@ -637,5 +638,5 @@ function formatTimeAgo(dateStr: string): string {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  return parseDateOnly(dateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 }

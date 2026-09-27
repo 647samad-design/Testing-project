@@ -6,6 +6,7 @@ import {
   Sparkles, CalendarDays, Info, ShieldCheck,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { parseDateOnly } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -81,8 +82,8 @@ export function ElectionInfo({ candidateId }: { candidateId: string }) {
 
   if (!extras?.election_date && !extras?.next_election_date && !extras?.term_length) return null;
 
-  const electionDate = extras?.election_date ? new Date(extras.election_date) : null;
-  const nextElection = extras?.next_election_date ? new Date(extras.next_election_date) : null;
+  const electionDate = extras?.election_date ? parseDateOnly(extras.election_date) : null;
+  const nextElection = extras?.next_election_date ? parseDateOnly(extras.next_election_date) : null;
   const daysToNext = nextElection
     ? Math.max(0, Math.ceil((nextElection.getTime() - Date.now()) / 86400000))
     : null;

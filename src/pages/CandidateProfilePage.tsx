@@ -37,6 +37,7 @@ import {
 } from '@/components/shared/CandidateProfileExtras';
 import { getFeedPosts, trackProfileView } from '@/services/social';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { parseDateOnly } from '@/lib/date-utils';
 import { getTeamMembers } from '@/services/social';
 import type { FeedPost, CampaignTeamMember } from '@/types';
 import { getCampaign, type Campaign as CampaignType } from '@/services/campaign';
@@ -277,10 +278,10 @@ export function CandidateProfilePage() {
               <div key={ev.id} className="flex items-start gap-3 rounded-xl bg-secondary/30 p-3">
                 <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-primary/10">
                   <span className="text-xs font-bold text-primary">
-                    {new Date(ev.event_date).toLocaleDateString('en-US', { month: 'short' })}
+                    {parseDateOnly(ev.event_date).toLocaleDateString('en-US', { month: 'short' })}
                   </span>
                   <span className="text-lg font-bold text-primary leading-none">
-                    {new Date(ev.event_date).getDate()}
+                    {parseDateOnly(ev.event_date).getDate()}
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -420,7 +421,7 @@ export function CandidateProfilePage() {
                   {post.image_url && <img src={post.image_url} alt="Post image" className="mt-2 rounded-xl max-h-60 object-cover" />}
                   {post.event_date && (
                     <div className="mt-2 rounded-xl border border-border bg-secondary/30 p-2 text-sm">
-                      <span className="font-semibold">{new Date(post.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                      <span className="font-semibold">{parseDateOnly(post.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
                       {post.event_start_time && <span className="text-muted-foreground"> at {post.event_start_time}</span>}
                       {post.event_location && <span className="text-muted-foreground"> — {post.event_location}</span>}
                     </div>
