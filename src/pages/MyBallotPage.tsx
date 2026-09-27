@@ -29,12 +29,39 @@ export function MyBallotPage() {
   const { user } = useAuth();
   const { contestId } = useParams();
   const [address, setAddress] = useState('');
+  const [addressInput, setAddressInput] = useState('');
+  const [needsAddress, setNeedsAddress] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [election, setElection] = useState<Election | null>(null);
   const [contests, setContests] = useState<BallotContest[]>([]);
   const [measures, setMeasures] = useState<BallotMeasure[]>([]);
   const [districts, setDistricts] = useState<DistrictResult | null>(null);
+
+  async function loadBallotFor(savedAddress: string) {
+    sessionStorage.setItem('ballotlens_address', savedAddress);
+    setAddress(savedAddress);
+    setNeedsAddress(false);
+    setLoading(true);
+    setError(null);
+
+    getVoterDistricts(savedAddress).then(setDistricts).catch(() => {});
+
+    const result = await getVoterBallot(savedAddress);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      setElection(result.election);
+      setContests(result.contests);
+      setMeasures(result.measures);
+    }
+    setLoading(false);
+  }
+
+  function handleAddressSubmit() {
+    if (!addressInput.trim()) return;
+    loadBallotFor(addressInput.trim());
+  }
 
   useEffect(() => {
     async function init() {
@@ -49,28 +76,22 @@ export function MyBallotPage() {
       }
 
       if (!savedAddress) {
-        navigate('/');
+        // Previously silently redirected to "/" with no explanation --
+        // "My Ballot" is a primary header nav link, so a first-time visitor
+        // clicking it directly (the normal way anyone would reach this
+        // page) would just get bounced back to the page they were probably
+        // already on, with nothing telling them why or what to do next.
+        // This page now asks for the address itself instead of assuming
+        // one was already entered somewhere else.
+        setNeedsAddress(true);
+        setLoading(false);
         return;
       }
-      setAddress(savedAddress);
 
-      setLoading(true);
-      setError(null);
-
-      getVoterDistricts(savedAddress).then(setDistricts).catch(() => {});
-
-      const result = await getVoterBallot(savedAddress);
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setElection(result.election);
-        setContests(result.contests);
-        setMeasures(result.measures);
-      }
-      setLoading(false);
+      await loadBallotFor(savedAddress);
     }
     init();
-  }, [navigate, user]);
+  }, [user]);
 
   // Group contests by level
   const contestsByLevel = levelOrder.map((level) => ({
@@ -78,6 +99,32 @@ export function MyBallotPage() {
     label: levelLabels[level],
     contests: contests.filter((c) => c.contest_level === level),
   })).filter((g) => g.contests.length > 0);
+
+  if (needsAddress) {
+    return (
+      <div className="mx-auto max-w-lg px-4 sm:px-6 py-16 text-center animate-fade-in">
+        <MapPin className="mx-auto h-10 w-10 text-primary" />
+        <h1 className="mt-4 font-display text-2xl font-semibold">Find your ballot</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Enter your address or ZIP code to see every race and measure on your ballot.
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <input
+            type="text"
+            value={addressInput}
+            onChange={(e) => setAddressInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddressSubmit()}
+            placeholder="Enter your ZIP code"
+            className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-base"
+            aria-label="Enter your address or ZIP code"
+          />
+          <Button size="lg" onClick={handleAddressSubmit} disabled={!addressInput.trim()} className="rounded-xl font-semibold">
+            See My Ballot
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return <LoadingState message="Finding your ballot…" />;
