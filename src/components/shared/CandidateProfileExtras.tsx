@@ -310,7 +310,7 @@ export function WhoFundsMe({ candidateId }: { candidateId: string }) {
 
       {sources[0]?.report_date && (
         <p className="mt-3 text-[10px] text-muted-foreground">
-          Data as of {new Date(sources[0].report_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+          Data as of {parseDateOnly(sources[0].report_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
         </p>
       )}
     </Card>
@@ -377,7 +377,7 @@ export function Endorsements({ candidateId }: { candidateId: string }) {
                 </div>
                 {e.endorsement_date && (
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {new Date(e.endorsement_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    {parseDateOnly(e.endorsement_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </p>
                 )}
               </div>

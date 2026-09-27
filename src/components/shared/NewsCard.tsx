@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { SourceBadge } from './SourceBadge';
 import type { NewsArticle } from '@/types';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/date-utils';
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -61,10 +62,4 @@ export function NewsCard({ article, className }: NewsCardProps) {
       </Card>
     </a>
   );
-}
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }

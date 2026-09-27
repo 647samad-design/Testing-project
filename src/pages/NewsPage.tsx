@@ -10,6 +10,7 @@ import { AdSlot } from '@/components/shared/AdSlot';
 import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { getMediaByTab } from '@/services/news';
 import { getCandidate } from '@/services/candidates';
+import { formatDate } from '@/lib/date-utils';
 import type { NewsArticle, Video as VideoType, SocialPost, Candidate } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -252,10 +253,4 @@ function SocialCard({ post }: { post: SocialPost }) {
       </Card>
     </a>
   );
-}
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { getCandidatePromises, addCandidatePromise, updatePromiseStatus } from '@/services/civic';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
+import { parseDateOnly } from '@/lib/date-utils';
 import type { CandidatePromise, PromiseStatus } from '@/types';
 
 const STATUS_STYLES: Record<PromiseStatus, { label: string; icon: typeof CheckCircle2; color: string; bg: string; dot: string }> = {
@@ -155,7 +156,7 @@ export function PromisesTracker({ candidateId, canEdit }: { candidateId: string;
                       </Badge>
                       {promise.date_made && (
                         <span className="text-xs text-muted-foreground">
-                          Promised {new Date(promise.date_made).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          Promised {parseDateOnly(promise.date_made).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                       )}
                       {promise.issue && (

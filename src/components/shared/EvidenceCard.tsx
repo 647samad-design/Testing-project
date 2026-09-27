@@ -5,6 +5,7 @@ import { SourceBadge } from './SourceBadge';
 import { ExplainSimply } from './ExplainSimply';
 import type { CandidatePosition, VotingRecord, CandidateStatement } from '@/types';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/date-utils';
 
 type Evidence = CandidatePosition | VotingRecord | CandidateStatement;
 
@@ -119,10 +120,4 @@ export function EvidenceCard({ type, data, className }: EvidenceCardProps) {
       </div>
     </Card>
   );
-}
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }

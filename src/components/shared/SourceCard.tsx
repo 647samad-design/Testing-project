@@ -2,6 +2,7 @@ import { ChevronRight, FileText } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { SourceBadge } from './SourceBadge';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/date-utils';
 import type { Source } from '@/types';
 
 interface SourceCardProps {
@@ -51,10 +52,4 @@ export function SourceCard({ source, showBadge = true, className }: SourceCardPr
       </Card>
     </Wrapper>
   );
-}
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }

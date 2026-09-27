@@ -30,3 +30,23 @@ export function parseDateOnly(dateString: string): Date {
   const [year, month, day] = dateString.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
+
+/**
+ * Formats a plain date-only string ("YYYY-MM-DD", no time/timezone) as
+ * "Mon D, YYYY" for display — e.g. voting record dates, source publication
+ * dates, statement dates, bar admission dates, social/news post dates.
+ *
+ * This exact implementation (new Date(dateStr) -> toLocaleDateString())
+ * was independently duplicated, bug and all, in 5 separate files
+ * (EvidenceCard, NewsCard, SourceCard, and local copies inside
+ * CandidateProfilePage and NewsPage) — every one of them showed the wrong
+ * calendar day for anyone in a timezone behind UTC, same root cause as
+ * parseDateOnly's other callers. Consolidated into one correctly-
+ * implemented function so this specific bug can't reappear the same way
+ * in a sixth place later.
+ */
+export function formatDate(dateStr: string): string {
+  const d = parseDateOnly(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}

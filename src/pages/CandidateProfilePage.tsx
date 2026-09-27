@@ -37,7 +37,7 @@ import {
 } from '@/components/shared/CandidateProfileExtras';
 import { getFeedPosts, trackProfileView } from '@/services/social';
 import { usePageMeta } from '@/hooks/use-page-meta';
-import { parseDateOnly } from '@/lib/date-utils';
+import { parseDateOnly, formatDate } from '@/lib/date-utils';
 import { getTeamMembers } from '@/services/social';
 import type { FeedPost, CampaignTeamMember } from '@/types';
 import { getCampaign, type Campaign as CampaignType } from '@/services/campaign';
@@ -690,11 +690,6 @@ function InfoCard({ icon: Icon, title, content }: { icon: React.ComponentType<{ 
   );
 }
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
 
 function CandidateNewsSection({
   news, videos, social, candidateId,
