@@ -11,13 +11,10 @@ interface SourceCardProps {
 }
 
 export function SourceCard({ source, showBadge = true, className }: SourceCardProps) {
+  const Wrapper = source.url ? 'a' : 'div';
+  const linkProps = source.url ? { href: source.url, target: '_blank', rel: 'noopener noreferrer' } : {};
   return (
-    <a
-      href={source.url ?? '#'}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block"
-    >
+    <Wrapper {...linkProps} className="block">
       <Card className={cn('group p-4 transition-all hover:border-primary/30 hover:shadow-sm', className)}>
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
@@ -52,7 +49,7 @@ export function SourceCard({ source, showBadge = true, className }: SourceCardPr
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5" />
         </div>
       </Card>
-    </a>
+    </Wrapper>
   );
 }
 

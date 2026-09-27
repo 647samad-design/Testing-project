@@ -725,8 +725,8 @@ function CandidateNewsSection({
             </Link>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {videos.map((video) => (
-              <a key={video.id} href={video.url ?? '#'} target="_blank" rel="noopener noreferrer" className="block">
+            {videos.filter((video) => video.url).map((video) => (
+              <a key={video.id} href={video.url!} target="_blank" rel="noopener noreferrer" className="block">
                 <Card className="group p-4 transition-all hover:border-primary/30 hover:shadow-sm">
                   <div className="flex items-start gap-3">
                     <div className="relative flex h-16 w-24 shrink-0 items-center justify-center rounded-lg bg-secondary overflow-hidden">
@@ -762,8 +762,8 @@ function CandidateNewsSection({
             </Link>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {social.map((post) => (
-              <a key={post.id} href={post.url ?? '#'} target="_blank" rel="noopener noreferrer" className="block">
+            {social.filter((post) => post.url).map((post) => (
+              <a key={post.id} href={post.url!} target="_blank" rel="noopener noreferrer" className="block">
                 <Card className="group p-4 transition-all hover:border-primary/30 hover:shadow-sm">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50">

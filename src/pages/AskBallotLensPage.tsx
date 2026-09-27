@@ -287,10 +287,10 @@ function AIResponseCard({ response }: { response: AIResponse }) {
         <section className="mt-6 border-t border-border pt-6">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Sources</h3>
           <div className="mt-3 space-y-2">
-            {response.sources.map((src) => (
+            {response.sources.filter((src) => src.url).map((src) => (
               <a
                 key={src.id}
-                href={src.url ?? '#'}
+                href={src.url!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-lg border border-border p-3 text-sm transition-colors hover:border-primary/30 hover:bg-secondary/50"
@@ -381,10 +381,10 @@ function ClaimResultCard({ result }: { result: ClaimAssessment }) {
         <section className="mt-6 border-t border-border pt-6">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Sources</h3>
           <div className="mt-3 space-y-2">
-            {result.sources.map((src) => (
+            {result.sources.filter((src) => src.url).map((src) => (
               <a
                 key={src.id}
-                href={src.url ?? '#'}
+                href={src.url!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-lg border border-border p-3 text-sm transition-colors hover:border-primary/30 hover:bg-secondary/50"

@@ -68,12 +68,12 @@ export function EvidenceCard({ type, data, className }: EvidenceCardProps) {
               {vr.vote_date && (
                 <span className="text-xs text-muted-foreground">{formatDate(vr.vote_date)}</span>
               )}
-              {vr.source && (
+              {vr.source?.url && (
                 <>
                   <span className="text-xs text-muted-foreground">·</span>
                   <Link
                     to="#"
-                    onClick={(e) => { e.preventDefault(); window.open(vr.source?.url ?? '#', '_blank'); }}
+                    onClick={(e) => { e.preventDefault(); window.open(vr.source!.url!, '_blank'); }}
                     className="text-xs text-primary hover:underline font-semibold"
                   >
                     View Source <ChevronRight className="inline h-3 w-3" />

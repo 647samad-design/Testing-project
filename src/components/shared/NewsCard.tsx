@@ -13,8 +13,10 @@ export function NewsCard({ article, className }: NewsCardProps) {
   const isOpinion = article.article_type === 'opinion';
   const isCampaign = article.article_type === 'campaign_material';
 
+  if (!article.url) return null;
+
   return (
-    <a href={article.url ?? '#'} target="_blank" rel="noopener noreferrer" className="block">
+    <a href={article.url} target="_blank" rel="noopener noreferrer" className="block">
       <Card className={cn('group p-4 transition-all hover:border-primary/30 hover:shadow-sm', className)}>
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">

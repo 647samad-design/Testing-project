@@ -184,8 +184,9 @@ export function NewsPage() {
 }
 
 function VideoCard({ video }: { video: VideoType }) {
+  if (!video.url) return null;
   return (
-    <a href={video.url ?? '#'} target="_blank" rel="noopener noreferrer" className="block">
+    <a href={video.url} target="_blank" rel="noopener noreferrer" className="block">
       <Card className="group p-4 transition-all hover:border-primary/30 hover:shadow-sm">
         <div className="flex items-start gap-3">
           <div className="relative flex h-16 w-24 shrink-0 items-center justify-center rounded-lg bg-secondary overflow-hidden">
@@ -218,8 +219,9 @@ function VideoCard({ video }: { video: VideoType }) {
 }
 
 function SocialCard({ post }: { post: SocialPost }) {
+  if (!post.url) return null;
   return (
-    <a href={post.url ?? '#'} target="_blank" rel="noopener noreferrer" className="block">
+    <a href={post.url} target="_blank" rel="noopener noreferrer" className="block">
       <Card className="group p-4 transition-all hover:border-primary/30 hover:shadow-sm">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50">
