@@ -35,6 +35,9 @@ import type { VerificationStatus, Election, Source } from '@/types';
 import { getElections as getElectionsList } from '@/services/elections';
 import { getSources } from '@/services/sources';
 import { deleteElection, deleteSource } from '@/services/admin';
+import { addVotingRecord, addCandidatePosition } from '@/services/admin';
+import { getIssues } from '@/services/districts';
+import type { Issue } from '@/types';
 import { Navigate } from 'react-router-dom';
 import { LoadingState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
@@ -188,6 +191,8 @@ export function AdminDashboardPage() {
             <AddSourceForm />
             <AddElectionForm />
             <AddMeasureForm />
+            <AddVotingRecordForm />
+            <AddCandidatePositionForm />
           </div>
           <div className="mt-6">
             <ManageRecordsPanel />
@@ -1819,6 +1824,177 @@ function AddMeasureForm() {
         </div>
         <Button onClick={handleSave} disabled={!title || !electionId || saving} size="sm" className="w-full">
           {saving ? 'Saving…' : saved ? 'Added!' : 'Add Measure'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function CandidateSearchPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const [query, setQuery] = useState('');
+  const [candidates, setCandidates] = useState<Awaited<ReturnType<typeof listCandidatesForAdmin>>>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => { listCandidatesForAdmin().then(setCandidates); }, []);
+
+  const selected = candidates.find((c) => c.id === value);
+  const filtered = candidates.filter((c) =>
+    `${c.first_name} ${c.last_name}`.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 8);
+
+  return (
+    <div className="relative">
+      <Input
+        value={open ? query : (selected ? `${selected.first_name} ${selected.last_name}` : '')}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => { setOpen(true); setQuery(''); }}
+        placeholder="Search candidate by name…"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card shadow-md max-h-48 overflow-y-auto">
+          {filtered.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => { onChange(c.id); setOpen(false); setQuery(''); }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/50"
+            >
+              {c.first_name} {c.last_name}{c.party ? ` (${c.party})` : ''}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddVotingRecordForm() {
+  const [candidateId, setCandidateId] = useState('');
+  const [billName, setBillName] = useState('');
+  const [billNumber, setBillNumber] = useState('');
+  const [vote, setVote] = useState('yes');
+  const [voteDate, setVoteDate] = useState('');
+  const [chamber, setChamber] = useState('');
+  const [description, setDescription] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!candidateId || !billName.trim()) return;
+    setSaving(true);
+    try {
+      await addVotingRecord({
+        candidate_id: candidateId, bill_name: billName.trim(), bill_number: billNumber.trim() || undefined,
+        vote, vote_date: voteDate || undefined, chamber: chamber.trim() || undefined, description: description.trim() || undefined,
+      });
+      setBillName(''); setBillNumber(''); setVoteDate(''); setChamber(''); setDescription('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add voting record.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="p-5">
+      <h3 className="font-semibold mb-3 flex items-center gap-2"><Plus className="h-4 w-4" /> Add Voting Record</h3>
+      <div className="space-y-3">
+        <div>
+          <Label className="text-xs">Candidate</Label>
+          <CandidateSearchPicker value={candidateId} onChange={setCandidateId} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Bill Name</Label>
+            <Input value={billName} onChange={(e) => setBillName(e.target.value)} placeholder="e.g. Property Tax Reform Act" />
+          </div>
+          <div>
+            <Label className="text-xs">Bill Number</Label>
+            <Input value={billNumber} onChange={(e) => setBillNumber(e.target.value)} placeholder="HB 123" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Vote</Label>
+            <select value={vote} onChange={(e) => setVote(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+              <option value="abstain">Abstain</option>
+              <option value="absent">Absent</option>
+            </select>
+          </div>
+          <div>
+            <Label className="text-xs">Vote Date</Label>
+            <Input type="date" value={voteDate} onChange={(e) => setVoteDate(e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs">Chamber (optional)</Label>
+          <Input value={chamber} onChange={(e) => setChamber(e.target.value)} placeholder="e.g. State Senate" />
+        </div>
+        <div>
+          <Label className="text-xs">Description</Label>
+          <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What the bill does…" />
+        </div>
+        <Button onClick={handleSave} disabled={!candidateId || !billName.trim() || saving} size="sm" className="w-full">
+          {saving ? 'Saving…' : saved ? 'Added!' : 'Add Voting Record'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function AddCandidatePositionForm() {
+  const [candidateId, setCandidateId] = useState('');
+  const [issueId, setIssueId] = useState('');
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [summary, setSummary] = useState('');
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { getIssues().then(setIssues); }, []);
+
+  async function handleSave() {
+    if (!candidateId || !issueId || !summary.trim()) return;
+    setSaving(true);
+    try {
+      await addCandidatePosition({ candidate_id: candidateId, issue_id: issueId, summary: summary.trim() });
+      setSummary('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add position.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="p-5">
+      <h3 className="font-semibold mb-3 flex items-center gap-2"><Plus className="h-4 w-4" /> Add Candidate Position</h3>
+      <div className="space-y-3">
+        <div>
+          <Label className="text-xs">Candidate</Label>
+          <CandidateSearchPicker value={candidateId} onChange={setCandidateId} />
+        </div>
+        <div>
+          <Label className="text-xs">Issue</Label>
+          <select value={issueId} onChange={(e) => setIssueId(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            <option value="">Select an issue…</option>
+            {issues.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <Label className="text-xs">Position Summary</Label>
+          <Input value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Where they stand, in a sentence or two…" />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          New positions start as "not verified" — verify sourcing in the Verify Positions tab before it counts as reviewed.
+        </p>
+        <Button onClick={handleSave} disabled={!candidateId || !issueId || !summary.trim() || saving} size="sm" className="w-full">
+          {saving ? 'Saving…' : saved ? 'Added!' : 'Add Position'}
         </Button>
       </div>
     </Card>
