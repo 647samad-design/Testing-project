@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -203,5 +203,51 @@ describe('ad review — advertisers cannot self-activate, real admin approval re
   it('rejectAd sets status to rejected with notes and logs the action', async () => {
     await rejectAd('ad-2', 'Misleading claim');
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'rejected', admin_notes: 'Misleading claim' }));
+  });
+});
+
+describe('bulkImportCandidates — duplicate protection (previously none at all)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('skips a row matching an existing candidate name (case-insensitive) instead of creating a duplicate', async () => {
+    fromMock.mockImplementationOnce(() => ({
+      select: () => Promise.resolve({ data: [{ first_name: 'Jane', last_name: 'Doe' }], error: null }),
+    }) as unknown as ReturnType<typeof fromMock>);
+
+    const result = await bulkImportCandidates([
+      { first_name: 'jane', last_name: 'DOE' }, // duplicate, different casing
+      { first_name: 'John', last_name: 'Smith' }, // new
+    ]);
+
+    expect(result.skippedDuplicates).toEqual(['jane DOE']);
+    expect(insertMock).toHaveBeenCalledWith([
+      expect.objectContaining({ first_name: 'John', last_name: 'Smith' }),
+    ]);
+  });
+
+  it('also catches a duplicate within the same import file, not just against existing data', async () => {
+    fromMock.mockImplementationOnce(() => ({
+      select: () => Promise.resolve({ data: [], error: null }),
+    }) as unknown as ReturnType<typeof fromMock>);
+    insertMock.mockReturnValueOnce({ select: () => Promise.resolve({ data: [{ id: 'new-1' }], error: null }) } as unknown as ReturnType<typeof insertMock>);
+
+    const result = await bulkImportCandidates([
+      { first_name: 'Jane', last_name: 'Doe' },
+      { first_name: 'jane', last_name: 'doe' }, // duplicate of the row above
+    ]);
+
+    expect(result.inserted).toBe(1);
+    expect(result.skippedDuplicates).toEqual(['jane doe']);
+  });
+
+  it('does not call insert at all if every row is a duplicate', async () => {
+    fromMock.mockImplementationOnce(() => ({
+      select: () => Promise.resolve({ data: [{ first_name: 'Jane', last_name: 'Doe' }], error: null }),
+    }) as unknown as ReturnType<typeof fromMock>);
+
+    const result = await bulkImportCandidates([{ first_name: 'Jane', last_name: 'Doe' }]);
+
+    expect(result.inserted).toBe(0);
+    expect(insertMock).not.toHaveBeenCalled();
   });
 });

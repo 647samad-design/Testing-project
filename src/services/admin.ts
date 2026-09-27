@@ -135,15 +135,38 @@ export async function deleteCandidate(id: string): Promise<void> {
 }
 
 /** Bulk-inserts candidates (from a CSV/JSON import) in one request and writes
- * a single audit log entry summarizing the import, rather than one per row. */
+ * a single audit log entry summarizing the import, rather than one per row.
+ * Skips any row that matches an existing candidate's name (case-insensitive)
+ * rather than silently creating a duplicate profile — re-importing the same
+ * file, or an overlapping file, previously had no protection against this. */
 export async function bulkImportCandidates(rows: Array<{
   first_name: string;
   last_name: string;
   party?: string;
   bio?: string;
   photo_url?: string | null;
-}>): Promise<{ inserted: number }> {
-  const payload = rows.map((r) => ({
+}>): Promise<{ inserted: number; skippedDuplicates: string[] }> {
+  const { data: existing } = await supabase.from('candidates').select('first_name, last_name');
+  const existingNames = new Set(
+    (existing ?? []).map((c) => `${c.first_name.trim().toLowerCase()}|${c.last_name.trim().toLowerCase()}`)
+  );
+
+  const skippedDuplicates: string[] = [];
+  const newRows = rows.filter((r) => {
+    const key = `${r.first_name.trim().toLowerCase()}|${r.last_name.trim().toLowerCase()}`;
+    if (existingNames.has(key)) {
+      skippedDuplicates.push(`${r.first_name} ${r.last_name}`);
+      return false;
+    }
+    existingNames.add(key); // also catch duplicates within the same import file
+    return true;
+  });
+
+  if (newRows.length === 0) {
+    return { inserted: 0, skippedDuplicates };
+  }
+
+  const payload = newRows.map((r) => ({
     first_name: r.first_name,
     last_name: r.last_name,
     party: r.party || null,
@@ -155,9 +178,10 @@ export async function bulkImportCandidates(rows: Array<{
   if (error) throw error;
   await logAdminAction('bulk_import_candidates', 'candidates', undefined, {
     count: data?.length ?? 0,
-    names: rows.map((r) => `${r.first_name} ${r.last_name}`),
+    names: newRows.map((r) => `${r.first_name} ${r.last_name}`),
+    skippedDuplicates,
   });
-  return { inserted: data?.length ?? 0 };
+  return { inserted: data?.length ?? 0, skippedDuplicates };
 }
 
 export async function addElection(election: {

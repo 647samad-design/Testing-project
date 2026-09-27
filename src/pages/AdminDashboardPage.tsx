@@ -581,8 +581,13 @@ function ImportCandidatesTab() {
     if (rows.length === 0) return;
     setImporting(true);
     try {
-      const { inserted } = await bulkImportCandidates(rows);
-      toast.success(`Imported ${inserted} candidate${inserted === 1 ? '' : 's'}.`);
+      const { inserted, skippedDuplicates } = await bulkImportCandidates(rows);
+      if (inserted > 0) {
+        toast.success(`Imported ${inserted} candidate${inserted === 1 ? '' : 's'}.`);
+      }
+      if (skippedDuplicates.length > 0) {
+        toast.info(`Skipped ${skippedDuplicates.length} already-existing candidate${skippedDuplicates.length === 1 ? '' : 's'}: ${skippedDuplicates.slice(0, 5).join(', ')}${skippedDuplicates.length > 5 ? '…' : ''}`);
+      }
       setRows([]);
       setFileName(null);
     } catch (err) {
