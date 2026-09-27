@@ -17,11 +17,20 @@ export async function getVoterDistricts(address: string): Promise<DistrictResult
   const zip = extractZip(address);
 
   if (zip) {
-    const { data, error } = await supabase
+    // zip_code has no UNIQUE constraint at the database level -- some real
+    // ZIP codes genuinely span more than one county/district, so more than
+    // one row for the same zip_code is a legitimate possibility, not just
+    // a data error. .maybeSingle() throws a "multiple rows" error in that
+    // case, which would silently break the ballot lookup for that address
+    // (the single most core feature of the platform) with no indication
+    // to the user of what went wrong. .limit(1) takes the first match
+    // instead of failing outright.
+    const { data: rows, error } = await supabase
       .from('zip_districts')
       .select('*')
       .eq('zip_code', zip)
-      .maybeSingle();
+      .limit(1);
+    const data = rows?.[0] ?? null;
 
     if (!error && data) {
       const d = data as Record<string, unknown>;
