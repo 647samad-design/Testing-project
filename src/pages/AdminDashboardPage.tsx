@@ -16,6 +16,7 @@ import {
   compCandidateManagement, revokeCandidateManagement, listActiveManagementCandidateIds,
   getBillingOverview, type BillingOverview,
   getPendingClaims, approveClaim, rejectClaim, type PendingClaim,
+  expireOverdueComps,
   getPendingEvents, approveEvent, rejectEvent, type PendingEvent,
   getPendingQuestionnaireResponses, approveQuestionnaireResponse, rejectQuestionnaireResponse, type PendingQuestionnaireResponse,
   getPendingAds, approveAd, rejectAd, type PendingAd,
@@ -829,6 +830,25 @@ function DataFeedsTab() {
   const [digestResult, setDigestResult] = useState<string | null>(null);
   const [reminderLoading, setReminderLoading] = useState(false);
   const [reminderResult, setReminderResult] = useState<string | null>(null);
+  const [expireLoading, setExpireLoading] = useState(false);
+  const [expireResult, setExpireResult] = useState<string | null>(null);
+
+  async function handleExpireComps() {
+    setExpireLoading(true);
+    setExpireResult(null);
+    try {
+      const result = await expireOverdueComps();
+      setExpireResult(
+        result.expiredCount === 0
+          ? '✅ No overdue comps found — nothing needed expiring.'
+          : `✅ Expired ${result.expiredCount} overdue comp(s): ${result.expiredCandidateNames.join(', ')}.`
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to check for overdue comps.');
+    } finally {
+      setExpireLoading(false);
+    }
+  }
 
   async function handleReminderRun(dryRun: boolean) {
     setReminderLoading(true);
@@ -971,6 +991,19 @@ function DataFeedsTab() {
           </Button>
         </div>
         {reminderResult && <p className="mt-2 text-sm">{reminderResult}</p>}
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="font-semibold mb-2">Comped Management Expiration</h3>
+        <p className="text-sm text-muted-foreground mb-3">
+          Checks free ("comped") Candidate Management grants — like the first-year-free beta plan
+          — and expires any whose 1-year period has passed. Never touches real paying subscriptions.
+        </p>
+        <Button onClick={handleExpireComps} disabled={expireLoading} size="sm" className="gap-1.5">
+          <RefreshCw className={`h-3.5 w-3.5 ${expireLoading ? 'animate-spin' : ''}`} />
+          {expireLoading ? 'Checking…' : 'Check for Overdue Comps'}
+        </Button>
+        {expireResult && <p className="mt-2 text-sm">{expireResult}</p>}
       </Card>
 
       <p className="text-xs text-muted-foreground">

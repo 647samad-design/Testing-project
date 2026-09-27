@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -107,6 +107,18 @@ describe('admin service', () => {
       { onConflict: 'candidate_id' }
     );
     expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'comp_candidate_management', p_target_id: 'cand-1' }));
+  });
+
+  it('compCandidateManagement sets a 1-year expiration, not an indefinite grant', async () => {
+    const before = Date.now();
+    await compCandidateManagement('cand-1', 'Beta launch');
+    const call = upsertMock.mock.calls[upsertMock.mock.calls.length - 1][0];
+
+    const periodEnd = new Date(call.current_period_end).getTime();
+    const oneYearMs = 365 * 24 * 60 * 60 * 1000;
+    // Allow a little slack for test execution time / leap years.
+    expect(periodEnd - before).toBeGreaterThan(oneYearMs - 2 * 24 * 60 * 60 * 1000);
+    expect(periodEnd - before).toBeLessThan(oneYearMs + 2 * 24 * 60 * 60 * 1000);
   });
 
   it('revokeCandidateManagement sets status to canceled', async () => {
@@ -249,5 +261,41 @@ describe('bulkImportCandidates — duplicate protection (previously none at all)
 
     expect(result.inserted).toBe(0);
     expect(insertMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('expireOverdueComps — comped Management previously had no expiration mechanism at all', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('flips overdue comped grants to expired and reports who was affected', async () => {
+    const ltMock = vi.fn().mockResolvedValue({
+      data: [{ candidate_id: 'cand-1', candidates: { first_name: 'Jane', last_name: 'Doe' } }],
+      error: null,
+    });
+    const eqStatusMock = vi.fn(() => ({ lt: ltMock }));
+    const eqCompedMock = vi.fn(() => ({ eq: eqStatusMock }));
+    const inMock = vi.fn().mockResolvedValue({ error: null });
+    fromMock.mockImplementationOnce(() => ({
+      select: () => ({ eq: eqCompedMock }),
+    }) as unknown as ReturnType<typeof fromMock>);
+    fromMock.mockImplementationOnce(() => ({
+      update: () => ({ in: inMock }),
+    }) as unknown as ReturnType<typeof fromMock>);
+
+    const result = await expireOverdueComps();
+
+    expect(eqCompedMock).toHaveBeenCalledWith('is_comped', true);
+    expect(inMock).toHaveBeenCalledWith('candidate_id', ['cand-1']);
+    expect(result).toEqual({ expiredCount: 1, expiredCandidateNames: ['Jane Doe'] });
+  });
+
+  it('returns zero without updating anything when nothing is overdue', async () => {
+    fromMock.mockImplementationOnce(() => ({
+      select: () => ({ eq: () => ({ eq: () => ({ lt: () => Promise.resolve({ data: [], error: null }) }) }) }),
+    }) as unknown as ReturnType<typeof fromMock>);
+
+    const result = await expireOverdueComps();
+
+    expect(result).toEqual({ expiredCount: 0, expiredCandidateNames: [] });
   });
 });

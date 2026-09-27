@@ -274,7 +274,18 @@ export async function rejectSubmission(id: string, notes?: string): Promise<void
  * needing a real Stripe charge. Creates or updates the row with is_comped=true
  * and status='active' so has_active_management() (used by the paywall on
  * team invites AND the campaign page) treats it exactly like a paid sub. */
+/** Grants free ("comped") Candidate Management access — used for the
+ * client's stated first-year-free beta plan. Sets a 1-year period end so
+ * the grant has an actual expiration date recorded, rather than staying
+ * active forever with no way to track when it's supposed to end (an admin
+ * previously had to remember to manually revoke each comp individually,
+ * with nothing in the system tracking who was even due). Does not, by
+ * itself, revoke access when that date passes — see expireOverdueComps(). */
 export async function compCandidateManagement(candidateId: string, reason: string): Promise<void> {
+  const now = new Date();
+  const oneYearFromNow = new Date(now);
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
   const { error } = await supabase
     .from('candidate_management_subscriptions')
     .upsert({
@@ -282,9 +293,11 @@ export async function compCandidateManagement(candidateId: string, reason: strin
       status: 'active',
       is_comped: true,
       comped_reason: reason,
+      current_period_start: now.toISOString(),
+      current_period_end: oneYearFromNow.toISOString(),
     }, { onConflict: 'candidate_id' });
   if (error) throw error;
-  await logAdminAction('comp_candidate_management', 'candidate_management_subscriptions', candidateId, { reason });
+  await logAdminAction('comp_candidate_management', 'candidate_management_subscriptions', candidateId, { reason, expiresAt: oneYearFromNow.toISOString() });
 }
 
 /** Revokes a comped (or any) Management grant, e.g. when the beta period ends. */
@@ -295,6 +308,35 @@ export async function revokeCandidateManagement(candidateId: string): Promise<vo
     .eq('candidate_id', candidateId);
   if (error) throw error;
   await logAdminAction('revoke_candidate_management', 'candidate_management_subscriptions', candidateId);
+}
+
+/** Finds comped grants whose 1-year period has passed and flips them to
+ * 'expired' — nothing does this automatically (no cron job exists in this
+ * project yet), so this is an admin-triggered check, matching the same
+ * manual-trigger pattern already used for digest emails and election
+ * reminders. Only touches comped rows, never real paying subscriptions
+ * (those are entirely Stripe-driven). */
+export async function expireOverdueComps(): Promise<{ expiredCount: number; expiredCandidateNames: string[] }> {
+  const { data: overdue, error: fetchError } = await supabase
+    .from('candidate_management_subscriptions')
+    .select('candidate_id, candidates(first_name, last_name)')
+    .eq('is_comped', true)
+    .eq('status', 'active')
+    .lt('current_period_end', new Date().toISOString());
+  if (fetchError) throw fetchError;
+  if (!overdue || overdue.length === 0) return { expiredCount: 0, expiredCandidateNames: [] };
+
+  const ids = overdue.map((r) => r.candidate_id);
+  const { error: updateError } = await supabase
+    .from('candidate_management_subscriptions')
+    .update({ status: 'expired' })
+    .in('candidate_id', ids);
+  if (updateError) throw updateError;
+
+  const names = (overdue as unknown as Array<{ candidates: { first_name: string; last_name: string } | null }>)
+    .map((r) => r.candidates ? `${r.candidates.first_name} ${r.candidates.last_name}` : 'Unknown candidate');
+  await logAdminAction('expire_overdue_comps', 'candidate_management_subscriptions', undefined, { count: ids.length, names });
+  return { expiredCount: ids.length, expiredCandidateNames: names };
 }
 
 /** For the admin "Manage Candidates" list: which candidates currently have
