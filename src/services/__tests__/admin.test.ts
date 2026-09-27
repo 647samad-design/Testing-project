@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -403,5 +403,37 @@ describe('candidate-to-race linking — previously the "Add Candidate" form had 
     expect(eq1Mock).toHaveBeenCalledWith('candidate_id', 'cand-1');
     expect(eq2Mock).toHaveBeenCalledWith('contest_id', 'contest-1');
     expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'unlink_candidate_from_contest' }));
+  });
+});
+
+describe('evidence sourcing for positions — previously no way to attach a source to a position at all', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('getSourceCountsForPositions tallies candidate_sources rows per position', async () => {
+    const inMock = vi.fn().mockResolvedValue({
+      data: [
+        { candidate_position_id: 'pos-1' },
+        { candidate_position_id: 'pos-1' },
+        { candidate_position_id: 'pos-2' },
+      ],
+      error: null,
+    });
+    fromMock.mockReturnValueOnce({ select: () => ({ in: inMock }) } as unknown as ReturnType<typeof fromMock>);
+
+    const result = await getSourceCountsForPositions(['pos-1', 'pos-2']);
+
+    expect(result).toEqual({ 'pos-1': 2, 'pos-2': 1 });
+  });
+
+  it('getSourceCountsForPositions returns empty without querying for an empty list', async () => {
+    const result = await getSourceCountsForPositions([]);
+    expect(result).toEqual({});
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('linkSourceToPosition inserts the candidate_sources row', async () => {
+    await linkSourceToPosition('pos-1', 'source-1');
+    expect(fromMock).toHaveBeenCalledWith('candidate_sources');
+    expect(insertMock).toHaveBeenCalledWith({ candidate_position_id: 'pos-1', source_id: 'source-1' });
   });
 });

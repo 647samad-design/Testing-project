@@ -744,3 +744,34 @@ export async function unlinkCandidateFromContest(candidateId: string, contestId:
   if (error) throw error;
   await logAdminAction('unlink_candidate_from_contest', 'candidate_offices', candidateId, { contestId });
 }
+
+/** Batch source-count lookup for a set of positions — used so the admin
+ * can see, at a glance in the review queue, whether a position actually
+ * has any cited evidence before marking it "verified." Previously the
+ * review card showed only the summary text with no indication of whether
+ * zero sources or several were backing it, undermining the platform's
+ * core evidence-based premise. */
+export async function getSourceCountsForPositions(positionIds: string[]): Promise<Record<string, number>> {
+  if (positionIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('candidate_sources')
+    .select('candidate_position_id')
+    .in('candidate_position_id', positionIds);
+  if (error || !data) return {};
+  const counts: Record<string, number> = {};
+  for (const row of data as { candidate_position_id: string }[]) {
+    counts[row.candidate_position_id] = (counts[row.candidate_position_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
+/** Attaches an existing source as evidence for a candidate's position —
+ * there was previously no function anywhere to create this link, meaning
+ * no source could ever be cited for a position through the app. */
+export async function linkSourceToPosition(positionId: string, sourceId: string): Promise<void> {
+  const { error } = await supabase.from('candidate_sources').insert({
+    candidate_position_id: positionId,
+    source_id: sourceId,
+  });
+  if (error) throw error;
+}

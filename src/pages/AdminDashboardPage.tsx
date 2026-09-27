@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import {
   getAdminMetrics, getUnverifiedPositions, verifyPosition, flagPositionOutdated,
+  getSourceCountsForPositions, linkSourceToPosition,
   listCandidatesForAdmin, updateCandidate, deleteCandidate,
   listProfilesForAdmin, setAdminRole, getAuditLog,
   listPendingSubmissions, approveSubmission, rejectSubmission,
@@ -50,6 +51,7 @@ export function AdminDashboardPage() {
   const { profile, loading: authLoading } = useAuth();
   const [metrics, setMetrics] = useState<Awaited<ReturnType<typeof getAdminMetrics>> | null>(null);
   const [unverified, setUnverified] = useState<Array<{ id: string; summary: string | null; verification_status: VerificationStatus; candidate: { first_name: string; last_name: string } | null; issue: { name: string } | null }>>([]);
+  const [positionSourceCounts, setPositionSourceCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,6 +64,8 @@ export function AdminDashboardPage() {
       setMetrics(m);
       setUnverified(uv as unknown as typeof unverified);
       setLoading(false);
+      const counts = await getSourceCountsForPositions(uv.map((p) => p.id));
+      setPositionSourceCounts(counts);
     }
     load();
   }, [profile]);
@@ -138,6 +142,11 @@ export function AdminDashboardPage() {
                       <span className="mt-2 inline-block text-xs text-warning">
                         Status: {p.verification_status.replace(/_/g, ' ')}
                       </span>
+                      <PositionSourcesInline
+                        positionId={p.id}
+                        count={positionSourceCounts[p.id] ?? 0}
+                        onAttached={() => setPositionSourceCounts((prev) => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 }))}
+                      />
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <Button
@@ -145,6 +154,7 @@ export function AdminDashboardPage() {
                         variant="outline"
                         className="gap-1.5 text-success border-success/30 hover:bg-success/10"
                         onClick={async () => {
+                          if ((positionSourceCounts[p.id] ?? 0) === 0 && !window.confirm('This position has no cited sources yet. Verify anyway?')) return;
                           try {
                             await verifyPosition(p.id);
                             setUnverified((prev) => prev.filter((x) => x.id !== p.id));
@@ -1593,6 +1603,81 @@ function MetricCard({ icon: Icon, label, value, color }: { icon: React.Component
       <p className="mt-2 text-2xl font-bold">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </Card>
+  );
+}
+
+function PositionSourcesInline({ positionId, count, onAttached }: { positionId: string; count: number; onAttached: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Source[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function handleSearch() {
+    setSearching(true);
+    try {
+      const all = await getSources();
+      setResults(
+        query.trim()
+          ? all.filter((s) => s.title.toLowerCase().includes(query.toLowerCase())).slice(0, 10)
+          : all.slice(0, 10)
+      );
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function handleAttach(sourceId: string) {
+    setBusy(true);
+    try {
+      await linkSourceToPosition(positionId, sourceId);
+      toast.success('Source attached.');
+      onAttached();
+      setResults([]);
+      setQuery('');
+      setOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to attach source.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`inline-flex items-center gap-1 text-xs font-medium ${count === 0 ? 'text-destructive' : 'text-muted-foreground hover:text-primary'}`}
+      >
+        {count === 0 ? '⚠ No sources cited' : `${count} source${count === 1 ? '' : 's'} cited`} · {open ? 'Close' : 'Attach a source'}
+      </button>
+      {open && (
+        <div className="mt-2 flex gap-2">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder="Search sources by title…"
+            className="text-xs h-8"
+          />
+          <Button size="sm" onClick={handleSearch} disabled={searching}>Search</Button>
+        </div>
+      )}
+      {open && results.length > 0 && (
+        <div className="mt-2 space-y-1.5 max-h-40 overflow-y-auto">
+          {results.map((s) => (
+            <button
+              key={s.id}
+              disabled={busy}
+              onClick={() => handleAttach(s.id)}
+              className="w-full text-left text-xs bg-secondary/30 hover:bg-secondary/60 rounded-lg px-2.5 py-1.5 transition-colors truncate"
+            >
+              {s.title} {s.publisher ? `· ${s.publisher}` : ''}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
