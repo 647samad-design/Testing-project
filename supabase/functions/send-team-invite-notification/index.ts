@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         userId,
         subject: "You've been added to a BallotLens campaign team",
-        html: `<p>You've been added as a ${role ?? "team member"} on a BallotLens candidate's campaign team. Sign in and check your Candidate Portal to get started.</p>`,
+        html: `<p>You've been added as a ${ROLE_LABELS[role ?? ""] ?? "team member"} on a BallotLens candidate's campaign team. Sign in and check your Candidate Portal to get started.</p>`,
       }),
     });
 
@@ -67,3 +67,14 @@ Deno.serve(async (req: Request) => {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
+
+// The role comes from the request body; only known roles are ever put into the
+// email (previously the raw string was interpolated into the HTML).
+const ROLE_LABELS: Record<string, string> = {
+  candidate: "candidate",
+  campaign_manager: "campaign manager",
+  social_manager: "social media manager",
+  volunteer_manager: "volunteer manager",
+  staff: "staff member",
+  volunteer: "volunteer",
+};

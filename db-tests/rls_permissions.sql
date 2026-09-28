@@ -227,6 +227,16 @@ UPDATE candidate_management_subscriptions SET status='active' WHERE candidate_id
 SELECT rlstest.check('[3000] unpaid subscription does NOT count as paid for watchlist limit',
   rlstest.cnt($$SELECT count(*) FROM subscriptions WHERE user_id='bbbbbbbb-0000-0000-0000-000000000002' AND status='active'$$) = 0);
 
+-- ───────── email-unsubscribe upsert shape (no prior preferences row) ─────────
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[unsub] digest opt-out works for a user with NO preferences row yet',
+  rlstest.rc($$INSERT INTO notification_preferences (user_id, digest_frequency, updated_at) VALUES ('cccccccc-0000-0000-0000-000000000003','off',now())
+    ON CONFLICT (user_id) DO UPDATE SET digest_frequency=EXCLUDED.digest_frequency, updated_at=EXCLUDED.updated_at$$) = 1);
+SELECT rlstest.check('[unsub] reminders opt-out updates only that column on an existing row',
+  rlstest.rc($$INSERT INTO notification_preferences (user_id, instant_election_reminders, updated_at) VALUES ('cccccccc-0000-0000-0000-000000000003',false,now())
+    ON CONFLICT (user_id) DO UPDATE SET instant_election_reminders=EXCLUDED.instant_election_reminders, updated_at=EXCLUDED.updated_at$$) = 1);
+SELECT rlstest.check('[unsub] both opt-outs stuck', rlstest.cnt($$SELECT count(*) FROM notification_preferences WHERE user_id='cccccccc-0000-0000-0000-000000000003' AND digest_frequency='off' AND instant_election_reminders = false$$) = 1);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

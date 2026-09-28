@@ -35,11 +35,9 @@ Deno.serve(async (req: Request) => {
     if (!userData?.user) return json({ error: "Not authenticated" }, 401);
 
     const body = await req.json().catch(() => ({}));
-    const { conversationId, userId, title, preview } = body as {
-      conversationId?: string; userId?: string; title?: string; preview?: string;
-    };
-    if (!conversationId || !userId || !title) {
-      return json({ error: "conversationId, userId, and title are required" }, 400);
+    const { conversationId, userId } = body as { conversationId?: string; userId?: string };
+    if (!conversationId || !userId) {
+      return json({ error: "conversationId and userId are required" }, 400);
     }
 
     const admin = createClient(supabaseUrl, supabaseServiceKey);
@@ -61,13 +59,34 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Not authorized to notify this user about this conversation" }, 403);
     }
 
+    // Build the email from the database, not from the request. `title` and
+    // `preview` used to be taken from the caller's request body and placed
+    // raw into the subject and HTML of an email sent from BallotLens's own
+    // domain -- any participant could send the other one arbitrary HTML
+    // (fake buttons, links) that looked like an official BallotLens email.
+    // Now: fixed subject, and the preview is the caller's own latest message
+    // in this conversation, HTML-escaped and truncated. `title`/`preview`
+    // from the request are ignored.
+    const { data: latest } = await admin
+      .from("messages")
+      .select("body")
+      .eq("conversation_id", conversationId)
+      .eq("sender_id", userData.user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!latest) return json({ error: "No message from you in this conversation" }, 400);
+
+    const raw = String(latest.body ?? "");
+    const snippet = raw.length > 280 ? `${raw.slice(0, 280)}…` : raw;
+
     const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: "POST",
       headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         userId,
-        subject: title,
-        html: `<p>${preview ?? "You have a new message on BallotLens."}</p><p style="color:#888;font-size:12px;">Reply at ballotlens.com/messages</p>`,
+        subject: "You have a new message on BallotLens",
+        html: `<p>You have a new message on BallotLens:</p><blockquote style="border-left:3px solid #ddd;margin:0;padding-left:12px;color:#444;">${escapeHtml(snippet)}</blockquote><p style="color:#888;font-size:12px;">Reply at ballotlens.com/messages</p>`,
       }),
     });
 
@@ -83,4 +102,8 @@ Deno.serve(async (req: Request) => {
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }

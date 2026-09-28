@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
             await fetch(`${supabaseUrl}/functions/v1/send-email`, {
               method: "POST",
               headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ userId, subject: title, html: `<p>${bodyText}</p>` }),
+              body: JSON.stringify({ userId, subject: title, html: `<p>${escapeHtml(bodyText)}</p>`, unsubscribeList: "reminders" }),
             });
           } catch (e) {
             errors.push(`user ${userId}: ${e instanceof Error ? e.message : "send failed"}`);
@@ -131,4 +131,8 @@ Deno.serve(async (req: Request) => {
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }

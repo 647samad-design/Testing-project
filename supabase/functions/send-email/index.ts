@@ -61,7 +61,9 @@ Deno.serve(async (req: Request) => {
     const admin = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json().catch(() => ({}));
-    const { userId, subject, html } = body as { userId?: string; subject?: string; html?: string };
+    const { userId, subject, html, unsubscribeList } = body as {
+      userId?: string; subject?: string; html?: string; unsubscribeList?: "digest" | "reminders";
+    };
 
     if (!userId || !subject || !html) {
       return json({ error: "userId, subject, and html are required" }, 400);
@@ -71,6 +73,22 @@ Deno.serve(async (req: Request) => {
     const { data: authUser, error: authUserError } = await admin.auth.admin.getUserById(userId);
     if (authUserError || !authUser?.user?.email) {
       return json({ error: "Could not find an email address for that user" }, 404);
+    }
+
+    // Bulk emails (digest, reminders) get a signed one-click unsubscribe link
+    // in the body plus List-Unsubscribe headers (CAN-SPAM; Gmail/Yahoo bulk
+    // sender rules). Direct, personal emails (a new message, a team invite)
+    // don't pass unsubscribeList.
+    let finalHtml = html;
+    let extraHeaders: Record<string, string> | undefined;
+    if (unsubscribeList === "digest" || unsubscribeList === "reminders") {
+      const t = await unsubscribeToken(userId, unsubscribeList);
+      const link = `${supabaseUrl}/functions/v1/email-unsubscribe?u=${encodeURIComponent(userId)}&l=${unsubscribeList}&t=${t}`;
+      finalHtml = `${html}<p style="color:#888;font-size:12px;margin-top:24px;">Don't want these emails? <a href="${link}">Unsubscribe</a>.</p>`;
+      extraHeaders = {
+        "List-Unsubscribe": `<${link}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      };
     }
 
     const resendResponse = await fetch("https://api.resend.com/emails", {
@@ -83,7 +101,8 @@ Deno.serve(async (req: Request) => {
         from: FROM_ADDRESS,
         to: authUser.user.email,
         subject,
-        html,
+        html: finalHtml,
+        ...(extraHeaders ? { headers: extraHeaders } : {}),
       }),
     });
 
@@ -104,3 +123,12 @@ function json(body: unknown, status = 200): Response {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+// ── unsubscribe token (keep IDENTICAL in send-email and email-unsubscribe; a test enforces this) ──
+async function unsubscribeToken(userId: string, list: string): Promise<string> {
+  const secret = Deno.env.get("EMAIL_UNSUBSCRIBE_SECRET") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${userId}:${list}`));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+// ── end unsubscribe token ──

@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
         const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
           method: "POST",
           headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: pref.user_id, subject: "Your BallotLens Digest", html }),
+          body: JSON.stringify({ userId: pref.user_id, subject: "Your BallotLens Digest", html, unsubscribeList: "digest" }),
         });
         if (!sendResponse.ok) {
           errors.push(`user ${pref.user_id}: ${await sendResponse.text()}`);
