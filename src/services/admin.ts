@@ -789,3 +789,56 @@ export async function addClaimEvidence(claimId: string, sourceId: string, note?:
   if (error) throw error;
   await logAdminAction('add_claim_evidence', 'claim_evidence', claimId, { sourceId });
 }
+
+export type ProfileExtraKind = 'endorsement' | 'funding' | 'get_to_know';
+
+const EXTRA_TABLE: Record<ProfileExtraKind, string> = {
+  endorsement: 'candidate_endorsements',
+  funding: 'candidate_funding_sources',
+  get_to_know: 'candidate_get_to_know',
+};
+
+export interface PendingProfileExtra {
+  kind: ProfileExtraKind;
+  id: string;
+  candidate_id: string;
+  created_at: string;
+  summary: string;
+  candidate?: { first_name: string; last_name: string } | null;
+}
+
+/** Admin-only: pending endorsements, funding sources and get-to-know answers
+ * submitted by candidates. Before migration 20260913002500 an admin could not
+ * even read pending rows in these tables (the only SELECT policy was
+ * status='approved'), so there was nothing to build this on; the only way a
+ * row ever became approved was the open UPDATE hole that migration closes. */
+export async function getPendingProfileExtras(): Promise<PendingProfileExtra[]> {
+  const select = '*, candidate:candidates(first_name, last_name)';
+  const [endorse, funding, gtk] = await Promise.all([
+    supabase.from('candidate_endorsements').select(select).eq('status', 'pending').order('created_at', { ascending: true }),
+    supabase.from('candidate_funding_sources').select(select).eq('status', 'pending').order('created_at', { ascending: true }),
+    supabase.from('candidate_get_to_know').select(select).eq('status', 'pending').order('created_at', { ascending: true }),
+  ]);
+
+  type Row = Record<string, unknown> & { id: string; candidate_id: string; created_at: string; candidate?: PendingProfileExtra['candidate'] };
+  const out: PendingProfileExtra[] = [];
+  for (const r of (endorse.data ?? []) as Row[]) {
+    out.push({ kind: 'endorsement', id: r.id, candidate_id: r.candidate_id, created_at: r.created_at, candidate: r.candidate,
+      summary: `${r.endorser_name}${r.endorser_title ? ` (${r.endorser_title})` : ''} · ${String(r.endorser_type).replace(/_/g, ' ')}` });
+  }
+  for (const r of (funding.data ?? []) as Row[]) {
+    out.push({ kind: 'funding', id: r.id, candidate_id: r.candidate_id, created_at: r.created_at, candidate: r.candidate,
+      summary: `${String(r.source_type).replace(/_/g, ' ')}: ${r.percentage}%${r.amount_dollars != null ? ` ($${Number(r.amount_dollars).toLocaleString('en-US')})` : ''}${r.source_label ? ` · ${r.source_label}` : ''}` });
+  }
+  for (const r of (gtk.data ?? []) as Row[]) {
+    out.push({ kind: 'get_to_know', id: r.id, candidate_id: r.candidate_id, created_at: r.created_at, candidate: r.candidate,
+      summary: `Q: ${r.question} — A: ${r.answer}` });
+  }
+  return out.sort((a, b) => a.created_at.localeCompare(b.created_at));
+}
+
+export async function reviewProfileExtra(kind: ProfileExtraKind, id: string, decision: 'approved' | 'rejected'): Promise<void> {
+  const { error } = await supabase.from(EXTRA_TABLE[kind]).update({ status: decision }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction(`${decision === 'approved' ? 'approve' : 'reject'}_${kind}`, EXTRA_TABLE[kind], id);
+}

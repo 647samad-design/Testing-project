@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -451,5 +451,37 @@ describe('addClaimEvidence — published Claims Library assessments previously a
   it('stores a null note when none is given', async () => {
     await addClaimEvidence('claim-1', 'source-1');
     expect(insertMock).toHaveBeenCalledWith({ claim_id: 'claim-1', source_id: 'source-1', note: null });
+  });
+});
+
+describe('profile extras review — admins could not even read pending rows before migration 2500', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('merges pending endorsements, funding and get-to-know into one oldest-first list', async () => {
+    const byTable: Record<string, unknown[]> = {
+      candidate_endorsements: [{ id: 'e1', candidate_id: 'c1', created_at: '2026-01-03', endorser_name: 'Teachers Union', endorser_title: null, endorser_type: 'union' }],
+      candidate_funding_sources: [{ id: 'f1', candidate_id: 'c1', created_at: '2026-01-01', source_type: 'self_funded', percentage: 40, amount_dollars: 12000, source_label: null }],
+      candidate_get_to_know: [{ id: 'g1', candidate_id: 'c1', created_at: '2026-01-02', question: 'Favorite book?', answer: 'Dune' }],
+    };
+    const eqSpy = vi.fn();
+    const impl = ((table: string) => ({
+      select: () => ({ eq: (col: string, val: string) => { eqSpy(table, col, val); return { order: () => Promise.resolve({ data: byTable[table], error: null }) }; } }),
+    })) as unknown as Parameters<typeof fromMock.mockImplementationOnce>[0];
+    fromMock.mockImplementationOnce(impl).mockImplementationOnce(impl).mockImplementationOnce(impl);
+
+    const result = await getPendingProfileExtras();
+
+    expect(eqSpy).toHaveBeenCalledWith('candidate_endorsements', 'status', 'pending');
+    expect(result.map((r) => r.id)).toEqual(['f1', 'g1', 'e1']);
+    expect(result[0].summary).toContain('self funded: 40%');
+    expect(result[0].summary).toContain('$12,000');
+    expect(result[2].summary).toContain('Teachers Union');
+  });
+
+  it('reviewProfileExtra updates the right table and logs the decision', async () => {
+    await reviewProfileExtra('funding', 'f1', 'approved');
+    expect(fromMock).toHaveBeenCalledWith('candidate_funding_sources');
+    expect(updateMock).toHaveBeenCalledWith({ status: 'approved' });
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'approve_funding', p_target_id: 'f1' }));
   });
 });

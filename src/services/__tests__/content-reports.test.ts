@@ -6,7 +6,7 @@ vi.mock('@/lib/supabase', () => ({
   supabase: { from: fromMock, auth: { getUser: getUserMock } },
 }));
 
-import { submitContentReport, getPendingReports, markReportReviewed } from '@/services/content-reports';
+import { submitContentReport, getPendingReports, markReportReviewed, getReportedContentPreview, removeReportedFeedPost } from '@/services/content-reports';
 
 describe('content reporting — the backend already existed correctly secured, just had no UI/service layer', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -42,5 +42,35 @@ describe('content reporting — the backend already existed correctly secured, j
     await markReportReviewed('r1', 'actioned');
 
     expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'actioned', reviewed_by: 'admin-1' }));
+  });
+});
+
+describe('report review helpers', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('previews a reported feed post by its body instead of a bare UUID', async () => {
+    fromMock.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { body: 'spam spam' }, error: null }) }) }) });
+    expect(await getReportedContentPreview('feed_post', 'p1')).toBe('Feed post: "spam spam"');
+  });
+
+  it('returns null when the reported content no longer exists', async () => {
+    fromMock.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }) });
+    expect(await getReportedContentPreview('candidate', 'gone')).toBeNull();
+  });
+
+  it('returns null for content types without a preview', async () => {
+    expect(await getReportedContentPreview('message', 'm1')).toBeNull();
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('removeReportedFeedPost deletes by id and throws on failure', async () => {
+    const eqMock = vi.fn().mockResolvedValue({ error: null });
+    fromMock.mockReturnValue({ delete: () => ({ eq: eqMock }) });
+    await removeReportedFeedPost('p1');
+    expect(fromMock).toHaveBeenCalledWith('feed_posts');
+    expect(eqMock).toHaveBeenCalledWith('id', 'p1');
+
+    fromMock.mockReturnValue({ delete: () => ({ eq: vi.fn().mockResolvedValue({ error: new Error('not allowed') }) }) });
+    await expect(removeReportedFeedPost('p1')).rejects.toThrow('not allowed');
   });
 });

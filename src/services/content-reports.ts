@@ -55,3 +55,38 @@ export async function markReportReviewed(id: string, outcome: 'actioned' | 'dism
     .eq('id', id);
   if (error) throw error;
 }
+
+/** A human-readable preview of what was reported. Previously the admin
+ * Reports tab showed only the raw content UUID, so reviewing a report meant
+ * looking the row up in the database by hand. */
+export async function getReportedContentPreview(contentType: string, contentId: string): Promise<string | null> {
+  try {
+    if (contentType === 'candidate') {
+      const { data } = await supabase.from('candidates').select('first_name, last_name, party').eq('id', contentId).maybeSingle();
+      return data ? `Candidate profile: ${data.first_name} ${data.last_name}${data.party ? ` (${data.party})` : ''}` : null;
+    }
+    if (contentType === 'feed_post') {
+      const { data } = await supabase.from('feed_posts').select('body').eq('id', contentId).maybeSingle();
+      return data ? `Feed post: "${data.body}"` : null;
+    }
+    if (contentType === 'fact_check') {
+      const { data } = await supabase.from('fact_checks').select('claim_text').eq('id', contentId).maybeSingle();
+      return data ? `Fact check: "${data.claim_text}"` : null;
+    }
+    if (contentType === 'story') {
+      const { data } = await supabase.from('stories').select('title').eq('id', contentId).maybeSingle();
+      return data ? `Story: ${data.title}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Admin-only removal of a reported feed post (policy added in 20260913002500).
+ * Before that there was no admin DELETE on feed_posts, so "Mark Actioned" on a
+ * report about an abusive post had no way to actually take the post down. */
+export async function removeReportedFeedPost(postId: string): Promise<void> {
+  const { error } = await supabase.from('feed_posts').delete().eq('id', postId);
+  if (error) throw error;
+}

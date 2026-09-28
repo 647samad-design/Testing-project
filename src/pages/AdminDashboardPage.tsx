@@ -21,8 +21,9 @@ import {
   getPendingEvents, approveEvent, rejectEvent, type PendingEvent,
   getPendingQuestionnaireResponses, approveQuestionnaireResponse, rejectQuestionnaireResponse, type PendingQuestionnaireResponse,
   getPendingAds, approveAd, rejectAd, type PendingAd,
+  getPendingProfileExtras, reviewProfileExtra, type PendingProfileExtra, type ProfileExtraKind,
 } from '@/services/admin';
-import { getPendingReports, markReportReviewed, type ContentReport } from '@/services/content-reports';
+import { getPendingReports, markReportReviewed, getReportedContentPreview, removeReportedFeedPost, type ContentReport } from '@/services/content-reports';
 import { getUnresearchedClaims, assessClaimInLibrary, addClaimEvidence, type UnresearchedClaim } from '@/services/admin';
 import { getRevenueSummary, type RevenueSummary } from '@/services/admin';
 import {
@@ -330,6 +331,10 @@ function SubmissionsTab() {
       <div className="border-t border-border pt-6">
         <AdReviewSection />
       </div>
+
+      <div className="border-t border-border pt-6">
+        <ProfileExtrasReviewSection />
+      </div>
     </div>
   );
 }
@@ -465,6 +470,65 @@ function QuestionnaireReviewSection() {
             <div className="mt-3 flex gap-2">
               <Button size="sm" disabled={busyId === r.id} onClick={() => handleApprove(r.id)}>Approve</Button>
               <Button size="sm" variant="outline" disabled={busyId === r.id} onClick={() => handleReject(r.id)}>Reject</Button>
+            </div>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+}
+
+const EXTRA_KIND_LABEL: Record<ProfileExtraKind, string> = {
+  endorsement: 'Endorsement',
+  funding: 'Funding source',
+  get_to_know: 'Get to know',
+};
+
+function ProfileExtrasReviewSection() {
+  const [items, setItems] = useState<PendingProfileExtra[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getPendingProfileExtras()
+      .then(setItems)
+      .catch((err) => toast.error(err instanceof Error ? err.message : 'Failed to load profile submissions.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleDecision(item: PendingProfileExtra, decision: 'approved' | 'rejected') {
+    setBusyId(item.id);
+    try {
+      await reviewProfileExtra(item.kind, item.id, decision);
+      toast.success(decision === 'approved' ? 'Approved and now public.' : 'Rejected.');
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading profile submissions…" />;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold">Endorsements, Funding &amp; Get-to-Know</h3>
+      <p className="text-sm text-muted-foreground">
+        Submitted by candidates from their portal. Nothing here is public until approved.
+      </p>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing pending.</p>
+      ) : (
+        items.map((item) => (
+          <Card key={`${item.kind}-${item.id}`} className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {EXTRA_KIND_LABEL[item.kind]}{item.candidate ? ` · ${item.candidate.first_name} ${item.candidate.last_name}` : ''}
+            </p>
+            <p className="mt-1 text-sm break-words">{item.summary}</p>
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" disabled={busyId === item.id} onClick={() => handleDecision(item, 'approved')}>Approve</Button>
+              <Button size="sm" variant="outline" disabled={busyId === item.id} onClick={() => handleDecision(item, 'rejected')}>Reject</Button>
             </div>
           </Card>
         ))
@@ -1411,13 +1475,19 @@ function ManageAdminsTab({ currentUserId }: { currentUserId: string }) {
 
 function ContentReportsTab() {
   const [reports, setReports] = useState<ContentReport[]>([]);
+  const [previews, setPreviews] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
     try {
-      setReports(await getPendingReports());
+      const rows = await getPendingReports();
+      setReports(rows);
+      const entries = await Promise.all(
+        rows.map(async (r) => [r.id, await getReportedContentPreview(r.content_type, r.content_id)] as const)
+      );
+      setPreviews(Object.fromEntries(entries));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load reports.');
     } finally {
@@ -1440,6 +1510,21 @@ function ContentReportsTab() {
     }
   }
 
+  async function handleRemovePost(report: ContentReport) {
+    if (!window.confirm('Permanently remove this feed post? This cannot be undone.')) return;
+    setBusyId(report.id);
+    try {
+      await removeReportedFeedPost(report.content_id);
+      await markReportReviewed(report.id, 'actioned');
+      toast.success('Post removed and report marked actioned.');
+      setReports((prev) => prev.filter((r) => r.id !== report.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove the post.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (loading) return <LoadingState message="Loading reports…" />;
 
   if (reports.length === 0) {
@@ -1449,20 +1534,24 @@ function ContentReportsTab() {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground mb-2">
-        Content flagged by users as false, abusive, or spam. "Actioned" means you removed or fixed
-        the content yourself elsewhere — this just tracks that the report was handled.
+        Content flagged by users as false, abusive, or spam. Reported feed posts can be removed directly here;
+        for other content, fix it in the relevant tab, then mark the report actioned.
       </p>
       {reports.map((r) => (
         <Card key={r.id} className="p-4">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium">{r.reason} <span className="font-normal text-muted-foreground">— {r.content_type}</span></p>
-              {r.description && <p className="mt-1 text-sm text-muted-foreground">{r.description}</p>}
-              <p className="mt-1 text-xs text-muted-foreground">
-                Content ID: {r.content_id} · Reported {new Date(r.created_at).toLocaleDateString()}
+            <div className="min-w-0">
+              <p className="text-sm font-medium">{r.reason} <span className="font-normal text-muted-foreground">— {r.content_type.replace(/_/g, ' ')}</span></p>
+              <p className="mt-1 text-sm bg-secondary/40 rounded-lg px-2.5 py-1.5 break-words">
+                {previews[r.id] ?? <span className="text-muted-foreground italic">Content no longer exists or can't be previewed.</span>}
               </p>
+              {r.description && <p className="mt-1 text-sm text-muted-foreground">Reporter's note: {r.description}</p>}
+              <p className="mt-1 text-xs text-muted-foreground">Reported {new Date(r.created_at).toLocaleDateString()}</p>
             </div>
-            <div className="shrink-0 flex gap-2">
+            <div className="shrink-0 flex flex-col gap-2">
+              {r.content_type === 'feed_post' && previews[r.id] && (
+                <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" disabled={busyId === r.id} onClick={() => handleRemovePost(r)}>Remove Post</Button>
+              )}
               <Button size="sm" disabled={busyId === r.id} onClick={() => handleResolve(r.id, 'actioned')}>Mark Actioned</Button>
               <Button size="sm" variant="outline" disabled={busyId === r.id} onClick={() => handleResolve(r.id, 'dismissed')}>Dismiss</Button>
             </div>

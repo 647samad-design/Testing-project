@@ -20,6 +20,7 @@ import {
 } from '@/services/campaign';
 import {
   getGetToKnow, submitGetToKnow, getFundingSources, submitFundingSource, getEndorsements, submitEndorsement,
+  getProfileExtras, upsertProfileExtras,
 } from '@/services/candidate-profile-extras';
 import type { CampaignTeamMember, TeamRole, CandidateGetToKnow, CandidateFundingSource, CandidateEndorsement, FundingSourceType, EndorserType, FeedPost } from '@/types';
 import { toast } from 'sonner';
@@ -780,6 +781,81 @@ const ENDORSER_TYPES: { value: EndorserType; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
+function ProfileDetailsEditor({ candidateId }: { candidateId: string }) {
+  const [form, setForm] = useState({
+    office_sought: '', district: '', current_occupation: '', hometown_area: '',
+    election_date: '', election_type: '', term_length: '', next_election_date: '',
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getProfileExtras(candidateId).then((ex) => {
+      if (ex) {
+        setForm({
+          office_sought: ex.office_sought ?? '', district: ex.district ?? '',
+          current_occupation: ex.current_occupation ?? '', hometown_area: ex.hometown_area ?? '',
+          election_date: ex.election_date ?? '', election_type: ex.election_type ?? '',
+          term_length: ex.term_length ?? '', next_election_date: ex.next_election_date ?? '',
+        });
+      }
+      setLoading(false);
+    });
+  }, [candidateId]);
+
+  function set<K extends keyof typeof form>(key: K, value: string) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    const blankToNull = (v: string) => (v.trim() === '' ? null : v.trim());
+    const result = await upsertProfileExtras(candidateId, {
+      office_sought: blankToNull(form.office_sought),
+      district: blankToNull(form.district),
+      current_occupation: blankToNull(form.current_occupation),
+      hometown_area: blankToNull(form.hometown_area),
+      election_date: blankToNull(form.election_date),
+      election_type: (blankToNull(form.election_type) as 'primary' | 'runoff' | 'general' | null),
+      term_length: blankToNull(form.term_length),
+      next_election_date: blankToNull(form.next_election_date),
+    });
+    setSaving(false);
+    if (result.success) toast.success('Profile details saved.');
+    else toast.error(result.error ?? 'Failed to save profile details.');
+  }
+
+  if (loading) return <LoadingState message="Loading profile details…" />;
+
+  return (
+    <Card className="p-6 rounded-2xl">
+      <h3 className="font-bold text-lg mb-1">Profile Details</h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Shown on your public profile right away (these are factual details, not reviewed like endorsements).
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div><Label className="text-xs">Office sought</Label><Input value={form.office_sought} onChange={(e) => set('office_sought', e.target.value)} placeholder="e.g. City Council" /></div>
+        <div><Label className="text-xs">District</Label><Input value={form.district} onChange={(e) => set('district', e.target.value)} placeholder="e.g. District 3" /></div>
+        <div><Label className="text-xs">Current occupation</Label><Input value={form.current_occupation} onChange={(e) => set('current_occupation', e.target.value)} /></div>
+        <div><Label className="text-xs">Hometown / area</Label><Input value={form.hometown_area} onChange={(e) => set('hometown_area', e.target.value)} /></div>
+        <div><Label className="text-xs">Election date</Label><Input type="date" value={form.election_date} onChange={(e) => set('election_date', e.target.value)} /></div>
+        <div>
+          <Label className="text-xs">Election type</Label>
+          <select value={form.election_type} onChange={(e) => set('election_type', e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            <option value="">Not set</option>
+            <option value="primary">Primary</option>
+            <option value="runoff">Runoff</option>
+            <option value="general">General</option>
+          </select>
+        </div>
+        <div><Label className="text-xs">Term length</Label><Input value={form.term_length} onChange={(e) => set('term_length', e.target.value)} placeholder="e.g. 4 years" /></div>
+        <div><Label className="text-xs">Next election date</Label><Input type="date" value={form.next_election_date} onChange={(e) => set('next_election_date', e.target.value)} /></div>
+      </div>
+      <Button onClick={handleSave} disabled={saving} className="mt-4">{saving ? 'Saving…' : 'Save Details'}</Button>
+    </Card>
+  );
+}
+
 function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
   const [getToKnow, setGetToKnow] = useState<CandidateGetToKnow[]>([]);
   const [funding, setFunding] = useState<CandidateFundingSource[]>([]);
@@ -881,9 +957,11 @@ function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Everything here goes through admin review before it appears on your public profile —
-        approved items are shown; pending ones are only visible to you here.
+        Get-to-know answers, funding sources and endorsements go through admin review before they
+        appear on your public profile. The lists below show what's already approved; a new submission
+        shows up here once an admin approves it.
       </p>
+      <ProfileDetailsEditor candidateId={candidateId} />
 
       <Card className="p-6 rounded-2xl">
         <h3 className="font-bold text-lg mb-2">Get to Know You (Q&amp;A)</h3>
