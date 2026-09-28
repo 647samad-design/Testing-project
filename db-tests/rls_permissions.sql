@@ -332,6 +332,33 @@ UPDATE candidate_positions SET summary = 'Now also supports rent caps' WHERE can
 SELECT rlstest.check('[3300] a changed position text notifies again once the old alert was read',
   rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0110000-0000-0000-0000-000000000001' AND type='position_change'$$) = 2);
 
+-- ───────── message notifications (20260913003400) ─────────
+SELECT rlstest.as_owner();
+INSERT INTO auth.users (id,email) VALUES ('ab000000-0000-0000-0000-000000000001','msgvoter@t.io');
+SELECT rlstest.as_user('ab000000-0000-0000-0000-000000000001');
+SELECT rlstest.rc($$INSERT INTO conversations (id, voter_id, candidate_id, candidate_user_id)
+  VALUES ('cb000000-0000-0000-0000-000000000001', auth.uid(), '55555555-0000-0000-0000-000000000005', 'f0330000-0000-0000-0000-000000000003')$$);
+SELECT rlstest.check('[3400] voter sends a message', rlstest.rc($$INSERT INTO messages (conversation_id, sender_id, sender_role, body) VALUES ('cb000000-0000-0000-0000-000000000001', auth.uid(), 'voter', 'When is the town hall?')$$) = 1);
+SELECT rlstest.check('[3400] browser still cannot write a notification into someone else''s bell',
+  rlstest.fails($$INSERT INTO notifications (user_id, type, title) VALUES ('f0330000-0000-0000-0000-000000000003', 'new_message', 'Click here to verify your account')$$));
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[3400] candidate gets the message in their bell (was always blocked by RLS)',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0330000-0000-0000-0000-000000000003' AND type='new_message' AND title='New message from a voter' AND body='When is the town hall?'$$) = 1);
+SELECT rlstest.check('[3400] sender is not notified of their own message',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='ab000000-0000-0000-0000-000000000001' AND type='new_message'$$) = 0);
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.rc($$INSERT INTO messages (conversation_id, sender_id, sender_role, body) VALUES ('cb000000-0000-0000-0000-000000000001', auth.uid(), 'candidate', 'Thursday at 6')$$);
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[3400] voter gets the reply, labelled with the candidate''s name',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='ab000000-0000-0000-0000-000000000001' AND type='new_message' AND title='New message from Maria Lopez'$$) = 1);
+-- conversation started before the candidate was claimed: candidate_user_id NULL
+SELECT rlstest.as_user('ab000000-0000-0000-0000-000000000001');
+SELECT rlstest.rc($$INSERT INTO conversations (id, voter_id, candidate_id, candidate_user_id) VALUES ('cb000000-0000-0000-0000-000000000002', auth.uid(), '11111111-0000-0000-0000-000000000001', NULL)$$);
+SELECT rlstest.rc($$INSERT INTO messages (conversation_id, sender_id, sender_role, body) VALUES ('cb000000-0000-0000-0000-000000000002', auth.uid(), 'voter', 'Early question')$$);
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[3400] pre-claim conversation still reaches the verified claimant',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='bbbbbbbb-0000-0000-0000-000000000002' AND type='new_message' AND body='Early question'$$) = 1);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

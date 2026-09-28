@@ -91,7 +91,7 @@ export function NotificationBell() {
               notifications.slice(0, 15).map((n) => (
                 <Link
                   key={n.id}
-                  to={n.candidate_id ? `/candidates/${n.candidate_id}` : ['race_called', 'results_certified', 'election_reminder'].includes(n.type) ? '/ballot' : '/feed'}
+                  to={notificationLink(n)}
                   onClick={() => handleOpenNotification(n)}
                   className={`block px-4 py-3 text-sm border-b border-border last:border-0 hover:bg-secondary/50 transition-colors ${!n.is_read ? 'bg-primary/5' : ''}`}
                 >
@@ -106,4 +106,20 @@ export function NotificationBell() {
       )}
     </div>
   );
+}
+
+/** Where a notification should take you. Previously anything without a
+ * candidate_id went to /feed -- including new messages, team invites and
+ * admin review alerts. */
+function notificationLink(n: AppNotification): string {
+  switch (n.type) {
+    case 'new_message': return '/messages';
+    case 'team_invite': return '/candidate-portal';
+    case 'admin_review_needed': return '/admin';
+    case 'new_follower': return '/candidate-portal';
+    case 'race_called':
+    case 'results_certified':
+    case 'election_reminder': return '/ballot';
+    default: return n.candidate_id ? `/candidates/${n.candidate_id}` : '/feed';
+  }
 }

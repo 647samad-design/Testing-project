@@ -608,7 +608,9 @@ export interface QuestionRating {
 export type NotificationType =
   | 'position_change' | 'new_post' | 'question_answered'
   | 'new_voting_record' | 'new_event' | 'new_endorsement'
-  | 'new_follower' | 'team_invite';
+  | 'new_follower' | 'team_invite'
+  | 'race_called' | 'results_certified' | 'election_reminder'
+  | 'new_message' | 'admin_review_needed';
 
 export interface AppNotification {
   id: string;

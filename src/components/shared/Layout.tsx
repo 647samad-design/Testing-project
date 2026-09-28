@@ -317,6 +317,9 @@ export function Footer() {
               <li><Link to="/stories" className="text-muted-foreground hover:text-primary transition-colors">Civic Stories</Link></li>
               <li><Link to="/news" className="text-muted-foreground hover:text-primary transition-colors">News</Link></li>
               <li><Link to="/ask" className="text-muted-foreground hover:text-primary transition-colors">Ask BallotLens AI</Link></li>
+              <li><Link to="/issues" className="text-muted-foreground hover:text-primary transition-colors">Issues</Link></li>
+              <li><Link to="/lens" className="text-muted-foreground hover:text-primary transition-colors">Lens This</Link></li>
+              <li><Link to="/claims" className="text-muted-foreground hover:text-primary transition-colors">Claims Library</Link></li>
               <li><Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors">Premium</Link></li>
             </ul>
           </div>

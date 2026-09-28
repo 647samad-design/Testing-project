@@ -158,29 +158,17 @@ async function notifyMessageRecipient(
   const recipientUserId = senderRole === 'voter' ? conv.candidate_user_id : conv.voter_id;
   if (!recipientUserId) return; // e.g. an unclaimed candidate has no user to notify
 
-  const senderLabel = senderRole === 'voter'
-    ? 'A voter'
-    : conv.candidates
-      ? `${conv.candidates.first_name} ${conv.candidates.last_name}`
-      : 'The candidate';
-
-  const title = `New message from ${senderLabel}`;
-  const preview = body.length > 140 ? `${body.slice(0, 140)}…` : body;
-
-  await supabase.from('notifications').insert({
-    user_id: recipientUserId,
-    type: 'new_message',
-    title,
-    body: preview,
-    is_read: false,
-  });
+  // The in-app notification is created by the database (trigger
+  // messages_notify_recipient, migration 20260913003400). It used to be inserted
+  // here, for the OTHER user -- which the notifications RLS policy always
+  // rejected, silently, so recipients never saw a message in the bell.
 
   // Messages are a direct, personal communication — send an instant email
   // regardless of digest preferences, the same way a messaging app doesn't
   // gate DMs behind a "weekly digest" setting.
   try {
     await supabase.functions.invoke('send-message-notification', {
-      body: { conversationId, userId: recipientUserId, title, preview },
+      body: { conversationId, userId: recipientUserId },
     });
   } catch {
     // Email is best-effort.

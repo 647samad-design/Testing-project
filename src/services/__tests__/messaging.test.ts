@@ -140,10 +140,14 @@ describe('markConversationRead', () => {
   });
 });
 
-describe('sendMessage — recipient notification (previously missing entirely)', () => {
+// The in-app notification is now created by a database trigger
+// (messages_notify_recipient), verified in db-tests against real RLS. These
+// tests previously asserted that the browser inserted it -- and passed, because
+// the mock accepted an insert the real notifications policy always rejects.
+describe('sendMessage — recipient notification', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('notifies the candidate when a voter sends a message', async () => {
+  it('does not insert the notification itself (RLS forbids it); emails the candidate', async () => {
     const notificationInsertMock = vi.fn().mockResolvedValue({ error: null });
     fromMock.mockImplementation((table: string) => {
       if (table === 'messages') {
@@ -167,16 +171,13 @@ describe('sendMessage — recipient notification (previously missing entirely)',
 
     await sendMessage('convo-1', 'Hi there', 'voter');
 
-    expect(notificationInsertMock).toHaveBeenCalledWith(expect.objectContaining({
-      user_id: 'candidate-user-1',
-      type: 'new_message',
-    }));
+    expect(notificationInsertMock).not.toHaveBeenCalled();
     expect(invokeMock).toHaveBeenCalledWith('send-message-notification', expect.objectContaining({
       body: expect.objectContaining({ conversationId: 'convo-1', userId: 'candidate-user-1' }),
     }));
   });
 
-  it('notifies the voter when the candidate replies', async () => {
+  it('emails the voter when the candidate replies, without sending title/preview text', async () => {
     const notificationInsertMock = vi.fn().mockResolvedValue({ error: null });
     fromMock.mockImplementation((table: string) => {
       if (table === 'messages') {
@@ -200,7 +201,10 @@ describe('sendMessage — recipient notification (previously missing entirely)',
 
     await sendMessage('convo-1', 'Thanks for reaching out', 'candidate');
 
-    expect(notificationInsertMock).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'voter-1', type: 'new_message' }));
+    expect(notificationInsertMock).not.toHaveBeenCalled();
+    expect(invokeMock).toHaveBeenCalledWith('send-message-notification', expect.objectContaining({
+      body: { conversationId: 'convo-1', userId: 'voter-1' },
+    }));
   });
 
   it('does not fail sending the message if notifying the recipient throws', async () => {
