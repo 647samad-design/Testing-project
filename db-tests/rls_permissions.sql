@@ -283,6 +283,55 @@ SELECT rlstest.check('[3200] admin CAN publish with a verdict',
 SELECT rlstest.as_anon();
 SELECT rlstest.check('[3200] published check is public', rlstest.cnt($$SELECT count(*) FROM fact_checks WHERE id='fc000000-0000-0000-0000-000000000001' AND status='published'$$) = 1);
 
+-- ───────── follower notifications (20260913003300) ─────────
+SELECT rlstest.as_owner();
+INSERT INTO auth.users (id,email) VALUES
+ ('f0110000-0000-0000-0000-000000000001','fan1@t.io'),
+ ('f0220000-0000-0000-0000-000000000002','fan2_optout@t.io'),
+ ('f0330000-0000-0000-0000-000000000003','claim5@t.io');
+INSERT INTO candidates (id,first_name,last_name) VALUES ('55555555-0000-0000-0000-000000000005','Maria','Lopez');
+INSERT INTO candidate_claims (candidate_id,user_id,full_name,email,status) VALUES ('55555555-0000-0000-0000-000000000005','f0330000-0000-0000-0000-000000000003','Maria','claim5@t.io','verified');
+UPDATE notification_preferences SET instant_followed_updates = false WHERE user_id = 'f0220000-0000-0000-0000-000000000002';
+SELECT rlstest.as_user('f0110000-0000-0000-0000-000000000001');
+SELECT rlstest.rc($$INSERT INTO follows (followable_type, followable_id) VALUES ('candidate','55555555-0000-0000-0000-000000000005')$$);
+SELECT rlstest.as_user('f0220000-0000-0000-0000-000000000002');
+SELECT rlstest.rc($$INSERT INTO follows (followable_type, followable_id) VALUES ('candidate','55555555-0000-0000-0000-000000000005')$$);
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[3300] claimant told about a new follower (throttled to one)',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0330000-0000-0000-0000-000000000003' AND type='new_follower'$$) = 1);
+
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.rc($$INSERT INTO feed_posts (candidate_id, author_user_id, post_type, body) VALUES ('55555555-0000-0000-0000-000000000005', auth.uid(), 'update', 'Town hall Thursday at 6pm')$$);
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[3300] follower gets new_post with candidate name and post text',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0110000-0000-0000-0000-000000000001' AND type='new_post' AND title='Maria Lopez posted an update' AND body LIKE 'Town hall%'$$) = 1);
+SELECT rlstest.check('[3300] follower who turned updates OFF gets nothing',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0220000-0000-0000-0000-000000000002' AND type='new_post'$$) = 0);
+SELECT rlstest.check('[3300] the poster is not notified about their own post',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0330000-0000-0000-0000-000000000003' AND type='new_post'$$) = 0);
+
+INSERT INTO voting_records (candidate_id, bill_name, vote) SELECT '55555555-0000-0000-0000-000000000005', 'Bill '||g, 'yes' FROM generate_series(1,20) g;
+SELECT rlstest.check('[3300] bulk import of 20 votes -> ONE alert per follower, not 20',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0110000-0000-0000-0000-000000000001' AND type='new_voting_record'$$) = 1);
+
+INSERT INTO candidate_endorsements (id, candidate_id, endorser_name, endorser_type, status) VALUES ('e5000000-0000-0000-0000-000000000005','55555555-0000-0000-0000-000000000005','Teachers Union','union','pending');
+SELECT rlstest.check('[3300] pending endorsement notifies nobody',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0110000-0000-0000-0000-000000000001' AND type='new_endorsement'$$) = 0);
+UPDATE candidate_endorsements SET status='approved' WHERE id='e5000000-0000-0000-0000-000000000005';
+SELECT rlstest.check('[3300] approving it notifies the follower',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0110000-0000-0000-0000-000000000001' AND type='new_endorsement' AND body='Teachers Union'$$) = 1);
+
+INSERT INTO candidate_positions (candidate_id, issue_id, summary) SELECT '55555555-0000-0000-0000-000000000005', id, 'Supports more affordable housing' FROM issues LIMIT 1;
+SELECT rlstest.check('[3300] new position notifies the follower',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0110000-0000-0000-0000-000000000001' AND type='position_change'$$) = 1);
+UPDATE notifications SET is_read = true WHERE user_id='f0110000-0000-0000-0000-000000000001';
+UPDATE candidate_positions SET verification_status = 'verified' WHERE candidate_id='55555555-0000-0000-0000-000000000005';
+SELECT rlstest.check('[3300] a status-only change (verification) does NOT re-notify',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0110000-0000-0000-0000-000000000001' AND type='position_change'$$) = 1);
+UPDATE candidate_positions SET summary = 'Now also supports rent caps' WHERE candidate_id='55555555-0000-0000-0000-000000000005';
+SELECT rlstest.check('[3300] a changed position text notifies again once the old alert was read',
+  rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='f0110000-0000-0000-0000-000000000001' AND type='position_change'$$) = 2);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

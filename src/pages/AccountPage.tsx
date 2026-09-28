@@ -27,6 +27,8 @@ import { toast } from 'sonner';
 import type { Candidate, Issue, UserLocation, ElectionJourneyStep } from '@/types';
 import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { getElections } from '@/services/civic';
+import { parseDateOnly } from '@/lib/date-utils';
 
 export function AccountPage() {
   usePageMeta({ title: 'Account', noindex: true });
@@ -516,54 +518,11 @@ export function AccountPage() {
             </div>
           </Card>
 
-          {/* TRENDING RACES */}
-          <Card className="rounded-3xl">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-warning" />
-                <h2 className="font-bold text-sm uppercase tracking-wide">Trending Races</h2>
-              </div>
-              <Badge variant="secondary" className="rounded-lg text-[10px] font-bold">
-                <span className="mr-1 h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
-                LIVE
-              </Badge>
-            </div>
-            <div className="p-3 space-y-1">
-              {TRENDING_RACES.map((race) => (
-                <Link
-                  key={race.id}
-                  to={race.link}
-                  className="flex items-center gap-3 rounded-2xl p-3 hover:bg-secondary/50 transition-all touch-target group"
-                >
-                  <div className={cn(
-                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-                    race.status === 'completed' ? 'bg-success/10' : 'bg-secondary'
-                  )}>
-                    {race.status === 'completed' ? (
-                      <CheckCircle2 className="h-5 w-5 text-success" />
-                    ) : (
-                      <Clock className="h-5 w-5 text-warning" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">{race.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{race.desc}</p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'rounded-lg text-[9px] font-bold capitalize',
-                      race.status === 'upcoming' && 'border-warning/30 text-warning',
-                      race.status === 'completed' && 'border-success/30 text-success',
-                    )}
-                  >
-                    {race.status}
-                  </Badge>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-colors" />
-                </Link>
-              ))}
-            </div>
-          </Card>
+          {/* UPCOMING ELECTIONS — real data. This used to be a hardcoded
+              "Trending Races" list with a pulsing LIVE badge and invented
+              dates ("Florida Governor · Primary · Aug 18", "Tampa City
+              Council · Runoff · Dec 1") shown to every user. */}
+          <UpcomingElectionsCard />
 
           {/* QUICK ACTIONS */}
           <div>
@@ -1222,9 +1181,51 @@ const QUICK_ACTIONS = [
   { to: '/lens', label: 'Lens This', desc: 'Fact-check anything', icon: Search, color: 'text-accent', bg: 'bg-accent/10', hoverBg: 'hover:bg-accent/15' },
 ];
 
-const TRENDING_RACES = [
-  { id: '1', name: 'Florida Governor', desc: 'Primary • Aug 18', status: 'completed' as const, link: '/candidates' },
-  { id: '2', name: 'Miami Mayor', desc: 'General • Nov 3', status: 'upcoming' as const, link: '/candidates' },
-  { id: '3', name: 'FL District 5 — House', desc: 'General • Nov 3', status: 'upcoming' as const, link: '/candidates' },
-  { id: '4', name: 'Tampa City Council', desc: 'Runoff • Dec 1', status: 'upcoming' as const, link: '/candidates' },
-];
+
+function UpcomingElectionsCard() {
+  const [elections, setElections] = useState<{ id: string; name: string; election_date: string }[] | null>(null);
+
+  useEffect(() => {
+    getElections()
+      .then((all) => {
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        setElections(all.filter((e) => e.election_date >= today).slice(0, 4));
+      })
+      .catch(() => setElections([]));
+  }, []);
+
+  if (!elections || elections.length === 0) return null;
+
+  return (
+    <Card className="rounded-3xl">
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-border/50">
+        <Activity className="h-4 w-4 text-warning" />
+        <h2 className="font-bold text-sm uppercase tracking-wide">Upcoming Elections</h2>
+      </div>
+      <div className="p-3 space-y-1">
+        {elections.map((e) => {
+          const date = parseDateOnly(e.election_date);
+          const days = Math.round((date.getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
+          return (
+            <Link key={e.id} to="/ballot" className="flex items-center gap-3 rounded-2xl p-3 hover:bg-secondary/50 transition-all touch-target group">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                <Clock className="h-5 w-5 text-warning" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground truncate">{e.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </p>
+              </div>
+              <Badge variant="outline" className="rounded-lg text-[10px] font-bold border-warning/30 text-warning">
+                {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
+              </Badge>
+              <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-colors" />
+            </Link>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
