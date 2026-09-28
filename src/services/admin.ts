@@ -775,3 +775,17 @@ export async function linkSourceToPosition(positionId: string, sourceId: string)
   });
   if (error) throw error;
 }
+
+/** Attaches a cited source to a Claims Library entry. RLS already allowed
+ * admin inserts on claim_evidence, but no function ever created a row --
+ * so every published assessment ("Supported by Evidence", etc.) went out
+ * with an empty evidence list, no matter how well-researched it was. */
+export async function addClaimEvidence(claimId: string, sourceId: string, note?: string): Promise<void> {
+  const { error } = await supabase.from('claim_evidence').insert({
+    claim_id: claimId,
+    source_id: sourceId,
+    note: note?.trim() || null,
+  });
+  if (error) throw error;
+  await logAdminAction('add_claim_evidence', 'claim_evidence', claimId, { sourceId });
+}

@@ -23,7 +23,7 @@ import {
   getPendingAds, approveAd, rejectAd, type PendingAd,
 } from '@/services/admin';
 import { getPendingReports, markReportReviewed, type ContentReport } from '@/services/content-reports';
-import { getUnresearchedClaims, assessClaimInLibrary, type UnresearchedClaim } from '@/services/admin';
+import { getUnresearchedClaims, assessClaimInLibrary, addClaimEvidence, type UnresearchedClaim } from '@/services/admin';
 import { getRevenueSummary, type RevenueSummary } from '@/services/admin';
 import {
   searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest,
@@ -1478,6 +1478,26 @@ function ClaimsLibraryAdminTab() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [draftAssessment, setDraftAssessment] = useState<Record<string, string>>({});
   const [draftExplanation, setDraftExplanation] = useState<Record<string, string>>({});
+  const [draftSource, setDraftSource] = useState<Record<string, string>>({});
+  const [draftNote, setDraftNote] = useState<Record<string, string>>({});
+  const [evidenceCount, setEvidenceCount] = useState<Record<string, number>>({});
+
+  async function handleAttachEvidence(claimId: string) {
+    const sourceId = draftSource[claimId];
+    if (!sourceId) return;
+    setBusyId(claimId);
+    try {
+      await addClaimEvidence(claimId, sourceId, draftNote[claimId]);
+      toast.success('Evidence attached.');
+      setEvidenceCount((prev) => ({ ...prev, [claimId]: (prev[claimId] ?? 0) + 1 }));
+      setDraftSource((prev) => ({ ...prev, [claimId]: '' }));
+      setDraftNote((prev) => ({ ...prev, [claimId]: '' }));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to attach evidence.');
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -1499,6 +1519,7 @@ function ClaimsLibraryAdminTab() {
       toast.error('Add an explanation before publishing an assessment.');
       return;
     }
+    if ((evidenceCount[claim.id] ?? 0) === 0 && !window.confirm('No evidence sources are attached to this claim. Publish the assessment anyway?')) return;
     setBusyId(claim.id);
     try {
       await assessClaimInLibrary(claim.id, assessment, explanation);
@@ -1545,6 +1566,21 @@ function ClaimsLibraryAdminTab() {
                 rows={3}
                 className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               />
+              <div className="rounded-lg border border-border/60 p-2.5 space-y-2">
+                <p className={`text-xs font-medium ${(evidenceCount[claim.id] ?? 0) === 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {(evidenceCount[claim.id] ?? 0) === 0 ? '⚠ No evidence attached yet' : `${evidenceCount[claim.id]} evidence source${evidenceCount[claim.id] === 1 ? '' : 's'} attached`}
+                </p>
+                <SourceSearchPicker value={draftSource[claim.id] ?? ''} onChange={(id) => setDraftSource((prev) => ({ ...prev, [claim.id]: id }))} />
+                <Input
+                  value={draftNote[claim.id] ?? ''}
+                  onChange={(e) => setDraftNote((prev) => ({ ...prev, [claim.id]: e.target.value }))}
+                  placeholder="What this source shows (optional)"
+                  className="text-xs h-8"
+                />
+                <Button size="sm" variant="outline" disabled={!draftSource[claim.id] || busyId === claim.id} onClick={() => handleAttachEvidence(claim.id)}>
+                  Attach Evidence
+                </Button>
+              </div>
               <Button size="sm" disabled={busyId === claim.id} onClick={() => handleAssess(claim)}>
                 Publish Assessment
               </Button>

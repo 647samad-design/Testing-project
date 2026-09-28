@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -435,5 +435,21 @@ describe('evidence sourcing for positions — previously no way to attach a sour
     await linkSourceToPosition('pos-1', 'source-1');
     expect(fromMock).toHaveBeenCalledWith('candidate_sources');
     expect(insertMock).toHaveBeenCalledWith({ candidate_position_id: 'pos-1', source_id: 'source-1' });
+  });
+});
+
+describe('addClaimEvidence — published Claims Library assessments previously always had empty evidence', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('inserts a claim_evidence row with the note trimmed, and logs it', async () => {
+    await addClaimEvidence('claim-1', 'source-1', '  Shows the vote tally  ');
+    expect(fromMock).toHaveBeenCalledWith('claim_evidence');
+    expect(insertMock).toHaveBeenCalledWith({ claim_id: 'claim-1', source_id: 'source-1', note: 'Shows the vote tally' });
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'add_claim_evidence' }));
+  });
+
+  it('stores a null note when none is given', async () => {
+    await addClaimEvidence('claim-1', 'source-1');
+    expect(insertMock).toHaveBeenCalledWith({ claim_id: 'claim-1', source_id: 'source-1', note: null });
   });
 });
