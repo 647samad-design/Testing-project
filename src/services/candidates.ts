@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { fetchAllRows } from '@/lib/fetch-all';
 import { demoCandidates } from '@/services/demo-data';
 import { getStoredRegion } from '@/services/elections';
 import { getAllRegionCandidates, getAllStatesCandidates } from '@/services/regions';
@@ -9,13 +10,14 @@ import type {
 
 export async function getCandidates(): Promise<Candidate[]> {
   try {
-    const { data, error } = await supabase
+    const data = await fetchAllRows<Candidate>((from, to) => supabase
       .from('candidates')
       .select('*')
       .order('last_name')
-      .order('first_name');
-    if (error) throw error;
-    if (data && data.length > 0) return data as Candidate[];
+      .order('first_name')
+      .order('id')
+      .range(from, to));
+    if (data.length > 0) return data;
   } catch {
     // Database unreachable — fall through to demo data
   }

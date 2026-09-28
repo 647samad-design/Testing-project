@@ -3,6 +3,7 @@ import {
   demoElection, demoContests, demoMeasures,
 } from '@/services/demo-data';
 import { buildRegionBallot, type RegionConfig } from '@/services/regions';
+import { fetchAllRows, fetchInChunks } from '@/lib/fetch-all';
 import type {
   Election, BallotContest, District, BallotMeasure,
   DistrictResult, Candidate,
@@ -206,92 +207,85 @@ async function loadBallotFromDB(voterState: string, voterDistrictIds: string[]):
 
   const election = elections[0] as Election;
 
-  const [contestsRes, measuresRes, districtsRes] = await Promise.all([
-    supabase.from('ballot_contests')
-      .select('id, election_id, district_id, office_name, contest_level, seat_description, term_length')
-      .eq('election_id', election.id)
-      .order('contest_level')
-      .order('office_name'),
-    supabase.from('ballot_measures')
-      .select('*')
-      .eq('election_id', election.id)
-      .order('title'),
-    supabase.from('districts')
-      .select('id, name, district_type, state'),
-  ]);
+  // Every query here is scoped on the SERVER and paged. This function used to
+  // load every race of the election and every district in the database, then
+  // filter in JavaScript -- and PostgREST caps each response at 1,000 rows
+  // without any error. Verified against a real PostgREST with that cap: 1,621
+  // races -> 1,000 returned, 1,735 districts -> 1,000 returned. Past that size
+  // races silently vanished from ballots, and districts missing from the map
+  // were treated as "statewide", pulling other states' races onto the ballot.
+  const scope: BallotScope = voterDistrictIds.length > 0 ? 'district' : 'state';
+  const contestCols = 'id, election_id, district_id, office_name, contest_level, seat_description, term_length';
+  const districtCols = 'id, name, district_type, state';
 
-  if (contestsRes.error) throw contestsRes.error;
+  type ContestRow = { id: string; election_id: string; district_id: string | null; office_name: string; contest_level: string; seat_description: string | null; term_length: string | null };
+  type WithDistrict<T> = T & { district: District };
 
-  const contests = contestsRes.data ?? [];
-  const measures = (measuresRes.data ?? []) as BallotMeasure[];
-  const districts = districtsRes.data ?? [];
+  // Does the database cover this state at all? (Otherwise fall back to the
+  // region demo ballot, as before.)
+  const { count: stateCoverage, error: covErr } = await supabase
+    .from('ballot_contests')
+    .select('id, district:districts!inner(state)', { count: 'exact', head: true })
+    .eq('election_id', election.id)
+    .ilike('district.state', voterState);
+  if (covErr) throw covErr;
+  if (!stateCoverage) return null;
 
-  if (contests.length === 0 && measures.length === 0) return null;
+  const statewideContests = await fetchAllRows<ContestRow>((from, to) =>
+    supabase.from('ballot_contests').select(contestCols)
+      .eq('election_id', election.id).is('district_id', null)
+      .order('id').range(from, to));
+
+  let scopedContests: ContestRow[];
+  let scopedDistricts: District[];
+  if (scope === 'district') {
+    scopedContests = await fetchInChunks<ContestRow>(voterDistrictIds, (chunk) =>
+      supabase.from('ballot_contests').select(contestCols)
+        .eq('election_id', election.id).in('district_id', chunk));
+    scopedDistricts = await fetchInChunks<District>(voterDistrictIds, (chunk) =>
+      supabase.from('districts').select(districtCols).in('id', chunk));
+  } else {
+    const rows = await fetchAllRows<WithDistrict<ContestRow>>((from, to) =>
+      supabase.from('ballot_contests').select(`${contestCols}, district:districts!inner(${districtCols})`)
+        .eq('election_id', election.id).ilike('district.state', voterState)
+        .order('id').range(from, to));
+    scopedContests = rows.map(({ district: _d, ...c }) => c);
+    scopedDistricts = rows.map((r) => r.district);
+  }
+
+  type MeasureRow = BallotMeasure & { district: District | null };
+  const measureRows = await fetchAllRows<MeasureRow>((from, to) =>
+    supabase.from('ballot_measures').select(`*, district:districts(${districtCols})`)
+      .eq('election_id', election.id).order('id').range(from, to));
+  const ownDistricts = new Set(voterDistrictIds);
+  const filteredMeasures: BallotMeasure[] = measureRows
+    .filter((m) => {
+      if (!m.district_id) return true; // statewide
+      return scope === 'district'
+        ? ownDistricts.has(m.district_id)
+        : (m.district?.state ?? '').toLowerCase() === voterState.toLowerCase();
+    })
+    .map(({ district: _d, ...m }) => m as BallotMeasure);
 
   const districtMap: Record<string, District> = {};
-  districts.forEach((d) => {
-    districtMap[d.id] = d as District;
-  });
+  scopedDistricts.forEach((d) => { districtMap[d.id] = d; });
 
-  // Filter to contests whose districts match the voter's state.
-  // Statewide contests (district_id = null) are only included if the
-  // database actually has district-scoped contests for this state —
-  // otherwise the DB doesn't cover this state at all and we should
-  // fall back to region demo data.
-  const voterStateLower = voterState.toLowerCase();
-  const stateMatches = (d: District | undefined | null): boolean => {
-    if (!d) return true; // statewide contest
-    return (d.state ?? '').toLowerCase() === voterStateLower;
-  };
-
-  const districtScopedMatches = contests.filter((c) =>
-    c.district_id && stateMatches(districtMap[c.district_id] ?? null)
-  );
-
-  // If no district-scoped contests match the voter's state, the DB
-  // doesn't have data for this state — fall back to region demo data.
-  if (districtScopedMatches.length === 0) return null;
-
-  // Previously this ALWAYS filtered by state only -- the voter's own district
-  // ids never reached this function -- so a Miami voter was shown every
-  // district-scoped race in Florida (other cities' councils, other state
-  // house seats). When the ZIP is linked to districts we now show only the
-  // voter's own districts plus statewide contests; otherwise we fall back to
-  // state-wide and say so (scope = 'state').
-  const ownDistricts = new Set(voterDistrictIds);
-  const scope: BallotScope = ownDistricts.size > 0 ? 'district' : 'state';
-  const inScope = (districtId: string | null) => {
-    if (!districtId) return true; // statewide
-    return scope === 'district' ? ownDistricts.has(districtId) : stateMatches(districtMap[districtId] ?? null);
-  };
-
-  const filteredContests = contests.filter((c) => inScope(c.district_id));
-  // Measures follow the same scope (district-level when known, else state).
-  const filteredMeasures = measures.filter((m) => inScope(m.district_id ?? null));
+  const filteredContests = [...scopedContests, ...statewideContests].sort((a, b) =>
+    a.contest_level.localeCompare(b.contest_level) || a.office_name.localeCompare(b.office_name));
 
   const contestIds = filteredContests.map((c) => c.id);
-  let candidatesByContest: Record<string, Candidate[]> = {};
+  const candidatesByContest: Record<string, Candidate[]> = {};
 
   if (contestIds.length > 0) {
-    const { data: offices } = await supabase
-      .from('candidate_offices')
-      .select('candidate_id, contest_id, incumbent')
-      .in('contest_id', contestIds);
+    const offices = await fetchInChunks<{ candidate_id: string; contest_id: string; incumbent: boolean }>(contestIds, (chunk) =>
+      supabase.from('candidate_offices').select('candidate_id, contest_id, incumbent').in('contest_id', chunk));
 
-    const candidateIds = (offices ?? []).map((o) => o.candidate_id);
-    let candidateMap: Record<string, Candidate> = {};
+    const candidateMap: Record<string, Candidate> = {};
+    const cands = await fetchInChunks<Candidate>(offices.map((o) => o.candidate_id), (chunk) =>
+      supabase.from('candidates').select('*').in('id', chunk));
+    cands.forEach((c) => { candidateMap[c.id] = c; });
 
-    if (candidateIds.length > 0) {
-      const { data: cands } = await supabase
-        .from('candidates')
-        .select('*')
-        .in('id', candidateIds);
-      (cands ?? []).forEach((c) => {
-        candidateMap[c.id] = c as Candidate;
-      });
-    }
-
-    (offices ?? []).forEach((o) => {
+    offices.forEach((o) => {
       const c = candidateMap[o.candidate_id];
       if (c) {
         if (!candidatesByContest[o.contest_id]) candidatesByContest[o.contest_id] = [];
@@ -328,8 +322,8 @@ export async function getElections(): Promise<Election[]> {
 }
 
 export async function getDistricts(): Promise<District[]> {
-  const { data } = await supabase.from('districts').select('*').order('name');
-  return (data ?? []) as District[];
+  return fetchAllRows<District>((from, to) =>
+    supabase.from('districts').select('*').order('name').order('id').range(from, to)).catch(() => []);
 }
 
 export function getStoredRegion(): RegionConfig | null {

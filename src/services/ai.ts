@@ -1,4 +1,5 @@
 import type { AIResponse, ClaimAssessment, Source, CandidatePosition, VotingRecord, CandidateStatement } from '@/types';
+import { fetchAllRows } from '@/lib/fetch-all';
 import { supabase } from '@/lib/supabase';
 import { getCandidatePositions, getVotingRecord, getCandidateStatements } from './candidates';
 
@@ -282,7 +283,8 @@ export async function assessClaim(claimText: string): Promise<ClaimAssessment> {
 // --- helpers ---
 
 async function findCandidateByName(question: string): Promise<{ id: string } | null> {
-  const { data } = await supabase.from('candidates').select('id, first_name, last_name');
+  const data = await fetchAllRows<{ id: string; first_name: string; last_name: string }>((from, to) =>
+    supabase.from('candidates').select('id, first_name, last_name').order('id').range(from, to)).catch(() => null);
   if (!data) return null;
   const q = question.toLowerCase();
   for (const c of data) {

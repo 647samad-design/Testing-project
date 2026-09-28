@@ -223,7 +223,7 @@ describe('bulkImportCandidates — duplicate protection (previously none at all)
 
   it('skips a row matching an existing candidate name (case-insensitive) instead of creating a duplicate', async () => {
     fromMock.mockImplementationOnce(() => ({
-      select: () => Promise.resolve({ data: [{ first_name: 'Jane', last_name: 'Doe' }], error: null }),
+      select: () => ({ order: () => ({ range: () => Promise.resolve({ data: [{ first_name: 'Jane', last_name: 'Doe' }], error: null }) }) }),
     }) as unknown as ReturnType<typeof fromMock>);
 
     const result = await bulkImportCandidates([
@@ -239,7 +239,7 @@ describe('bulkImportCandidates — duplicate protection (previously none at all)
 
   it('also catches a duplicate within the same import file, not just against existing data', async () => {
     fromMock.mockImplementationOnce(() => ({
-      select: () => Promise.resolve({ data: [], error: null }),
+      select: () => ({ order: () => ({ range: () => Promise.resolve({ data: [], error: null }) }) }),
     }) as unknown as ReturnType<typeof fromMock>);
     insertMock.mockReturnValueOnce({ select: () => Promise.resolve({ data: [{ id: 'new-1' }], error: null }) } as unknown as ReturnType<typeof insertMock>);
 
@@ -254,7 +254,7 @@ describe('bulkImportCandidates — duplicate protection (previously none at all)
 
   it('does not call insert at all if every row is a duplicate', async () => {
     fromMock.mockImplementationOnce(() => ({
-      select: () => Promise.resolve({ data: [{ first_name: 'Jane', last_name: 'Doe' }], error: null }),
+      select: () => ({ order: () => ({ range: () => Promise.resolve({ data: [{ first_name: 'Jane', last_name: 'Doe' }], error: null }) }) }),
     }) as unknown as ReturnType<typeof fromMock>);
 
     const result = await bulkImportCandidates([{ first_name: 'Jane', last_name: 'Doe' }]);
@@ -516,5 +516,32 @@ describe('addBallotContest — now audit-logged', () => {
     await addBallotContest({ election_id: 'e1', office_name: 'City Council Seat 3', contest_level: 'local', district_id: 'd1' });
     expect(fromMock).toHaveBeenCalledWith('ballot_contests');
     expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'add_ballot_contest' }));
+  });
+});
+
+describe('bulkImportCandidates past 1,000 existing candidates', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('pages through ALL existing names, so a duplicate of candidate #1,500 is still caught', async () => {
+    const existing = Array.from({ length: 1500 }, (_, i) => ({ first_name: `First${i}`, last_name: `Last${i}` }));
+    const rangeCalls: Array<[number, number]> = [];
+    fromMock.mockImplementationOnce(() => ({
+      select: () => ({ order: () => ({ range: (from: number, to: number) => {
+        rangeCalls.push([from, to]);
+        return Promise.resolve({ data: existing.slice(from, to + 1), error: null });
+      } }) }),
+    }) as unknown as ReturnType<typeof fromMock>);
+    fromMock.mockImplementationOnce(() => ({
+      select: () => ({ order: () => ({ range: (from: number, to: number) => {
+        rangeCalls.push([from, to]);
+        return Promise.resolve({ data: existing.slice(from, to + 1), error: null });
+      } }) }),
+    }) as unknown as ReturnType<typeof fromMock>);
+
+    const result = await bulkImportCandidates([{ first_name: 'First1499', last_name: 'Last1499' }]);
+
+    expect(rangeCalls).toEqual([[0, 999], [1000, 1999]]);
+    expect(result.skippedDuplicates).toEqual(['First1499 Last1499']);
+    expect(result.inserted).toBe(0);
   });
 });

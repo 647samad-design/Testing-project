@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { fetchAllRows } from '@/lib/fetch-all';
 import type { CandidateClaim } from '@/types';
 
 /** Writes one row to `audit_log` via the SECURITY DEFINER `log_admin_action` RPC.
@@ -111,12 +112,12 @@ export async function addCandidate(candidate: {
 export async function listCandidatesForAdmin(): Promise<Array<{
   id: string; first_name: string; last_name: string; party: string | null; photo_url: string | null; is_demo: boolean;
 }>> {
-  const { data, error } = await supabase
+  return fetchAllRows((from, to) => supabase
     .from('candidates')
     .select('id, first_name, last_name, party, photo_url, is_demo')
-    .order('last_name', { ascending: true });
-  if (error) throw error;
-  return data ?? [];
+    .order('last_name', { ascending: true })
+    .order('id')
+    .range(from, to));
 }
 
 export async function updateCandidate(
@@ -146,9 +147,12 @@ export async function bulkImportCandidates(rows: Array<{
   bio?: string;
   photo_url?: string | null;
 }>): Promise<{ inserted: number; skippedDuplicates: string[] }> {
-  const { data: existing } = await supabase.from('candidates').select('first_name, last_name');
+  // Paged: with more than 1,000 existing candidates a single select only saw
+  // the first 1,000, so duplicates of everyone after that slipped through.
+  const existing = await fetchAllRows<{ first_name: string; last_name: string }>((from, to) =>
+    supabase.from('candidates').select('first_name, last_name').order('id').range(from, to));
   const existingNames = new Set(
-    (existing ?? []).map((c) => `${c.first_name.trim().toLowerCase()}|${c.last_name.trim().toLowerCase()}`)
+    existing.map((c) => `${c.first_name.trim().toLowerCase()}|${c.last_name.trim().toLowerCase()}`)
   );
 
   const skippedDuplicates: string[] = [];
@@ -899,10 +903,10 @@ export interface AdminBallotMeasure { id: string; title: string; measure_type: s
 /** For the Manage Records panel: deleteBallotMeasure() existed with no UI, so a
  * mistyped or duplicate measure could never be removed. */
 export async function listBallotMeasuresForAdmin(): Promise<AdminBallotMeasure[]> {
-  const { data, error } = await supabase
+  return fetchAllRows<AdminBallotMeasure>((from, to) => supabase
     .from('ballot_measures')
     .select('id, title, measure_type, election:elections(name)')
-    .order('title', { ascending: true });
-  if (error || !data) return [];
-  return data as unknown as AdminBallotMeasure[];
+    .order('title', { ascending: true })
+    .order('id')
+    .range(from, to));
 }

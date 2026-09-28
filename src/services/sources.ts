@@ -1,4 +1,5 @@
 import { pgrstQuote } from '@/lib/postgrest-filter';
+import { fetchAllRows } from '@/lib/fetch-all';
 import { supabase } from '@/lib/supabase';
 import type { Source, Claim, ClaimEvidence, AssessmentStatus } from '@/types';
 
@@ -13,12 +14,12 @@ export async function searchSources(query: string): Promise<Source[]> {
 }
 
 export async function getSources(): Promise<Source[]> {
-  const { data, error } = await supabase
+  return fetchAllRows<Source>((from, to) => supabase
     .from('sources')
     .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as Source[];
+    .order('created_at', { ascending: false })
+    .order('id')
+    .range(from, to));
 }
 
 export async function getSourceCountForPosition(positionId: string): Promise<number> {
