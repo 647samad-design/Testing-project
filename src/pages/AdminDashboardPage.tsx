@@ -45,6 +45,7 @@ import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { toast } from 'sonner';
 import { Pencil, Trash2, ShieldOff, ShieldCheck as ShieldCheckIcon, ScrollText, DollarSign } from 'lucide-react';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { SearchPicker } from '@/components/shared/SearchPicker';
 
 export function AdminDashboardPage() {
   usePageMeta({ title: 'Admin', noindex: true });
@@ -1952,76 +1953,30 @@ function AddMeasureForm() {
 }
 
 function CandidateSearchPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
-  const [query, setQuery] = useState('');
   const [candidates, setCandidates] = useState<Awaited<ReturnType<typeof listCandidatesForAdmin>>>([]);
-  const [open, setOpen] = useState(false);
-
   useEffect(() => { listCandidatesForAdmin().then(setCandidates); }, []);
-
-  const selected = candidates.find((c) => c.id === value);
-  const filtered = candidates.filter((c) =>
-    `${c.first_name} ${c.last_name}`.toLowerCase().includes(query.toLowerCase())
-  ).slice(0, 8);
-
   return (
-    <div className="relative">
-      <Input
-        value={open ? query : (selected ? `${selected.first_name} ${selected.last_name}` : '')}
-        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-        onFocus={() => { setOpen(true); setQuery(''); }}
-        placeholder="Search candidate by name…"
-      />
-      {open && filtered.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card shadow-md max-h-48 overflow-y-auto">
-          {filtered.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => { onChange(c.id); setOpen(false); setQuery(''); }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/50"
-            >
-              {c.first_name} {c.last_name}{c.party ? ` (${c.party})` : ''}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <SearchPicker
+      items={candidates}
+      value={value}
+      onChange={onChange}
+      getLabel={(c) => `${c.first_name} ${c.last_name}${c.party ? ` (${c.party})` : ''}`}
+      placeholder="Search candidate by name…"
+    />
   );
 }
 
 function SourceSearchPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
-  const [query, setQuery] = useState('');
   const [sources, setSourcesList] = useState<Source[]>([]);
-  const [open, setOpen] = useState(false);
-
   useEffect(() => { getSources().then(setSourcesList); }, []);
-
-  const selected = sources.find((s) => s.id === value);
-  const filtered = sources.filter((s) => s.title.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
-
   return (
-    <div className="relative">
-      <Input
-        value={open ? query : (selected ? selected.title : '')}
-        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-        onFocus={() => { setOpen(true); setQuery(''); }}
-        placeholder="Search sources by title (optional)…"
-      />
-      {open && filtered.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card shadow-md max-h-48 overflow-y-auto">
-          {filtered.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => { onChange(s.id); setOpen(false); setQuery(''); }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/50 truncate"
-            >
-              {s.title}{s.publisher ? ` · ${s.publisher}` : ''}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <SearchPicker
+      items={sources}
+      value={value}
+      onChange={onChange}
+      getLabel={(s) => `${s.title}${s.publisher ? ` · ${s.publisher}` : ''}`}
+      placeholder="Search sources by title (optional)…"
+    />
   );
 }
 
