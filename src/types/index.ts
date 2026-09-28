@@ -521,6 +521,9 @@ export interface DistrictResult {
   judicial: string | null;
   school: string | null;
   special: string[];
+  /** The voter's own district ids from zip_districts. Empty when the ZIP isn't
+   * linked to specific districts; the ballot then falls back to state-wide. */
+  district_ids?: string[];
 }
 
 // === Social Engagement Types ===

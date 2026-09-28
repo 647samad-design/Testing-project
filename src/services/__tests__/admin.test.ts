@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra, publishFactCheck, dismissFactCheck, addBallotContest } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -483,5 +483,38 @@ describe('profile extras review — admins could not even read pending rows befo
     expect(fromMock).toHaveBeenCalledWith('candidate_funding_sources');
     expect(updateMock).toHaveBeenCalledWith({ status: 'approved' });
     expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'approve_funding', p_target_id: 'f1' }));
+  });
+});
+
+describe('Lens This review — only admins can publish, and there was no UI to do it', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('publishFactCheck sets published + verdict + trimmed explanation and logs it', async () => {
+    await publishFactCheck('fc1', { assessment: 'misleading', explanation: '  Numbers are from 2019.  ', evidence_url: ' https://x.gov ' });
+    expect(fromMock).toHaveBeenCalledWith('fact_checks');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'published', assessment: 'misleading', explanation: 'Numbers are from 2019.', evidence_url: 'https://x.gov',
+    }));
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'publish_fact_check' }));
+  });
+
+  it('refuses to publish without an explanation', async () => {
+    await expect(publishFactCheck('fc1', { assessment: 'true', explanation: '   ' })).rejects.toThrow('explanation');
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it('dismissFactCheck marks reviewed (kept private)', async () => {
+    await dismissFactCheck('fc2');
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'reviewed' }));
+  });
+});
+
+describe('addBallotContest — now audit-logged', () => {
+  beforeEach(() => vi.clearAllMocks());
+  it('inserts the race and logs it', async () => {
+    insertMock.mockReturnValueOnce(Promise.resolve({ error: null }) as unknown as ReturnType<typeof insertMock>);
+    await addBallotContest({ election_id: 'e1', office_name: 'City Council Seat 3', contest_level: 'local', district_id: 'd1' });
+    expect(fromMock).toHaveBeenCalledWith('ballot_contests');
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'add_ballot_contest' }));
   });
 });

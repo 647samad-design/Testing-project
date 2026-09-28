@@ -14,6 +14,8 @@ import { getLocation } from '@/services/districts';
 import { useAuth } from '@/hooks/use-auth';
 import type { BallotContest, BallotMeasure, Election, DistrictResult } from '@/types';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { ElectionResultsCard } from '@/components/shared/ElectionResultsCard';
+import { toStatePostal } from '@/lib/us-states';
 
 const levelOrder = ['federal', 'state', 'local', 'judicial'] as const;
 const levelLabels: Record<string, string> = {
@@ -37,6 +39,7 @@ export function MyBallotPage() {
   const [contests, setContests] = useState<BallotContest[]>([]);
   const [measures, setMeasures] = useState<BallotMeasure[]>([]);
   const [districts, setDistricts] = useState<DistrictResult | null>(null);
+  const [ballotScope, setBallotScope] = useState<'district' | 'state' | undefined>(undefined);
 
   async function loadBallotFor(savedAddress: string) {
     sessionStorage.setItem('ballotlens_address', savedAddress);
@@ -54,6 +57,7 @@ export function MyBallotPage() {
       setElection(result.election);
       setContests(result.contests);
       setMeasures(result.measures);
+      setBallotScope(result.scope);
     }
     setLoading(false);
   }
@@ -187,10 +191,26 @@ export function MyBallotPage() {
           <DemoBanner compact />
         </div>
 
+        {ballotScope === 'state' && (
+          <p className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-sm">
+            We couldn't match your ZIP code to specific districts yet, so this shows every race in your state.
+            Races for other cities or districts may appear here — check the district on each race.
+          </p>
+        )}
+
         <p className="mt-3 text-sm text-muted-foreground">
           Your ballot may change depending on your address. Enter a different ZIP code to see races for another location.
         </p>
       </div>
+
+      {/* AP race calls / certified results for the voter's state. Renders
+          nothing until results exist. This card existed but was never placed
+          on any page, so "race called" notifications had nowhere to lead. */}
+      {toStatePostal(districts?.state) && (
+        <div className="mb-6">
+          <ElectionResultsCard state={toStatePostal(districts?.state)} title="Results in your state" />
+        </div>
+      )}
 
       {/* Election guide sponsor */}
       <div className="mb-6">

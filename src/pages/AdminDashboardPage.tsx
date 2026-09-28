@@ -33,10 +33,12 @@ import {
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
-import type { VerificationStatus, Election, Source } from '@/types';
+import type { VerificationStatus, Election, Source, District } from '@/types';
 import { getElections as getElectionsList } from '@/services/elections';
 import { getSources } from '@/services/sources';
-import { deleteElection, deleteSource } from '@/services/admin';
+import { deleteElection, deleteSource, deleteBallotMeasure, addBallotContest, listBallotMeasuresForAdmin, type AdminBallotMeasure } from '@/services/admin';
+import { getPendingFactChecks, publishFactCheck, dismissFactCheck, type PendingFactCheck, type FactCheckVerdict } from '@/services/admin';
+import { getDistricts as getDistrictsList } from '@/services/elections';
 import { addVotingRecord, addCandidatePosition } from '@/services/admin';
 import { getIssues } from '@/services/districts';
 import type { Issue } from '@/types';
@@ -205,6 +207,7 @@ export function AdminDashboardPage() {
             <AddMeasureForm />
             <AddVotingRecordForm />
             <AddCandidatePositionForm />
+            <AddBallotContestForm />
           </div>
           <div className="mt-6">
             <ManageRecordsPanel />
@@ -334,6 +337,10 @@ function SubmissionsTab() {
 
       <div className="border-t border-border pt-6">
         <ProfileExtrasReviewSection />
+      </div>
+
+      <div className="border-t border-border pt-6">
+        <FactCheckReviewSection />
       </div>
     </div>
   );
@@ -483,6 +490,108 @@ const EXTRA_KIND_LABEL: Record<ProfileExtraKind, string> = {
   funding: 'Funding source',
   get_to_know: 'Get to know',
 };
+
+const VERDICTS: { value: FactCheckVerdict; label: string }[] = [
+  { value: 'true', label: 'True' },
+  { value: 'misleading', label: 'Misleading' },
+  { value: 'needs_context', label: 'Needs context' },
+  { value: 'false', label: 'False' },
+  { value: 'unverified', label: 'Unverified' },
+];
+
+function FactCheckReviewSection() {
+  const [items, setItems] = useState<PendingFactCheck[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [verdict, setVerdict] = useState<Record<string, FactCheckVerdict>>({});
+  const [explanation, setExplanation] = useState<Record<string, string>>({});
+  const [evidenceUrl, setEvidenceUrl] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    getPendingFactChecks()
+      .then(setItems)
+      .catch((err) => toast.error(err instanceof Error ? err.message : 'Failed to load fact checks.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handlePublish(id: string) {
+    setBusyId(id);
+    try {
+      await publishFactCheck(id, {
+        assessment: verdict[id] ?? 'unverified',
+        explanation: explanation[id] ?? '',
+        evidence_url: evidenceUrl[id],
+      });
+      toast.success('Published to Lens This.');
+      setItems((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to publish.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDismiss(id: string) {
+    setBusyId(id);
+    try {
+      await dismissFactCheck(id);
+      toast.success('Dismissed (kept private).');
+      setItems((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to dismiss.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading Lens This submissions…" />;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold">Lens This Submissions</h3>
+      <p className="text-sm text-muted-foreground">
+        Claims voters submitted for checking. Nothing is public until you publish it with a verdict and explanation.
+      </p>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing pending.</p>
+      ) : (
+        items.map((fc) => (
+          <Card key={fc.id} className="p-4 space-y-2">
+            <p className="text-sm font-medium break-words">"{fc.claim_text}"</p>
+            <p className="text-xs text-muted-foreground">
+              {fc.source_platform ? `Seen on ${fc.source_platform} · ` : ''}Submitted {new Date(fc.created_at).toLocaleDateString()}
+              {fc.source_url && (<> · <a href={fc.source_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">source</a></>)}
+            </p>
+            <select
+              value={verdict[fc.id] ?? 'unverified'}
+              onChange={(e) => setVerdict((p) => ({ ...p, [fc.id]: e.target.value as FactCheckVerdict }))}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            >
+              {VERDICTS.map((v) => <option key={v.value} value={v.value}>{v.label}</option>)}
+            </select>
+            <textarea
+              value={explanation[fc.id] ?? ''}
+              onChange={(e) => setExplanation((p) => ({ ...p, [fc.id]: e.target.value }))}
+              placeholder="Explain the verdict with specifics (shown publicly)…"
+              rows={3}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <Input
+              value={evidenceUrl[fc.id] ?? ''}
+              onChange={(e) => setEvidenceUrl((p) => ({ ...p, [fc.id]: e.target.value }))}
+              placeholder="Evidence link (recommended)"
+              className="text-sm"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" disabled={busyId === fc.id || !(explanation[fc.id] ?? '').trim()} onClick={() => handlePublish(fc.id)}>Publish</Button>
+              <Button size="sm" variant="outline" disabled={busyId === fc.id} onClick={() => handleDismiss(fc.id)}>Dismiss</Button>
+            </div>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+}
 
 function ProfileExtrasReviewSection() {
   const [items, setItems] = useState<PendingProfileExtra[]>([]);
@@ -2208,19 +2317,116 @@ function AddCandidatePositionForm() {
   );
 }
 
+function AddBallotContestForm() {
+  const [electionsList, setElectionsList] = useState<Election[]>([]);
+  const [districtsList, setDistrictsList] = useState<District[]>([]);
+  const [electionId, setElectionId] = useState('');
+  const [officeName, setOfficeName] = useState('');
+  const [level, setLevel] = useState('local');
+  const [districtId, setDistrictId] = useState('');
+  const [seat, setSeat] = useState('');
+  const [term, setTerm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    getElectionsList().then((els) => { setElectionsList(els); if (els[0]) setElectionId(els[0].id); });
+    getDistrictsList().then(setDistrictsList);
+  }, []);
+
+  async function handleSave() {
+    if (!electionId || !officeName.trim()) return;
+    if (!districtId && !window.confirm('No district selected: this race will be treated as STATEWIDE and shown to every voter in the state. Continue?')) return;
+    setSaving(true);
+    try {
+      await addBallotContest({
+        election_id: electionId,
+        office_name: officeName.trim(),
+        contest_level: level,
+        district_id: districtId || undefined,
+        seat_description: seat.trim() || undefined,
+        term_length: term.trim() || undefined,
+      });
+      setOfficeName(''); setSeat(''); setTerm(''); setDistrictId('');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add race.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="p-5">
+      <h3 className="font-semibold mb-1 flex items-center gap-2"><Plus className="h-4 w-4" /> Add Race</h3>
+      <p className="text-xs text-muted-foreground mb-3">
+        A race must exist before candidates can be linked to it (Manage Candidates → Race). The district decides whose ballot it appears on.
+      </p>
+      <div className="space-y-3">
+        <div>
+          <Label className="text-xs">Election</Label>
+          <select value={electionId} onChange={(e) => setElectionId(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+            {electionsList.length === 0 && <option value="">No elections yet — create one first</option>}
+            {electionsList.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <Label className="text-xs">Office</Label>
+          <Input value={officeName} onChange={(e) => setOfficeName(e.target.value)} placeholder="e.g. City Council Seat 3" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Level</Label>
+            <select value={level} onChange={(e) => setLevel(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="federal">Federal</option>
+              <option value="state">State</option>
+              <option value="local">Local</option>
+              <option value="judicial">Judicial</option>
+            </select>
+          </div>
+          <div>
+            <Label className="text-xs">Term length</Label>
+            <Input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="e.g. 4 years" />
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs">District (leave empty only for statewide races)</Label>
+          <SearchPicker
+            items={districtsList}
+            value={districtId}
+            onChange={setDistrictId}
+            getLabel={(d) => `${d.name} · ${d.state}`}
+            placeholder="Search districts…"
+          />
+        </div>
+        <div>
+          <Label className="text-xs">Seat description (optional)</Label>
+          <Input value={seat} onChange={(e) => setSeat(e.target.value)} />
+        </div>
+        <Button onClick={handleSave} disabled={!electionId || !officeName.trim() || saving} size="sm" className="w-full">
+          {saving ? 'Saving…' : saved ? 'Added!' : 'Add Race'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 function ManageRecordsPanel() {
   const [electionsList, setElectionsList] = useState<Election[]>([]);
   const [sourcesList, setSourcesList] = useState<Source[]>([]);
+  const [measuresList, setMeasuresList] = useState<AdminBallotMeasure[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [view, setView] = useState<'elections' | 'sources'>('elections');
+  const [view, setView] = useState<'elections' | 'sources' | 'measures'>('elections');
 
   async function load() {
     setLoading(true);
     try {
-      const [els, srcs] = await Promise.all([getElectionsList(), getSources()]);
+      const [els, srcs, ms] = await Promise.all([getElectionsList(), getSources(), listBallotMeasuresForAdmin()]);
       setElectionsList(els);
       setSourcesList(srcs);
+      setMeasuresList(ms);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load records.');
     } finally {
@@ -2258,6 +2464,20 @@ function ManageRecordsPanel() {
     }
   }
 
+  async function handleDeleteMeasure(id: string, title: string) {
+    if (!window.confirm(`Delete ballot measure "${title}"? This cannot be undone.`)) return;
+    setBusyId(id);
+    try {
+      await deleteBallotMeasure(id);
+      toast.success('Ballot measure deleted.');
+      setMeasuresList((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete ballot measure.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (loading) return <LoadingState message="Loading records…" />;
 
   return (
@@ -2265,8 +2485,27 @@ function ManageRecordsPanel() {
       <div className="flex items-center gap-2 mb-3">
         <Button size="sm" variant={view === 'elections' ? 'default' : 'outline'} onClick={() => setView('elections')}>Elections</Button>
         <Button size="sm" variant={view === 'sources' ? 'default' : 'outline'} onClick={() => setView('sources')}>Sources</Button>
+        <Button size="sm" variant={view === 'measures' ? 'default' : 'outline'} onClick={() => setView('measures')}>Ballot Measures</Button>
       </div>
-      {view === 'elections' ? (
+      {view === 'measures' ? (
+        measuresList.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No ballot measures yet.</p>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {measuresList.map((m) => (
+              <div key={m.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{m.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{m.election?.name ?? ''}{m.measure_type ? ` · ${m.measure_type}` : ''}</p>
+                </div>
+                <button disabled={busyId === m.id} onClick={() => handleDeleteMeasure(m.id, m.title)} className="shrink-0 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )
+      ) : view === 'elections' ? (
         electionsList.length === 0 ? (
           <p className="text-sm text-muted-foreground">No elections yet.</p>
         ) : (

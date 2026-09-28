@@ -67,6 +67,7 @@ export async function getVoterDistricts(address: string): Promise<DistrictResult
         judicial: name(d.judicial_district_id),
         school: name(d.school_district_id),
         special: [],
+        district_ids: districtIds,
       };
     }
   }
@@ -155,6 +156,7 @@ export async function getVoterBallot(address: string): Promise<{
   contests: BallotContest[];
   measures: BallotMeasure[];
   error: string | null;
+  scope?: BallotScope;
 }> {
   const districts = await getVoterDistricts(address);
   const cfg: RegionConfig = {
@@ -170,7 +172,7 @@ export async function getVoterBallot(address: string): Promise<{
   sessionStorage.setItem('ballotlens_region', JSON.stringify(cfg));
 
   try {
-    const result = await loadBallotFromDB(cfg.state);
+    const result = await loadBallotFromDB(cfg.state, districts.district_ids ?? []);
     if (result) return result;
   } catch {
     // Database unreachable — fall through to demo data
@@ -184,11 +186,14 @@ export async function getVoterBallot(address: string): Promise<{
   };
 }
 
-async function loadBallotFromDB(voterState: string): Promise<{
+export type BallotScope = 'district' | 'state';
+
+async function loadBallotFromDB(voterState: string, voterDistrictIds: string[]): Promise<{
   election: Election | null;
   contests: BallotContest[];
   measures: BallotMeasure[];
   error: string | null;
+  scope: BallotScope;
 } | null> {
   const { data: elections, error: eErr } = await supabase
     .from('elections')
@@ -247,10 +252,22 @@ async function loadBallotFromDB(voterState: string): Promise<{
   // doesn't have data for this state — fall back to region demo data.
   if (districtScopedMatches.length === 0) return null;
 
-  const filteredContests = contests.filter((c) => {
-    if (!c.district_id) return true; // statewide — include since DB covers this state
-    return stateMatches(districtMap[c.district_id] ?? null);
-  });
+  // Previously this ALWAYS filtered by state only -- the voter's own district
+  // ids never reached this function -- so a Miami voter was shown every
+  // district-scoped race in Florida (other cities' councils, other state
+  // house seats). When the ZIP is linked to districts we now show only the
+  // voter's own districts plus statewide contests; otherwise we fall back to
+  // state-wide and say so (scope = 'state').
+  const ownDistricts = new Set(voterDistrictIds);
+  const scope: BallotScope = ownDistricts.size > 0 ? 'district' : 'state';
+  const inScope = (districtId: string | null) => {
+    if (!districtId) return true; // statewide
+    return scope === 'district' ? ownDistricts.has(districtId) : stateMatches(districtMap[districtId] ?? null);
+  };
+
+  const filteredContests = contests.filter((c) => inScope(c.district_id));
+  // Measures follow the same scope (district-level when known, else state).
+  const filteredMeasures = measures.filter((m) => inScope(m.district_id ?? null));
 
   const contestIds = filteredContests.map((c) => c.id);
   let candidatesByContest: Record<string, Candidate[]> = {};
@@ -290,13 +307,7 @@ async function loadBallotFromDB(voterState: string): Promise<{
     candidates: candidatesByContest[c.id] ?? [],
   })) as unknown as BallotContest[];
 
-  // Also filter measures to the voter's state
-  const filteredMeasures = measures.filter((m) => {
-    if (!m.district_id) return true;
-    return stateMatches(districtMap[m.district_id] ?? null);
-  });
-
-  return { election, contests: enrichedContests, measures: filteredMeasures, error: null };
+  return { election, contests: enrichedContests, measures: filteredMeasures, error: null, scope };
 }
 
 export async function getElection(electionId: string): Promise<Election | null> {

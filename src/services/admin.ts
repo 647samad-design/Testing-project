@@ -204,6 +204,7 @@ export async function addBallotContest(contest: {
 }): Promise<void> {
   const { error } = await supabase.from('ballot_contests').insert(contest);
   if (error) throw error;
+  await logAdminAction('add_ballot_contest', 'ballot_contests', undefined, { office_name: contest.office_name });
 }
 
 export async function addSource(source: {
@@ -841,4 +842,67 @@ export async function reviewProfileExtra(kind: ProfileExtraKind, id: string, dec
   const { error } = await supabase.from(EXTRA_TABLE[kind]).update({ status: decision }).eq('id', id);
   if (error) throw error;
   await logAdminAction(`${decision === 'approved' ? 'approve' : 'reject'}_${kind}`, EXTRA_TABLE[kind], id);
+}
+
+export interface PendingFactCheck {
+  id: string;
+  claim_text: string;
+  source_url: string | null;
+  source_platform: string | null;
+  created_at: string;
+}
+
+export type FactCheckVerdict = 'true' | 'misleading' | 'false' | 'unverified' | 'needs_context';
+
+/** Admin-only: "Lens This" community submissions awaiting review. Only an admin
+ * can publish one, but there was no admin UI to do it, so every submission
+ * stayed pending forever and the public community list could never fill. */
+export async function getPendingFactChecks(): Promise<PendingFactCheck[]> {
+  const { data, error } = await supabase
+    .from('fact_checks')
+    .select('id, claim_text, source_url, source_platform, created_at')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true });
+  if (error || !data) return [];
+  return data as PendingFactCheck[];
+}
+
+export async function publishFactCheck(
+  id: string,
+  review: { assessment: FactCheckVerdict; explanation: string; evidence_url?: string },
+): Promise<void> {
+  if (!review.explanation.trim()) throw new Error('An explanation is required before publishing.');
+  const { error } = await supabase.from('fact_checks').update({
+    status: 'published',
+    assessment: review.assessment,
+    explanation: review.explanation.trim(),
+    evidence_url: review.evidence_url?.trim() || null,
+    reviewed_at: new Date().toISOString(),
+  }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('publish_fact_check', 'fact_checks', id, { assessment: review.assessment });
+}
+
+/** Reviewed but not published (spam, duplicate, not a checkable claim). Stays
+ * visible only to the submitter and admins. */
+export async function dismissFactCheck(id: string): Promise<void> {
+  const { error } = await supabase.from('fact_checks').update({
+    status: 'reviewed',
+    reviewed_at: new Date().toISOString(),
+  }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('dismiss_fact_check', 'fact_checks', id);
+}
+
+export interface AdminBallotMeasure { id: string; title: string; measure_type: string | null; election?: { name: string } | null }
+
+/** For the Manage Records panel: deleteBallotMeasure() existed with no UI, so a
+ * mistyped or duplicate measure could never be removed. */
+export async function listBallotMeasuresForAdmin(): Promise<AdminBallotMeasure[]> {
+  const { data, error } = await supabase
+    .from('ballot_measures')
+    .select('id, title, measure_type, election:elections(name)')
+    .order('title', { ascending: true });
+  if (error || !data) return [];
+  return data as unknown as AdminBallotMeasure[];
 }

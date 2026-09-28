@@ -266,6 +266,23 @@ SELECT rlstest.check('[3100] outsider sees no conversations or messages',
 SELECT rlstest.check('[3100] outsider cannot post into someone else''s conversation',
   rlstest.fails($$INSERT INTO messages (conversation_id,sender_id,sender_role,body) VALUES ('c0110000-0000-0000-0000-000000000001',auth.uid(),'voter','intrude')$$));
 
+-- ───────── Lens This self-publish (20260913003200) ─────────
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3200] user CANNOT self-publish a "true" fact check',
+  rlstest.fails($$INSERT INTO fact_checks (claim_text, submitted_by_user_id, status, assessment, explanation) VALUES ('Candidate X is a criminal', auth.uid(), 'published', 'true', 'Verified by BallotLens')$$));
+SELECT rlstest.check('[3200] user cannot pre-fill a verdict on a pending submission',
+  rlstest.fails($$INSERT INTO fact_checks (claim_text, submitted_by_user_id, assessment) VALUES ('x', auth.uid(), 'false')$$));
+SELECT rlstest.check('[3200] a normal submission still works (what the app sends)',
+  rlstest.rc($$INSERT INTO fact_checks (id, claim_text, source_url, source_platform, submitted_by_user_id) VALUES ('fc000000-0000-0000-0000-000000000001','Taxes doubled last year','https://example.com','x',auth.uid())$$) = 1);
+SELECT rlstest.check('[3200] submitter cannot publish it afterwards either', rlstest.rc($$UPDATE fact_checks SET status='published'$$) = 0);
+SELECT rlstest.as_user('dddddddd-0000-0000-0000-000000000004');
+SELECT rlstest.check('[3200] others cannot see the pending submission', rlstest.cnt($$SELECT count(*) FROM fact_checks WHERE id='fc000000-0000-0000-0000-000000000001'$$) = 0);
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[3200] admin CAN publish with a verdict',
+  rlstest.rc($$UPDATE fact_checks SET status='published', assessment='misleading', explanation='Rates rose 8%, not 100%.', reviewed_at=now() WHERE id='fc000000-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3200] published check is public', rlstest.cnt($$SELECT count(*) FROM fact_checks WHERE id='fc000000-0000-0000-0000-000000000001' AND status='published'$$) = 1);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

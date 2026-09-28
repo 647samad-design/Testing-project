@@ -91,7 +91,7 @@ export function NotificationBell() {
               notifications.slice(0, 15).map((n) => (
                 <Link
                   key={n.id}
-                  to={n.candidate_id ? `/candidates/${n.candidate_id}` : '/feed'}
+                  to={n.candidate_id ? `/candidates/${n.candidate_id}` : ['race_called', 'results_certified', 'election_reminder'].includes(n.type) ? '/ballot' : '/feed'}
                   onClick={() => handleOpenNotification(n)}
                   className={`block px-4 py-3 text-sm border-b border-border last:border-0 hover:bg-secondary/50 transition-colors ${!n.is_read ? 'bg-primary/5' : ''}`}
                 >
