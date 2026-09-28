@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 import { getVoterQuestions, askQuestion, answerQuestion, rateQuestion } from '@/services/social';
 import { getIssues } from '@/services/districts';
 import { cn } from '@/lib/utils';
@@ -43,8 +44,9 @@ export function QuestionsSection({ candidateId, canAnswer }: { candidateId: stri
       setSelectedIssue('none');
       const qs = await getVoterQuestions(candidateId);
       setQuestions(qs);
-    } catch {
-      // ignore
+      toast.success('Question posted.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not post your question.');
     }
     setSubmitting(false);
   }
@@ -56,15 +58,24 @@ export function QuestionsSection({ candidateId, canAnswer }: { candidateId: stri
       await answerQuestion(qId, answer.trim());
       const qs = await getVoterQuestions(candidateId);
       setQuestions(qs);
-    } catch {
-      // ignore
+      toast.success('Answer published. The person who asked has been notified.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not publish your answer.');
     }
   }
 
   async function handleRate(qId: string, type: RatingType, value: boolean) {
-    await rateQuestion(qId, type, value);
-    const qs = await getVoterQuestions(candidateId);
-    setQuestions(qs);
+    if (!user) {
+      toast.error('Sign in to rate answers.');
+      return;
+    }
+    try {
+      await rateQuestion(qId, type, value);
+      const qs = await getVoterQuestions(candidateId);
+      setQuestions(qs);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save your rating.');
+    }
   }
 
   function toggleExpand(qId: string) {

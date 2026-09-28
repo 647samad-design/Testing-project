@@ -252,25 +252,31 @@ export async function askQuestion(candidateId: string, questionText: string, iss
   if (error) throw error;
 }
 
+/** Answers a voter's question as the candidate. Goes through the
+ * answer_voter_question() database function rather than a direct UPDATE:
+ * the function verifies the caller is that candidate's verified claimant,
+ * an active team member, or an admin, records who answered, and notifies
+ * the person who asked. (A direct UPDATE policy let the asker themselves
+ * write a fake "candidate answer" onto their own question.) */
 export async function answerQuestion(questionId: string, answerText: string): Promise<void> {
-  const { error } = await supabase
-    .from('voter_questions')
-    .update({
-      answer_text: answerText,
-      answered_at: new Date().toISOString(),
-      status: 'answered',
-    })
-    .eq('id', questionId);
+  const { error } = await supabase.rpc('answer_voter_question', {
+    p_question_id: questionId,
+    p_answer: answerText,
+  });
   if (error) throw error;
 }
 
 export async function rateQuestion(questionId: string, ratingType: RatingType, value: boolean): Promise<void> {
   if (value) {
-    await supabase.from('question_ratings').upsert({
+    // ignoreDuplicates => INSERT ... ON CONFLICT DO NOTHING. A plain upsert
+    // would need an UPDATE policy on question_ratings (there isn't one, by
+    // design) and would error on a second click.
+    const { error } = await supabase.from('question_ratings').upsert({
       question_id: questionId,
       rating_type: ratingType,
       value: true,
-    }, { onConflict: 'question_id, user_id, rating_type' });
+    }, { onConflict: 'question_id,user_id,rating_type', ignoreDuplicates: true });
+    if (error) throw error;
   } else {
     await supabase.from('question_ratings').delete().eq('question_id', questionId).eq('rating_type', ratingType);
   }

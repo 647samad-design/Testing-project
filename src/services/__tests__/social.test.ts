@@ -11,7 +11,7 @@ vi.mock('@/lib/supabase', () => ({
   supabase: { from: fromMock, auth: { getUser: getUserMock }, rpc: rpcMock, functions: { invoke: invokeMock } },
 }));
 
-import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead, follow, createFeedPost, inviteTeamMember } from '@/services/social';
+import { isFollowing, getFollowingIds, getFollowedCandidates, getFollowedIssues, getFollowerCount, getNotifications, markAllNotificationsRead, follow, createFeedPost, inviteTeamMember, answerQuestion, rateQuestion } from '@/services/social';
 
 describe('createFeedPost — author attribution (was always NULL, breaking own-post delete)', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -232,5 +232,40 @@ describe('inviteTeamMember — the actual point of the $299 Management team feat
   it('throws if the RPC rejects (e.g. caller is not authorized for this candidate)', async () => {
     rpcMock.mockResolvedValue({ data: null, error: new Error('Not authorized to invite team members for this candidate') });
     await expect(inviteTeamMember('cand-1', 'x@example.com', 'volunteer')).rejects.toThrow('Not authorized');
+  });
+});
+
+describe('answerQuestion — goes through the authority-checked RPC, not a direct UPDATE', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('calls answer_voter_question and never updates voter_questions directly', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: null });
+    await answerQuestion('q-1', 'Here is my plan');
+    expect(rpcMock).toHaveBeenCalledWith('answer_voter_question', { p_question_id: 'q-1', p_answer: 'Here is my plan' });
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('surfaces the database error when the caller is not allowed to answer', async () => {
+    rpcMock.mockResolvedValue({ data: null, error: new Error('Not authorized to answer questions for this candidate') });
+    await expect(answerQuestion('q-1', 'fake')).rejects.toThrow('Not authorized');
+  });
+});
+
+describe('rateQuestion — insert-only (ON CONFLICT DO NOTHING); there is no UPDATE policy on ratings', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('upserts with ignoreDuplicates so a second click does not need UPDATE permission', async () => {
+    const upsertMock = vi.fn().mockResolvedValue({ error: null });
+    fromMock.mockReturnValue({ upsert: upsertMock });
+    await rateQuestion('q-1', 'helpful', true);
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ question_id: 'q-1', rating_type: 'helpful' }),
+      expect.objectContaining({ ignoreDuplicates: true }),
+    );
+  });
+
+  it('throws instead of silently swallowing a failed rating', async () => {
+    fromMock.mockReturnValue({ upsert: vi.fn().mockResolvedValue({ error: new Error('boom') }) });
+    await expect(rateQuestion('q-1', 'helpful', true)).rejects.toThrow('boom');
   });
 });
