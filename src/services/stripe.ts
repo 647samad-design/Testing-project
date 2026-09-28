@@ -1,3 +1,4 @@
+import { edgeFunctionErrorMessage } from '@/lib/edge-function-error';
 import { supabase } from '@/lib/supabase';
 
 export type CheckoutPlan =
@@ -25,7 +26,7 @@ export async function startCheckout(plan: CheckoutPlan, candidateId?: string): P
   );
 
   if (error) {
-    throw new Error(error.message || 'Could not start checkout. Please try again.');
+    throw new Error(await edgeFunctionErrorMessage(error, 'Could not start checkout. Please try again.'));
   }
   if (!data?.url) {
     throw new Error(data?.error || 'Checkout session did not return a redirect URL.');
@@ -44,7 +45,7 @@ export async function openBillingPortal(): Promise<void> {
     'create-portal-session',
     { body: {} }
   );
-  if (error) throw new Error(error.message || 'Could not open billing portal.');
+  if (error) throw new Error(await edgeFunctionErrorMessage(error, 'Could not open billing portal.'));
   if (!data?.url) throw new Error(data?.error || 'Billing portal did not return a URL.');
   window.location.href = data.url;
 }

@@ -113,6 +113,36 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Block a second, overlapping subscription. Without this, a user already on
+    // Candidate ($9) who clicks Pro got a SECOND Stripe subscription: both billed
+    // every period, and the single per-user `subscriptions` row just reflected
+    // whichever webhook arrived last -- so cancelling either one could revoke
+    // access while the other kept charging. Plan changes go through the billing
+    // portal instead.
+    if (plan === "candidate_management") {
+      const { data: mgmt } = await admin
+        .from("candidate_management_subscriptions")
+        .select("status")
+        .eq("candidate_id", candidateId)
+        .maybeSingle();
+      if (mgmt?.status === "active") {
+        return json({ error: "Candidate Management is already active for this profile.", code: "already_subscribed" }, 409);
+      }
+    } else if (existingCustomer?.stripe_customer_id) {
+      const mgmtPriceId = Deno.env.get("STRIPE_CANDIDATE_MANAGEMENT_PRICE_ID");
+      const subs = await stripe.subscriptions.list({ customer: stripeCustomerId, status: "all", limit: 100 });
+      const liveVoterPlan = subs.data.find((sub) =>
+        ["active", "trialing", "past_due", "unpaid", "incomplete"].includes(sub.status) &&
+        sub.items.data[0]?.price?.id !== mgmtPriceId
+      );
+      if (liveVoterPlan) {
+        return json({
+          error: "You already have an active plan. To switch or cancel it, open Account → Billing → Manage Billing.",
+          code: "already_subscribed",
+        }, 409);
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: "subscription",

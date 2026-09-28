@@ -192,6 +192,41 @@ SELECT rlstest.check('[2900] ...and their personal rows are gone',
   rlstest.cnt($$SELECT count(*) FROM follows WHERE user_id='ffffffff-0000-0000-0000-000000000006'$$)
   + rlstest.cnt($$SELECT count(*) FROM profiles WHERE id='ffffffff-0000-0000-0000-000000000006'$$) = 0);
 
+-- ───────── Stripe payment idempotency + statuses (20260913003000) ─────────
+SELECT rlstest.as_owner();
+-- order A: payment_intent.succeeded first (usual), then invoice.paid
+INSERT INTO payments (stripe_customer_id, stripe_payment_intent_id, amount, payment_type, status)
+  VALUES ('cus_A','pi_A',900,'other','succeeded') ON CONFLICT (stripe_payment_intent_id) DO NOTHING;
+INSERT INTO payments (stripe_customer_id, stripe_payment_intent_id, stripe_invoice_id, amount, currency, payment_type, status)
+  VALUES ('cus_A','pi_A','in_A',900,'usd','subscription','succeeded')
+  ON CONFLICT (stripe_payment_intent_id) DO UPDATE SET stripe_invoice_id=EXCLUDED.stripe_invoice_id, payment_type=EXCLUDED.payment_type, currency=EXCLUDED.currency;
+SELECT rlstest.check('[3000] PI-then-invoice stores ONE row (was two -> revenue double-counted)',
+  rlstest.cnt($$SELECT count(*) FROM payments WHERE stripe_payment_intent_id='pi_A'$$) = 1);
+SELECT rlstest.check('[3000] ...and it is the invoice-linked subscription row',
+  rlstest.cnt($$SELECT count(*) FROM payments WHERE stripe_payment_intent_id='pi_A' AND payment_type='subscription' AND stripe_invoice_id='in_A'$$) = 1);
+-- order B: invoice.paid first, then payment_intent.succeeded (handler skips when PI has an invoice; even if it didn't, DO NOTHING)
+INSERT INTO payments (stripe_customer_id, stripe_payment_intent_id, stripe_invoice_id, amount, payment_type, status)
+  VALUES ('cus_B','pi_B','in_B',2900,'subscription','succeeded') ON CONFLICT (stripe_payment_intent_id) DO NOTHING;
+INSERT INTO payments (stripe_customer_id, stripe_payment_intent_id, amount, payment_type, status)
+  VALUES ('cus_B','pi_B',2900,'other','succeeded') ON CONFLICT (stripe_payment_intent_id) DO NOTHING;
+SELECT rlstest.check('[3000] invoice-then-PI stores ONE row', rlstest.cnt($$SELECT count(*) FROM payments WHERE stripe_payment_intent_id='pi_B'$$) = 1);
+-- Stripe retry of invoice.paid
+INSERT INTO revenue_transactions (transaction_type, stripe_payment_id, amount_cents, currency, status) VALUES ('subscription','pi_B',2900,'usd','completed')
+  ON CONFLICT (stripe_payment_id) DO NOTHING;
+INSERT INTO revenue_transactions (transaction_type, stripe_payment_id, amount_cents, currency, status) VALUES ('subscription','pi_B',2900,'usd','completed')
+  ON CONFLICT (stripe_payment_id) DO NOTHING;
+SELECT rlstest.check('[3000] retried invoice.paid does not duplicate revenue', rlstest.cnt($$SELECT count(*) FROM revenue_transactions WHERE stripe_payment_id='pi_B'$$) = 1);
+SELECT rlstest.check('[3000] $0 invoices (no payment intent) still allowed, NULLs not unique-clashing',
+  NOT rlstest.fails($$INSERT INTO payments (stripe_customer_id, amount, payment_type, status) VALUES ('cus_C',0,'subscription','succeeded'),('cus_C',0,'subscription','succeeded')$$));
+SELECT rlstest.check('[3000] subscriptions accepts Stripe status "unpaid" (was CHECK violation)',
+  NOT rlstest.fails($$INSERT INTO subscriptions (user_id, plan, status) VALUES ('bbbbbbbb-0000-0000-0000-000000000002','pro_monthly','unpaid') ON CONFLICT (user_id) DO UPDATE SET status='unpaid'$$));
+SELECT rlstest.check('[3000] management accepts Stripe status "incomplete" (checkout start)',
+  NOT rlstest.fails($$UPDATE candidate_management_subscriptions SET status='incomplete' WHERE candidate_id='11111111-0000-0000-0000-000000000001'$$));
+SELECT rlstest.check('[3000] "incomplete" management does NOT grant access', NOT has_active_management('11111111-0000-0000-0000-000000000001'));
+UPDATE candidate_management_subscriptions SET status='active' WHERE candidate_id='11111111-0000-0000-0000-000000000001';
+SELECT rlstest.check('[3000] unpaid subscription does NOT count as paid for watchlist limit',
+  rlstest.cnt($$SELECT count(*) FROM subscriptions WHERE user_id='bbbbbbbb-0000-0000-0000-000000000002' AND status='active'$$) = 0);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

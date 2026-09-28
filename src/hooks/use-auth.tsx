@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { edgeFunctionErrorMessage } from '@/lib/edge-function-error';
 import type { Profile, LanguageName } from '@/types';
 
 interface AuthContextValue {
@@ -153,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteAccount: AuthContextValue['deleteAccount'] = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('delete-my-account');
-      if (error) return { error: error.message };
+      if (error) return { error: await edgeFunctionErrorMessage(error, 'Failed to delete account.') };
       if (data?.error) return { error: data.error };
       await supabase.auth.signOut();
       return { error: null };

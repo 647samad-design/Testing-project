@@ -12,6 +12,9 @@ cd "$(dirname "$0")/.."
 DB=${DB_NAME:-bl_test}
 run() { if [ -n "${PSQL_AS:-}" ]; then su "$PSQL_AS" -c "$*"; else sh -c "$*"; fi; }
 
+if ! run "psql -d postgres -Atc 'select 1'" >/dev/null 2>&1; then
+  echo "Cannot connect to PostgreSQL -- is the server running? (e.g. pg_ctlcluster 16 main start)"; exit 2
+fi
 run "dropdb --if-exists $DB && createdb $DB" >/dev/null 2>&1
 run "psql -q -d $DB -f '$PWD/db-tests/supabase_stub.sql'" >/dev/null 2>&1
 
