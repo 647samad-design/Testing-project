@@ -192,6 +192,11 @@ SELECT rlstest.check('[2700] user cannot set role=super_admin',
   rlstest.fails($$UPDATE profiles SET role = 'super_admin' WHERE id = auth.uid()$$));
 SELECT rlstest.check('[2700] user cannot change another user''s profile at all',
   rlstest.rc($$UPDATE profiles SET full_name='HACKED' WHERE id <> auth.uid()$$) = 0);
+SELECT rlstest.check('[2800] Account page save (incl. bio) works -- bio column was missing entirely',
+  rlstest.rc($$UPDATE profiles SET full_name='Real Name', zip_code='33101', bio='Local voter', occupation='Teacher', education='BA', photo_url=NULL WHERE id = auth.uid()$$) = 1);
+SELECT rlstest.check('[2800] bio longer than 160 chars rejected',
+  rlstest.fails($$UPDATE profiles SET bio = repeat('x', 161) WHERE id = auth.uid()$$));
+SELECT rlstest.check('[2800] language switch saves', rlstest.rc($$UPDATE profiles SET language_preference='es' WHERE id = auth.uid()$$) = 1);
 SELECT rlstest.check('[2700] user CAN still edit their own name/zip (normal settings save)',
   rlstest.rc($$UPDATE profiles SET full_name='Real Name', zip_code='33101' WHERE id = auth.uid()$$) = 1);
 SELECT rlstest.check('[2700] user still not admin after all attempts',

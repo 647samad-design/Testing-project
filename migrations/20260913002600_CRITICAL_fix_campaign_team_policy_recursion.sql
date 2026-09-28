@@ -29,6 +29,13 @@ broke:
 Logged-out browsing was unaffected, which is why it never showed up in
 casual testing, and several callers swallow errors and render an empty state.
 
+## Note on the live database
+On the live project this recursion was first patched directly through Bolt
+(helpers named is_campaign_team_member / is_verified_claimant). The helpers
+here use an rls_ prefix so this migration can't collide with those (CREATE OR
+REPLACE fails if an existing function's parameter names differ), and applying
+it makes the live policies match the repository again.
+
 ## Fix
 Membership checks move into SECURITY DEFINER functions. They read
 campaign_team/candidate_claims as the table owner, so they don't re-enter
@@ -39,7 +46,7 @@ The policies keep exactly the same meaning as before:
   UPDATE/DELETE : verified claimant OR team manager
 */
 
-CREATE OR REPLACE FUNCTION is_verified_claimant(p_candidate_id uuid)
+CREATE OR REPLACE FUNCTION rls_is_verified_claimant(p_candidate_id uuid)
 RETURNS boolean SECURITY DEFINER STABLE SET search_path = public LANGUAGE sql AS $$
   SELECT EXISTS (
     SELECT 1 FROM candidate_claims cc
@@ -47,7 +54,7 @@ RETURNS boolean SECURITY DEFINER STABLE SET search_path = public LANGUAGE sql AS
   );
 $$;
 
-CREATE OR REPLACE FUNCTION is_active_team_member(p_candidate_id uuid)
+CREATE OR REPLACE FUNCTION rls_is_active_team_member(p_candidate_id uuid)
 RETURNS boolean SECURITY DEFINER STABLE SET search_path = public LANGUAGE sql AS $$
   SELECT EXISTS (
     SELECT 1 FROM campaign_team ct
@@ -55,7 +62,7 @@ RETURNS boolean SECURITY DEFINER STABLE SET search_path = public LANGUAGE sql AS
   );
 $$;
 
-CREATE OR REPLACE FUNCTION is_team_manager(p_candidate_id uuid)
+CREATE OR REPLACE FUNCTION rls_is_team_manager(p_candidate_id uuid)
 RETURNS boolean SECURITY DEFINER STABLE SET search_path = public LANGUAGE sql AS $$
   SELECT EXISTS (
     SELECT 1 FROM campaign_team ct
@@ -64,28 +71,28 @@ RETURNS boolean SECURITY DEFINER STABLE SET search_path = public LANGUAGE sql AS
   );
 $$;
 
-REVOKE ALL ON FUNCTION is_verified_claimant(uuid), is_active_team_member(uuid), is_team_manager(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION is_verified_claimant(uuid), is_active_team_member(uuid), is_team_manager(uuid) TO anon, authenticated;
+REVOKE ALL ON FUNCTION rls_is_verified_claimant(uuid), rls_is_active_team_member(uuid), rls_is_team_manager(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION rls_is_verified_claimant(uuid), rls_is_active_team_member(uuid), rls_is_team_manager(uuid) TO anon, authenticated;
 
 DROP POLICY IF EXISTS "read_own_campaign_team" ON campaign_team;
 CREATE POLICY "read_own_campaign_team" ON campaign_team FOR SELECT
   TO authenticated USING (
-    is_admin() OR is_active_team_member(candidate_id) OR is_verified_claimant(candidate_id)
+    is_admin() OR rls_is_active_team_member(candidate_id) OR rls_is_verified_claimant(candidate_id)
   );
 
 DROP POLICY IF EXISTS "insert_campaign_team" ON campaign_team;
 CREATE POLICY "insert_campaign_team" ON campaign_team FOR INSERT
   TO authenticated WITH CHECK (
     has_active_management(candidate_id)
-    AND (is_verified_claimant(candidate_id) OR is_team_manager(candidate_id))
+    AND (rls_is_verified_claimant(candidate_id) OR rls_is_team_manager(candidate_id))
   );
 
 DROP POLICY IF EXISTS "update_campaign_team" ON campaign_team;
 CREATE POLICY "update_campaign_team" ON campaign_team FOR UPDATE
   TO authenticated
-  USING (is_verified_claimant(candidate_id) OR is_team_manager(candidate_id))
-  WITH CHECK (is_verified_claimant(candidate_id) OR is_team_manager(candidate_id));
+  USING (rls_is_verified_claimant(candidate_id) OR rls_is_team_manager(candidate_id))
+  WITH CHECK (rls_is_verified_claimant(candidate_id) OR rls_is_team_manager(candidate_id));
 
 DROP POLICY IF EXISTS "delete_campaign_team" ON campaign_team;
 CREATE POLICY "delete_campaign_team" ON campaign_team FOR DELETE
-  TO authenticated USING (is_verified_claimant(candidate_id) OR is_team_manager(candidate_id));
+  TO authenticated USING (rls_is_verified_claimant(candidate_id) OR rls_is_team_manager(candidate_id));
