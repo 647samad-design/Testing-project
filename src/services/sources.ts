@@ -1,3 +1,4 @@
+import { pgrstQuote } from '@/lib/postgrest-filter';
 import { supabase } from '@/lib/supabase';
 import type { Source, Claim, ClaimEvidence, AssessmentStatus } from '@/types';
 
@@ -5,7 +6,7 @@ export async function searchSources(query: string): Promise<Source[]> {
   const { data, error } = await supabase
     .from('sources')
     .select('*')
-    .or(`title.ilike.%${query}%,publisher.ilike.%${query}%,description.ilike.%${query}%`)
+    .or(['title', 'publisher', 'description'].map((col) => `${col}.ilike.${pgrstQuote(`%${query}%`)}`).join(','))
     .limit(20);
   if (error) throw error;
   return (data ?? []) as Source[];

@@ -237,6 +237,35 @@ SELECT rlstest.check('[unsub] reminders opt-out updates only that column on an e
     ON CONFLICT (user_id) DO UPDATE SET instant_election_reminders=EXCLUDED.instant_election_reminders, updated_at=EXCLUDED.updated_at$$) = 1);
 SELECT rlstest.check('[unsub] both opt-outs stuck', rlstest.cnt($$SELECT count(*) FROM notification_preferences WHERE user_id='cccccccc-0000-0000-0000-000000000003' AND digest_frequency='off' AND instant_election_reminders = false$$) = 1);
 
+-- ───────── messaging (20260913003100) ─────────
+SELECT rlstest.as_owner();
+INSERT INTO candidates (id,first_name,last_name) VALUES ('11111111-0000-0000-0000-000000000003','Cand','Z');
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3100] voter CANNOT aim a conversation at a random user',
+  rlstest.fails($$INSERT INTO conversations (voter_id,candidate_id,candidate_user_id) VALUES (auth.uid(),'11111111-0000-0000-0000-000000000001','dddddddd-0000-0000-0000-000000000004')$$));
+SELECT rlstest.check('[3100] voter cannot make themselves the other participant',
+  rlstest.fails($$INSERT INTO conversations (voter_id,candidate_id,candidate_user_id) VALUES (auth.uid(),'11111111-0000-0000-0000-000000000001',auth.uid())$$));
+SELECT rlstest.check('[3100] voter CAN message a candidate''s real verified claimant',
+  rlstest.rc($$INSERT INTO conversations (id,voter_id,candidate_id,candidate_user_id) VALUES ('c0110000-0000-0000-0000-000000000001',auth.uid(),'11111111-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002')$$) = 1);
+SELECT rlstest.check('[3100] voter CAN message an unclaimed candidate (no other participant yet)',
+  rlstest.rc($$INSERT INTO conversations (voter_id,candidate_id,candidate_user_id) VALUES (auth.uid(),'11111111-0000-0000-0000-000000000003',NULL)$$) = 1);
+SELECT rlstest.check('[3100] voter sends a message', rlstest.rc($$INSERT INTO messages (conversation_id,sender_id,sender_role,body) VALUES ('c0110000-0000-0000-0000-000000000001',auth.uid(),'voter','hello')$$) = 1);
+SELECT rlstest.check('[3100] voter CANNOT label their message as the candidate''s',
+  rlstest.rc($$INSERT INTO messages (conversation_id,sender_id,sender_role,body) VALUES ('c0110000-0000-0000-0000-000000000001',auth.uid(),'candidate','I am the candidate')$$) = 1
+  AND rlstest.cnt($$SELECT count(*) FROM messages WHERE body='I am the candidate' AND sender_role='voter'$$) = 1);
+SELECT rlstest.check('[3100] voter CANNOT redirect the conversation to another user',
+  rlstest.fails($$UPDATE conversations SET candidate_user_id='dddddddd-0000-0000-0000-000000000004' WHERE id='c0110000-0000-0000-0000-000000000001'$$));
+SELECT rlstest.check('[3100] voter can still mark it read', rlstest.rc($$UPDATE conversations SET voter_read_at=now() WHERE id='c0110000-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.as_user('bbbbbbbb-0000-0000-0000-000000000002');
+SELECT rlstest.check('[3100] claimant sees the conversation and replies', rlstest.rc($$INSERT INTO messages (conversation_id,sender_id,sender_role,body) VALUES ('c0110000-0000-0000-0000-000000000001',auth.uid(),'voter','thanks for writing')$$) = 1
+  AND rlstest.cnt($$SELECT count(*) FROM messages WHERE body='thanks for writing' AND sender_role='candidate'$$) = 1);
+SELECT rlstest.check('[3100] claimant can mark read + bump last_message_at', rlstest.rc($$UPDATE conversations SET candidate_read_at=now(), last_message_at=now() WHERE id='c0110000-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.as_user('dddddddd-0000-0000-0000-000000000004');
+SELECT rlstest.check('[3100] outsider sees no conversations or messages',
+  rlstest.cnt($$SELECT count(*) FROM conversations$$) + rlstest.cnt($$SELECT count(*) FROM messages$$) = 0);
+SELECT rlstest.check('[3100] outsider cannot post into someone else''s conversation',
+  rlstest.fails($$INSERT INTO messages (conversation_id,sender_id,sender_role,body) VALUES ('c0110000-0000-0000-0000-000000000001',auth.uid(),'voter','intrude')$$));
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

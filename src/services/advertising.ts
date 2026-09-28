@@ -1,3 +1,4 @@
+import { pgrstQuote } from '@/lib/postgrest-filter';
 import { supabase } from '@/lib/supabase';
 import type { Advertisement, Advertiser, AdPlan, Sponsor, Sponsorship, CandidateServicePlan, AdPlacement, SponsorPlacement } from '@/types';
 
@@ -38,7 +39,7 @@ export async function getActiveAds(placement: AdPlacement, viewerState?: string)
       .lte('start_date', today)
       .or(`end_date.is.null,end_date.gte.${today}`);
     if (viewerState) {
-      query = query.or(`target_state.is.null,target_state.eq.${viewerState}`);
+      query = query.or(`target_state.is.null,target_state.eq.${pgrstQuote(viewerState)}`);
     }
     const { data, error } = await query.order('created_at', { ascending: false }).limit(5);
     if (error) throw error;
