@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
       return json({ error: `${PLAN_ENV_VAR[plan]} is not configured. Add it as an edge function secret.` }, 503);
     }
 
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
     const admin = createClient(supabaseUrl, supabaseServiceKey);
 
     // For candidate_management: only the verified claimant of that candidate may buy it.

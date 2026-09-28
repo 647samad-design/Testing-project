@@ -166,7 +166,7 @@ Deno.serve(async (req: Request) => {
 
         const { data: existingRace } = await supabase
           .from("election_races")
-          .select("id, winner_candidate_id")
+          .select("id, winner_candidate_id, is_certified")
           .eq("ap_race_id", race.raceID)
           .maybeSingle();
 

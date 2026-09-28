@@ -9,6 +9,7 @@
 // something callable directly from the browser.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import Stripe from "npm:stripe@17.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,6 +39,38 @@ Deno.serve(async (req: Request) => {
     if (userError || !userData?.user) return json({ error: "Not authenticated" }, 401);
 
     const admin = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Cancel any live Stripe billing BEFORE deleting. Deleting the user
+    // cascades away the stripe_customers row, which is the only link between
+    // this account and its Stripe customer -- so if billing isn't stopped now,
+    // Stripe keeps charging the card every period for an account that no
+    // longer exists, and nothing in the app could ever find or cancel it.
+    // If cancellation fails, refuse to delete rather than orphan a paying
+    // subscription.
+    const { data: customer } = await admin
+      .from("stripe_customers")
+      .select("stripe_customer_id")
+      .eq("user_id", userData.user.id)
+      .maybeSingle();
+
+    if (customer?.stripe_customer_id) {
+      const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+      if (!stripeSecretKey) {
+        return json({ error: "Could not cancel your subscription automatically. Please cancel it from Billing first, then delete your account." }, 500);
+      }
+      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
+      try {
+        const subs = await stripe.subscriptions.list({ customer: customer.stripe_customer_id, status: "all", limit: 100 });
+        for (const sub of subs.data) {
+          if (["active", "trialing", "past_due", "unpaid", "incomplete"].includes(sub.status)) {
+            await stripe.subscriptions.cancel(sub.id);
+          }
+        }
+      } catch (err) {
+        return json({ error: `Could not cancel your subscription: ${err instanceof Error ? err.message : "unknown error"}. Your account was not deleted.` }, 502);
+      }
+    }
+
     const { error: deleteError } = await admin.auth.admin.deleteUser(userData.user.id);
     if (deleteError) return json({ error: deleteError.message }, 500);
 

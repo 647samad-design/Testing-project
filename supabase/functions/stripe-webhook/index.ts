@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const rawBody = await req.text();

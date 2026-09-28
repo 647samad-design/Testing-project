@@ -159,6 +159,39 @@ SELECT rlstest.check('[2600] voter can still log a profile view (was recursion)'
 SELECT rlstest.as_anon();
 SELECT rlstest.check('[2600] anon sees no team rows', rlstest.cnt($$SELECT count(*) FROM campaign_team$$) = 0);
 
+-- ───────── account deletion (20260913002900) ─────────
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[2900] no FK to auth.users/profiles can block deleting a user (NO ACTION/RESTRICT)',
+  rlstest.cnt($$SELECT count(*) FROM pg_constraint WHERE contype='f'
+    AND confrelid IN ('auth.users'::regclass,'public.profiles'::regclass) AND confdeltype IN ('a','r')$$) = 0);
+
+INSERT INTO auth.users (id,email) VALUES ('eeeeeeee-0000-0000-0000-000000000005','reviewer@t.io');
+UPDATE profiles SET is_admin=true, role='admin' WHERE id='eeeeeeee-0000-0000-0000-000000000005';
+INSERT INTO candidate_submissions (id,candidate_id,user_id,field_name,field_value)
+  VALUES ('50000000-0000-0000-0000-000000000005','11111111-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002','bio','reviewed bio');
+SELECT rlstest.as_user('eeeeeeee-0000-0000-0000-000000000005');
+SELECT rlstest.check('[2900] reviewer admin approves a submission', NOT rlstest.fails($$SELECT apply_candidate_submission('50000000-0000-0000-0000-000000000005')$$));
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[2900] admin who reviewed something CAN delete their account (was FK error)',
+  NOT rlstest.fails($$DELETE FROM auth.users WHERE id='eeeeeeee-0000-0000-0000-000000000005'$$));
+SELECT rlstest.check('[2900] the review decision survives, reviewer link cleared',
+  rlstest.cnt($$SELECT count(*) FROM candidate_submissions WHERE id='50000000-0000-0000-0000-000000000005' AND status='approved' AND reviewed_by IS NULL$$) = 1);
+
+-- A voter with data spread across the app must delete cleanly (delete-my-account).
+INSERT INTO auth.users (id,email) VALUES ('ffffffff-0000-0000-0000-000000000006','busyvoter@t.io');
+SELECT rlstest.as_user('ffffffff-0000-0000-0000-000000000006');
+SELECT rlstest.rc($$INSERT INTO follows (followable_type, followable_id) VALUES ('candidate','11111111-0000-0000-0000-000000000001')$$);
+SELECT rlstest.rc($$INSERT INTO voter_questions (candidate_id, question_text) VALUES ('11111111-0000-0000-0000-000000000001','Delete me later?')$$);
+SELECT rlstest.rc($$INSERT INTO question_ratings (question_id, rating_type) SELECT id,'helpful' FROM voter_questions WHERE question_text='Delete me later?'$$);
+SELECT rlstest.rc($$INSERT INTO content_reports (content_type, content_id, reason) VALUES ('candidate','11111111-0000-0000-0000-000000000001','Spam')$$);
+SELECT rlstest.rc($$INSERT INTO candidate_claims (candidate_id, full_name, email) VALUES ('11111111-0000-0000-0000-000000000002','Busy','busyvoter@t.io')$$);
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[2900] voter with follows/questions/ratings/reports/claims deletes cleanly',
+  NOT rlstest.fails($$DELETE FROM auth.users WHERE id='ffffffff-0000-0000-0000-000000000006'$$));
+SELECT rlstest.check('[2900] ...and their personal rows are gone',
+  rlstest.cnt($$SELECT count(*) FROM follows WHERE user_id='ffffffff-0000-0000-0000-000000000006'$$)
+  + rlstest.cnt($$SELECT count(*) FROM profiles WHERE id='ffffffff-0000-0000-0000-000000000006'$$) = 0);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

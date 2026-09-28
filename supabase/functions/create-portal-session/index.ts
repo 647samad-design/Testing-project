@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
       return json({ error: "No billing account found yet — subscribe to a plan first." }, 404);
     }
 
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
     const session = await stripe.billingPortal.sessions.create({
       customer: customer.stripe_customer_id,
       return_url: `${siteUrl}/account`,
