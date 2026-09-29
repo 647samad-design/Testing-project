@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra, publishFactCheck, dismissFactCheck, addBallotContest, applyPromiseProposal, discardPromiseProposal, reviewClaimAnalysis } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra, publishFactCheck, dismissFactCheck, addBallotContest, applyPromiseProposal, discardPromiseProposal, reviewClaimAnalysis, slugify, saveStory } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -568,5 +568,40 @@ describe('candidate self-reports are admin-reviewed', () => {
     await reviewClaimAnalysis('a1', 'published');
     expect(fromMock).toHaveBeenCalledWith('candidate_claim_analysis');
     expect(updateMock).toHaveBeenCalledWith({ review_status: 'published' });
+  });
+});
+
+describe('story editor', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('slugify makes clean URLs', () => {
+    expect(slugify('How a Bill Becomes Law: A Plain-English Guide!')).toBe('how-a-bill-becomes-law-a-plain-english-guide');
+    expect(slugify('  Café  Elección  ')).toBe('cafe-eleccion');
+  });
+
+  const base = { title: 'Why local races matter', slug: '', excerpt: '', body: 'word '.repeat(440), category_id: null,
+    author_name: 'BallotLens Editorial', hero_image_url: '', is_featured: false, is_published: true };
+
+  it('stamps published_at and read time on first publish', async () => {
+    insertMock.mockReturnValueOnce(Promise.resolve({ error: null }) as unknown as ReturnType<typeof insertMock>);
+    await saveStory(base);
+    const row = insertMock.mock.calls[0][0];
+    expect(row.slug).toBe('why-local-races-matter');
+    expect(row.read_time_minutes).toBe(2);
+    expect(typeof row.published_at).toBe('string');
+  });
+
+  it('keeps the original published_at when an already-published story is edited', async () => {
+    await saveStory(base, { id: 's1', published_at: '2026-01-01T00:00:00Z', read_time_minutes: 2, ...base, slug: 'why-local-races-matter', excerpt: null, hero_image_url: null });
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({ published_at: '2026-01-01T00:00:00Z' }));
+  });
+
+  it('refuses an empty body', async () => {
+    await expect(saveStory({ ...base, body: '  ' })).rejects.toThrow('empty');
+  });
+
+  it('explains a duplicate URL clearly', async () => {
+    insertMock.mockReturnValueOnce(Promise.resolve({ error: { message: 'duplicate key value violates unique constraint "stories_slug_key"' } }) as unknown as ReturnType<typeof insertMock>);
+    await expect(saveStory(base)).rejects.toThrow('already uses the URL');
   });
 });

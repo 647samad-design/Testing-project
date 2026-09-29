@@ -392,6 +392,22 @@ SELECT rlstest.rc($$UPDATE candidate_claim_analysis SET authority_assessment='wi
 SELECT rlstest.as_anon();
 SELECT rlstest.check('[3500] a candidate edit sends a published analysis back to review', rlstest.cnt($$SELECT count(*) FROM candidate_claim_analysis WHERE id='9a000000-0000-0000-0000-000000000001'$$) = 0);
 
+-- ───────── stories drafts (20260913003600) ─────────
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[3600] admin creates a draft story',
+  rlstest.rc($$INSERT INTO stories (id, title, slug, body, is_published) VALUES ('5700a000-0000-0000-0000-000000000001','Draft piece','draft-piece','body',false)$$) = 1);
+SELECT rlstest.check('[3600] admin can read the draft back (previously invisible)',
+  rlstest.cnt($$SELECT count(*) FROM stories WHERE id='5700a000-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3600] public cannot see drafts', rlstest.cnt($$SELECT count(*) FROM stories WHERE id='5700a000-0000-0000-0000-000000000001'$$) = 0);
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3600] non-admin cannot write stories',
+  rlstest.fails($$INSERT INTO stories (title, slug, body, is_published) VALUES ('x','x-voter','x',true)$$));
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[3600] admin publishes it', rlstest.rc($$UPDATE stories SET is_published=true, published_at=now() WHERE id='5700a000-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3600] published story is public', rlstest.cnt($$SELECT count(*) FROM stories WHERE slug='draft-piece'$$) = 1);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

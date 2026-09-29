@@ -970,3 +970,64 @@ export async function reviewClaimAnalysis(id: string, decision: 'published' | 'r
   if (error) throw error;
   await logAdminAction(decision === 'published' ? 'publish_claim_analysis' : 'reject_claim_analysis', 'candidate_claim_analysis', id);
 }
+
+export interface AdminStory {
+  id: string; title: string; slug: string; excerpt: string | null; body: string;
+  category_id: string | null; author_name: string | null; hero_image_url: string | null;
+  is_featured: boolean; is_published: boolean; published_at: string | null; read_time_minutes: number | null;
+}
+
+export type StoryDraft = Omit<AdminStory, 'id' | 'published_at' | 'read_time_minutes'>;
+
+/** Story editor. Before this there was no way at all to create or publish a
+ * Civic Story -- only read functions existed -- so the section could only
+ * ever show seed data. */
+export async function listStoriesForAdmin(): Promise<AdminStory[]> {
+  return fetchAllRows<AdminStory>((from, to) => supabase
+    .from('stories')
+    .select('id, title, slug, excerpt, body, category_id, author_name, hero_image_url, is_featured, is_published, published_at, read_time_minutes')
+    .order('created_at', { ascending: false }).order('id').range(from, to));
+}
+
+export function slugify(title: string): string {
+  return title.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+}
+
+function readTime(body: string): number {
+  return Math.max(1, Math.round(body.trim().split(/\s+/).filter(Boolean).length / 220));
+}
+
+/** Creates or updates a story. published_at is stamped the first time a story
+ * is published and kept after that (so re-saving doesn't bump it to the top). */
+export async function saveStory(draft: StoryDraft, existing?: AdminStory): Promise<void> {
+  if (!draft.title.trim()) throw new Error('A title is required.');
+  if (!draft.body.trim()) throw new Error('The story body is empty.');
+  const slug = slugify(draft.slug || draft.title);
+  if (!slug) throw new Error('Could not build a URL from that title.');
+  const row = {
+    ...draft,
+    title: draft.title.trim(),
+    slug,
+    excerpt: draft.excerpt?.trim() || null,
+    author_name: draft.author_name?.trim() || null,
+    hero_image_url: draft.hero_image_url?.trim() || null,
+    read_time_minutes: readTime(draft.body),
+    published_at: draft.is_published ? (existing?.published_at ?? new Date().toISOString()) : existing?.published_at ?? null,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = existing
+    ? await supabase.from('stories').update(row).eq('id', existing.id)
+    : await supabase.from('stories').insert(row);
+  if (error) {
+    if (/duplicate key|stories_slug/i.test(error.message)) throw new Error(`Another story already uses the URL "/stories/${slug}". Change the title or URL.`);
+    throw error;
+  }
+  await logAdminAction(existing ? 'update_story' : 'create_story', 'stories', existing?.id, { slug, published: draft.is_published });
+}
+
+export async function deleteStory(id: string): Promise<void> {
+  const { error } = await supabase.from('stories').delete().eq('id', id);
+  if (error) throw error;
+  await logAdminAction('delete_story', 'stories', id);
+}

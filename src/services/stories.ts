@@ -76,6 +76,15 @@ export async function getStoryCategories(): Promise<StoryCategory[]> {
   return demoCategories;
 }
 
+/** The sample stories below are written as real editorial ("BallotLens
+ * Editorial", named people, quotes, a published date always 7 days ago). They
+ * were shown to every visitor whenever the stories table was empty -- which it
+ * is on the live site -- presenting invented people and quotes as BallotLens
+ * journalism. They now appear only in the explicit demo mode. */
+function inDemoMode(): boolean {
+  try { return localStorage.getItem('ballotlens_demo') === 'true'; } catch { return false; }
+}
+
 export async function getFeaturedStories(limit = 3): Promise<Story[]> {
   try {
     const { data, error } = await supabase
@@ -86,8 +95,8 @@ export async function getFeaturedStories(limit = 3): Promise<Story[]> {
       .order('published_at', { ascending: false })
       .limit(limit);
     if (error) throw error;
-    if (data && data.length > 0) return data as Story[];
-  } catch { /* fall through */ }
+    if ((data && data.length > 0) || !inDemoMode()) return (data ?? []) as Story[];
+  } catch { if (!inDemoMode()) return []; }
   return demoStories.filter((s) => s.is_featured).slice(0, limit);
 }
 
@@ -102,8 +111,8 @@ export async function getRecentStories(limit = 12, categoryId?: string): Promise
     if (categoryId) query = query.eq('category_id', categoryId);
     const { data, error } = await query;
     if (error) throw error;
-    if (data && data.length > 0) return data as Story[];
-  } catch { /* fall through */ }
+    if ((data && data.length > 0) || !inDemoMode()) return (data ?? []) as Story[];
+  } catch { if (!inDemoMode()) return []; }
   if (categoryId) return demoStories.filter((s) => s.category_id === categoryId).slice(0, limit);
   return demoStories.slice(0, limit);
 }
@@ -117,7 +126,7 @@ export async function getStoryBySlug(slug: string): Promise<Story | null> {
       .eq('is_published', true)
       .maybeSingle();
     if (error) throw error;
-    if (data) return data as Story;
-  } catch { /* fall through */ }
+    if (data || !inDemoMode()) return (data as Story) ?? null;
+  } catch { if (!inDemoMode()) return null; }
   return demoStories.find((s) => s.slug === slug) ?? null;
 }

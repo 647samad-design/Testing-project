@@ -33,11 +33,13 @@ import {
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
-import type { VerificationStatus, Election, Source, District } from '@/types';
+import type { VerificationStatus, Election, Source, District, StoryCategory } from '@/types';
 import { getElections as getElectionsList } from '@/services/elections';
 import { getSources } from '@/services/sources';
 import { deleteElection, deleteSource, deleteBallotMeasure, addBallotContest, listBallotMeasuresForAdmin, type AdminBallotMeasure } from '@/services/admin';
 import { getPendingFactChecks, publishFactCheck, dismissFactCheck, type PendingFactCheck, type FactCheckVerdict } from '@/services/admin';
+import { listStoriesForAdmin, saveStory, deleteStory, slugify, type AdminStory, type StoryDraft } from '@/services/admin';
+import { getStoryCategories } from '@/services/stories';
 import { getPromiseProposals, applyPromiseProposal, discardPromiseProposal, getPendingClaimAnalyses, reviewClaimAnalysis, type PromiseProposal, type PendingClaimAnalysis } from '@/services/admin';
 import { getDistricts as getDistrictsList } from '@/services/elections';
 import { addVotingRecord, addCandidatePosition } from '@/services/admin';
@@ -115,6 +117,7 @@ export function AdminDashboardPage() {
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="claimslib">Claims Library</TabsTrigger>
+          <TabsTrigger value="stories">Stories</TabsTrigger>
           <TabsTrigger value="activity">Activity Log</TabsTrigger>
         </TabsList>
 
@@ -241,6 +244,10 @@ export function AdminDashboardPage() {
 
         <TabsContent value="claimslib" className="mt-6">
           <ClaimsLibraryAdminTab />
+        </TabsContent>
+
+        <TabsContent value="stories" className="mt-6">
+          <StoriesAdminTab />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
@@ -1848,6 +1855,138 @@ function ClaimsLibraryAdminTab() {
               <Button size="sm" disabled={busyId === claim.id} onClick={() => handleAssess(claim)}>
                 Publish Assessment
               </Button>
+            </div>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+}
+
+const EMPTY_STORY: StoryDraft = {
+  title: '', slug: '', excerpt: '', body: '', category_id: null, author_name: 'BallotLens Editorial',
+  hero_image_url: '', is_featured: false, is_published: false,
+};
+
+function StoriesAdminTab() {
+  const [stories, setStories] = useState<AdminStory[]>([]);
+  const [categories, setCategories] = useState<StoryCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<AdminStory | null>(null);
+  const [draft, setDraft] = useState<StoryDraft | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [st, cats] = await Promise.all([listStoriesForAdmin(), getStoryCategories()]);
+      setStories(st);
+      setCategories(cats);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load stories.');
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => { load(); }, []);
+
+  function startNew() { setEditing(null); setDraft({ ...EMPTY_STORY }); }
+  function startEdit(st: AdminStory) {
+    setEditing(st);
+    setDraft({
+      title: st.title, slug: st.slug, excerpt: st.excerpt ?? '', body: st.body, category_id: st.category_id,
+      author_name: st.author_name ?? '', hero_image_url: st.hero_image_url ?? '', is_featured: st.is_featured, is_published: st.is_published,
+    });
+  }
+  function set<K extends keyof StoryDraft>(k: K, v: StoryDraft[K]) { setDraft((d) => (d ? { ...d, [k]: v } : d)); }
+
+  async function handleSave() {
+    if (!draft) return;
+    setSaving(true);
+    try {
+      await saveStory(draft, editing ?? undefined);
+      toast.success(draft.is_published ? 'Story saved and published.' : 'Draft saved (not public).');
+      setDraft(null); setEditing(null);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save story.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(st: AdminStory) {
+    if (!window.confirm(`Delete "${st.title}"? This cannot be undone.`)) return;
+    try {
+      await deleteStory(st.id);
+      toast.success('Story deleted.');
+      setStories((prev) => prev.filter((x) => x.id !== st.id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete story.');
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading stories…" />;
+
+  if (draft) {
+    return (
+      <Card className="p-5 space-y-3">
+        <h3 className="font-semibold">{editing ? 'Edit story' : 'New story'}</h3>
+        <div><Label className="text-xs">Title</Label><Input value={draft.title} onChange={(e) => set('title', e.target.value)} /></div>
+        <div>
+          <Label className="text-xs">URL (optional — built from the title)</Label>
+          <Input value={draft.slug} onChange={(e) => set('slug', e.target.value)} placeholder={slugify(draft.title) || 'auto'} />
+          <p className="mt-1 text-xs text-muted-foreground">/stories/{slugify(draft.slug || draft.title) || '…'}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label className="text-xs">Category</Label>
+            <select value={draft.category_id ?? ''} onChange={(e) => set('category_id', e.target.value || null)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="">None</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div><Label className="text-xs">Author</Label><Input value={draft.author_name ?? ''} onChange={(e) => set('author_name', e.target.value)} /></div>
+        </div>
+        <div><Label className="text-xs">Excerpt (shown in lists and link previews)</Label><Input value={draft.excerpt ?? ''} onChange={(e) => set('excerpt', e.target.value)} /></div>
+        <div><Label className="text-xs">Hero image URL (optional)</Label><Input value={draft.hero_image_url ?? ''} onChange={(e) => set('hero_image_url', e.target.value)} /></div>
+        <div>
+          <Label className="text-xs">Story</Label>
+          <textarea value={draft.body} onChange={(e) => set('body', e.target.value)} rows={14}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm leading-relaxed" placeholder="Write the story. Blank lines separate paragraphs." />
+        </div>
+        <div className="flex flex-wrap gap-4 text-sm">
+          <label className="flex items-center gap-2"><input type="checkbox" checked={draft.is_published} onChange={(e) => set('is_published', e.target.checked)} /> Published (visible to everyone)</label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={draft.is_featured} onChange={(e) => set('is_featured', e.target.checked)} /> Featured</label>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleSave} disabled={saving || !draft.title.trim() || !draft.body.trim()}>{saving ? 'Saving…' : 'Save'}</Button>
+          <Button variant="outline" onClick={() => { setDraft(null); setEditing(null); }}>Cancel</Button>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Civic Stories. Drafts are only visible here until published.</p>
+        <Button size="sm" onClick={startNew} className="gap-1.5"><Plus className="h-4 w-4" /> New story</Button>
+      </div>
+      {stories.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">No stories yet.</p>
+      ) : (
+        stories.map((st) => (
+          <Card key={st.id} className="p-4 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-medium truncate">{st.title}</p>
+              <p className="text-xs text-muted-foreground">
+                /stories/{st.slug} · {st.is_published ? 'Published' : 'Draft'}{st.is_featured ? ' · Featured' : ''}
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => startEdit(st)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
+              <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => handleDelete(st)}><Trash2 className="h-3.5 w-3.5" /> Delete</Button>
             </div>
           </Card>
         ))
