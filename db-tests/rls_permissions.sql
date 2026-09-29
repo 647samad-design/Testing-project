@@ -408,6 +408,29 @@ SELECT rlstest.check('[3600] admin publishes it', rlstest.rc($$UPDATE stories SE
 SELECT rlstest.as_anon();
 SELECT rlstest.check('[3600] published story is public', rlstest.cnt($$SELECT count(*) FROM stories WHERE slug='draft-piece'$$) = 1);
 
+-- ───────── candidate quiz answers review (20260913003700) ─────────
+SELECT rlstest.as_owner();
+CREATE TEMP TABLE IF NOT EXISTS rlstest_q AS SELECT id FROM civic_quiz_questions ORDER BY id LIMIT 1;
+GRANT SELECT ON rlstest_q TO authenticated, anon;
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3700] candidate saves a quiz answer (what the app sends)',
+  rlstest.rc($$INSERT INTO candidate_quiz_answers (candidate_id, question_id, answer) SELECT '55555555-0000-0000-0000-000000000005', id, 'a' FROM rlstest_q$$) = 1);
+SELECT rlstest.check('[3700] candidate CANNOT approve their own answers (was UPDATE 1)',
+  rlstest.rc($$UPDATE candidate_quiz_answers SET status='approved' WHERE candidate_id='55555555-0000-0000-0000-000000000005'$$) >= 0
+  AND rlstest.cnt($$SELECT count(*) FROM candidate_quiz_answers WHERE candidate_id='55555555-0000-0000-0000-000000000005' AND status='approved'$$) = 0);
+SELECT rlstest.check('[3700] cannot insert pre-approved either',
+  rlstest.cnt($$SELECT count(*) FROM candidate_quiz_answers WHERE candidate_id='55555555-0000-0000-0000-000000000005' AND status='pending'$$) = 1);
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[3700] admin approves', rlstest.rc($$UPDATE candidate_quiz_answers SET status='approved' WHERE candidate_id='55555555-0000-0000-0000-000000000005'$$) = 1);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3700] approved answer is public (used for voter matching)', rlstest.cnt($$SELECT count(*) FROM candidate_quiz_answers WHERE candidate_id='55555555-0000-0000-0000-000000000005'$$) = 1);
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.rc($$INSERT INTO candidate_quiz_answers (candidate_id, question_id, answer) SELECT '55555555-0000-0000-0000-000000000005', id, 'd' FROM rlstest_q
+  ON CONFLICT (candidate_id, question_id) DO UPDATE SET answer = EXCLUDED.answer$$);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3700] changing an approved answer sends it back to review (was live unreviewed)',
+  rlstest.cnt($$SELECT count(*) FROM candidate_quiz_answers WHERE candidate_id='55555555-0000-0000-0000-000000000005'$$) = 0);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

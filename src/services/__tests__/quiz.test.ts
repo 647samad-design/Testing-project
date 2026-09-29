@@ -110,14 +110,14 @@ describe('getQuizMatches — the actual point of the quiz, previously never comp
         }) }) };
       }
       if (table === 'candidate_quiz_answers') {
-        return { select: () => ({ eq: () => ({ in: () => Promise.resolve({
+        return { select: () => ({ eq: () => ({ in: () => ({ order: () => ({ range: () => Promise.resolve({
           data: [
             { candidate_id: 'cand-1', question_id: 'q1', answer: 'a', candidates: { first_name: 'Jane', last_name: 'Doe', party: 'Independent', photo_url: null } },
             { candidate_id: 'cand-1', question_id: 'q2', answer: 'a', candidates: { first_name: 'Jane', last_name: 'Doe', party: 'Independent', photo_url: null } },
             { candidate_id: 'cand-1', question_id: 'q3', answer: 'a', candidates: { first_name: 'Jane', last_name: 'Doe', party: 'Independent', photo_url: null } },
           ],
           error: null,
-        }) }) }) };
+        }) }) }) }) }) };
       }
       throw new Error(`unexpected table ${table}`);
     });
@@ -136,10 +136,10 @@ describe('getQuizMatches — the actual point of the quiz, previously never comp
         return { select: () => ({ eq: () => Promise.resolve({ data: [{ question_id: 'q1', answer: 'a' }], error: null }) }) };
       }
       if (table === 'candidate_quiz_answers') {
-        return { select: () => ({ eq: () => ({ in: () => Promise.resolve({
+        return { select: () => ({ eq: () => ({ in: () => ({ order: () => ({ range: () => Promise.resolve({
           data: [{ candidate_id: 'cand-1', question_id: 'q1', answer: 'a', candidates: { first_name: 'Jane', last_name: 'Doe', party: null, photo_url: null } }],
           error: null,
-        }) }) }) };
+        }) }) }) }) }) };
       }
       throw new Error(`unexpected table ${table}`);
     });
@@ -170,7 +170,7 @@ describe('getQuizMatches — the actual point of the quiz, previously never comp
         }) }) };
       }
       if (table === 'candidate_quiz_answers') {
-        return { select: () => ({ eq: () => ({ in: () => Promise.resolve({
+        return { select: () => ({ eq: () => ({ in: () => ({ order: () => ({ range: () => Promise.resolve({
           data: [
             // cand-low: agrees on 1 of 3
             { candidate_id: 'cand-low', question_id: 'q1', answer: 'a', candidates: { first_name: 'Low', last_name: 'Match', party: null, photo_url: null } },
@@ -182,7 +182,7 @@ describe('getQuizMatches — the actual point of the quiz, previously never comp
             { candidate_id: 'cand-high', question_id: 'q3', answer: 'a', candidates: { first_name: 'High', last_name: 'Match', party: null, photo_url: null } },
           ],
           error: null,
-        }) }) }) };
+        }) }) }) }) }) };
       }
       throw new Error(`unexpected table ${table}`);
     });

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { fetchAllRows } from '@/lib/fetch-all';
 
 export interface QuizQuestion {
   id: string;
@@ -179,12 +180,21 @@ export async function getQuizMatches(userId: string, minOverlap = 3): Promise<Qu
   if (userAnswers.length === 0) return [];
   const userAnswerMap = new Map(userAnswers.map((a) => [a.question_id, a.answer]));
 
-  const { data: candidateAnswers, error } = await supabase
-    .from('candidate_quiz_answers')
-    .select('candidate_id, question_id, answer, candidates(first_name, last_name, party, photo_url)')
-    .eq('status', 'approved')
-    .in('question_id', userAnswers.map((a) => a.question_id));
-  if (error || !candidateAnswers) return [];
+  // Paged: this reads every candidate's answers at once (candidates x
+  // questions rows). One request is capped at 1,000 rows by PostgREST without
+  // any error, which would silently compute match % from partial answers.
+  let candidateAnswers: unknown[];
+  try {
+    candidateAnswers = await fetchAllRows((from, to) => supabase
+      .from('candidate_quiz_answers')
+      .select('candidate_id, question_id, answer, candidates(first_name, last_name, party, photo_url)')
+      .eq('status', 'approved')
+      .in('question_id', userAnswers.map((a) => a.question_id))
+      .order('id')
+      .range(from, to));
+  } catch {
+    return [];
+  }
 
   const byCandidate = new Map<string, { matches: number; total: number; info: { first_name: string; last_name: string; party: string | null; photo_url: string | null } }>();
 

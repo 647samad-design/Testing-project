@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { fetchAllRows } from '@/lib/fetch-all';
+import { fetchAllRows, fetchInChunks } from '@/lib/fetch-all';
 import type { CandidateClaim } from '@/types';
 
 /** Writes one row to `audit_log` via the SECURITY DEFINER `log_admin_action` RPC.
@@ -1030,4 +1030,48 @@ export async function deleteStory(id: string): Promise<void> {
   const { error } = await supabase.from('stories').delete().eq('id', id);
   if (error) throw error;
   await logAdminAction('delete_story', 'stories', id);
+}
+
+export interface PendingQuizAnswerGroup {
+  candidate_id: string;
+  candidate_name: string;
+  answers: Array<{ id: string; question_text: string; answer: string; answer_text: string }>;
+}
+
+/** Candidate quiz answers awaiting review, grouped per candidate so a reviewer
+ * can approve a whole questionnaire at once. Voter matching only counts
+ * approved answers, and there was previously no way to approve any. */
+export async function getPendingCandidateQuizAnswers(): Promise<PendingQuizAnswerGroup[]> {
+  type Row = {
+    id: string; candidate_id: string; answer: 'a' | 'b' | 'c' | 'd';
+    candidate: { first_name: string; last_name: string } | null;
+    question: { question_text: string; option_a: string; option_b: string; option_c: string; option_d: string } | null;
+  };
+  const rows = await fetchAllRows<Row>((from, to) => supabase
+    .from('candidate_quiz_answers')
+    .select('id, candidate_id, answer, candidate:candidates(first_name, last_name), question:civic_quiz_questions(question_text, option_a, option_b, option_c, option_d)')
+    .eq('status', 'pending')
+    .order('candidate_id').order('id').range(from, to));
+  const groups = new Map<string, PendingQuizAnswerGroup>();
+  for (const r of rows) {
+    const g = groups.get(r.candidate_id) ?? {
+      candidate_id: r.candidate_id,
+      candidate_name: r.candidate ? `${r.candidate.first_name} ${r.candidate.last_name}` : 'Unknown candidate',
+      answers: [],
+    };
+    g.answers.push({
+      id: r.id,
+      question_text: r.question?.question_text ?? '(question removed)',
+      answer: r.answer,
+      answer_text: r.question?.[`option_${r.answer}` as const] ?? r.answer.toUpperCase(),
+    });
+    groups.set(r.candidate_id, g);
+  }
+  return [...groups.values()];
+}
+
+export async function reviewCandidateQuizAnswers(ids: string[], decision: 'approved' | 'rejected'): Promise<void> {
+  await fetchInChunks(ids, (chunk) =>
+    supabase.from('candidate_quiz_answers').update({ status: decision }).in('id', chunk).select('id'));
+  await logAdminAction(`${decision === 'approved' ? 'approve' : 'reject'}_candidate_quiz`, 'candidate_quiz_answers', undefined, { count: ids.length });
 }

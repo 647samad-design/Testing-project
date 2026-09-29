@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra, publishFactCheck, dismissFactCheck, addBallotContest, applyPromiseProposal, discardPromiseProposal, reviewClaimAnalysis, slugify, saveStory } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra, publishFactCheck, dismissFactCheck, addBallotContest, applyPromiseProposal, discardPromiseProposal, reviewClaimAnalysis, slugify, saveStory, getPendingCandidateQuizAnswers } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -603,5 +603,24 @@ describe('story editor', () => {
   it('explains a duplicate URL clearly', async () => {
     insertMock.mockReturnValueOnce(Promise.resolve({ error: { message: 'duplicate key value violates unique constraint "stories_slug_key"' } }) as unknown as ReturnType<typeof insertMock>);
     await expect(saveStory(base)).rejects.toThrow('already uses the URL');
+  });
+});
+
+describe('candidate quiz review', () => {
+  beforeEach(() => vi.clearAllMocks());
+  it('groups pending answers per candidate and resolves the chosen option text', async () => {
+    const rows = [
+      { id: 'q1', candidate_id: 'c1', answer: 'b', candidate: { first_name: 'Maria', last_name: 'Lopez' },
+        question: { question_text: 'Rent control?', option_a: 'Yes', option_b: 'No', option_c: 'Only for seniors', option_d: 'Unsure' } },
+      { id: 'q2', candidate_id: 'c1', answer: 'c', candidate: { first_name: 'Maria', last_name: 'Lopez' },
+        question: { question_text: 'Transit?', option_a: 'Expand', option_b: 'Cut', option_c: 'Keep', option_d: 'Unsure' } },
+      { id: 'q3', candidate_id: 'c2', answer: 'a', candidate: { first_name: 'Sam', last_name: 'Reed' }, question: null },
+    ];
+    fromMock.mockImplementationOnce(() => ({ select: () => ({ eq: () => ({ order: () => ({ order: () => ({ range: () => Promise.resolve({ data: rows, error: null }) }) }) }) }) }) as unknown as ReturnType<typeof fromMock>);
+    const groups = await getPendingCandidateQuizAnswers();
+    expect(groups).toHaveLength(2);
+    expect(groups[0].candidate_name).toBe('Maria Lopez');
+    expect(groups[0].answers.map((a) => a.answer_text)).toEqual(['No', 'Keep']);
+    expect(groups[1].answers[0].question_text).toBe('(question removed)');
   });
 });

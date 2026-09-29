@@ -38,6 +38,7 @@ import { getElections as getElectionsList } from '@/services/elections';
 import { getSources } from '@/services/sources';
 import { deleteElection, deleteSource, deleteBallotMeasure, addBallotContest, listBallotMeasuresForAdmin, type AdminBallotMeasure } from '@/services/admin';
 import { getPendingFactChecks, publishFactCheck, dismissFactCheck, type PendingFactCheck, type FactCheckVerdict } from '@/services/admin';
+import { getPendingCandidateQuizAnswers, reviewCandidateQuizAnswers, type PendingQuizAnswerGroup } from '@/services/admin';
 import { listStoriesForAdmin, saveStory, deleteStory, slugify, type AdminStory, type StoryDraft } from '@/services/admin';
 import { getStoryCategories } from '@/services/stories';
 import { getPromiseProposals, applyPromiseProposal, discardPromiseProposal, getPendingClaimAnalyses, reviewClaimAnalysis, type PromiseProposal, type PendingClaimAnalysis } from '@/services/admin';
@@ -354,6 +355,10 @@ function SubmissionsTab() {
       <div className="border-t border-border pt-6">
         <CandidateSelfReportReviewSection />
       </div>
+
+      <div className="border-t border-border pt-6">
+        <CandidateQuizReviewSection />
+      </div>
     </div>
   );
 }
@@ -510,6 +515,72 @@ const VERDICTS: { value: FactCheckVerdict; label: string }[] = [
   { value: 'false', label: 'False' },
   { value: 'unverified', label: 'Unverified' },
 ];
+
+function CandidateQuizReviewSection() {
+  const [groups, setGroups] = useState<PendingQuizAnswerGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    getPendingCandidateQuizAnswers()
+      .then(setGroups)
+      .catch((err) => toast.error(err instanceof Error ? err.message : 'Failed to load quiz answers.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function decide(g: PendingQuizAnswerGroup, decision: 'approved' | 'rejected') {
+    setBusy(g.candidate_id);
+    try {
+      await reviewCandidateQuizAnswers(g.answers.map((a) => a.id), decision);
+      toast.success(decision === 'approved' ? `Approved ${g.answers.length} answers — ${g.candidate_name} now appears in voter quiz matches.` : 'Rejected.');
+      setGroups((prev) => prev.filter((x) => x.candidate_id !== g.candidate_id));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (loading) return <LoadingState message="Loading candidate quiz answers…" />;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold">Candidate Quiz Answers</h3>
+      <p className="text-sm text-muted-foreground">
+        Voter quiz matches only use approved answers. Changing an answer sends it back here.
+      </p>
+      {groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing pending.</p>
+      ) : (
+        groups.map((g) => (
+          <Card key={g.candidate_id} className="p-4 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">{g.candidate_name} · {g.answers.length} answer{g.answers.length === 1 ? '' : 's'}</p>
+              <button className="text-xs text-primary hover:underline" onClick={() => setOpen(open === g.candidate_id ? null : g.candidate_id)}>
+                {open === g.candidate_id ? 'Hide answers' : 'Show answers'}
+              </button>
+            </div>
+            {open === g.candidate_id && (
+              <ul className="space-y-1.5 text-sm">
+                {g.answers.map((a) => (
+                  <li key={a.id} className="rounded-lg bg-secondary/40 px-3 py-2">
+                    <p className="text-muted-foreground">{a.question_text}</p>
+                    <p className="font-medium">{a.answer.toUpperCase()}. {a.answer_text}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2">
+              <Button size="sm" disabled={busy === g.candidate_id} onClick={() => decide(g, 'approved')}>Approve all</Button>
+              <Button size="sm" variant="outline" disabled={busy === g.candidate_id} onClick={() => decide(g, 'rejected')}>Reject</Button>
+            </div>
+          </Card>
+        ))
+      )}
+    </div>
+  );
+}
 
 function CandidateSelfReportReviewSection() {
   const [proposals, setProposals] = useState<PromiseProposal[]>([]);
