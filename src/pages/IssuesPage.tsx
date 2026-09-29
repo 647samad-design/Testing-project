@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { Scale, Plus, Check, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,8 +78,10 @@ export function IssuesPage() {
         await selectIssue(issue.id);
         setSelectedIds((prev) => new Set(prev).add(issue.id));
       }
-    } catch {
-      // Silently fail — UI already reflects state
+    } catch (err) {
+      // State is only updated after a successful save, so on failure nothing
+      // changes on screen -- say why instead of doing nothing.
+      toast.error(err instanceof Error ? err.message : 'Could not update your issues.');
     }
   }
 
@@ -91,8 +94,8 @@ export function IssuesPage() {
         await selectIssue(newIssue.id);
         setSelectedIds((prev) => new Set(prev).add(newIssue.id));
       }
-    } catch {
-      // Ignore — user will see issue didn't appear
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not add that issue.');
     }
     setCustomIssueName('');
     setCustomDialogOpen(false);

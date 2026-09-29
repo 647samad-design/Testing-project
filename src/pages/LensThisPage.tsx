@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import {
   Search, Link2, Send, CheckCircle2, AlertTriangle, XCircle, HelpCircle,
@@ -195,8 +196,9 @@ export function LensThisPage() {
       try {
         await submitFactCheck(inputText.trim(), inputUrl.trim() || undefined, platform || undefined);
         await loadChecks();
-      } catch {
-        // submission is best-effort
+      } catch (err) {
+        // The scan result above still shows; only the community submission failed.
+        toast.error(err instanceof Error ? `Couldn't submit this for review: ${err.message}` : "Couldn't submit this for review.");
       }
     }
   }, [inputUrl, inputText, platform, user]);

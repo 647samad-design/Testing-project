@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { CheckCircle2, Clock, Circle, XCircle, HelpCircle, Target, ExternalLink, Plus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,8 +46,8 @@ export function PromisesTracker({ candidateId, canEdit }: { candidateId: string;
       setNewSource('');
       setShowAdd(false);
       await load();
-    } catch {
-      // ignore
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not add this promise.');
     }
   }
 
@@ -54,8 +55,8 @@ export function PromisesTracker({ candidateId, canEdit }: { candidateId: string;
     try {
       await updatePromiseStatus(promiseId, status);
       await load();
-    } catch {
-      // ignore
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update this promise.');
     }
   }
 

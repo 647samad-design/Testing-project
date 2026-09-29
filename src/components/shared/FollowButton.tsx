@@ -110,8 +110,9 @@ export function IssueFollowButton({ issueId, issueName }: { issueId: string; iss
     try {
       if (newFollowing) await follow('issue', issueId);
       else await unfollow('issue', issueId);
-    } catch {
+    } catch (err) {
       setFollowing(!newFollowing);
+      toast.error(err instanceof Error ? err.message : 'Could not update this follow.');
     }
   }
 

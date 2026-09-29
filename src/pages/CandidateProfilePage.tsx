@@ -37,6 +37,7 @@ import {
 } from '@/components/shared/CandidateProfileExtras';
 import { getFeedPosts, trackProfileView } from '@/services/social';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { useAuth } from '@/hooks/use-auth';
 import { parseDateOnly, formatDate } from '@/lib/date-utils';
 import { getTeamMembers } from '@/services/social';
 import type { FeedPost, CampaignTeamMember } from '@/types';
@@ -75,6 +76,7 @@ export function CandidateProfilePage() {
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
   const [teamMembers, setTeamMembers] = useState<CampaignTeamMember[]>([]);
   const [campaign, setCampaign] = useState<CampaignType | null>(null);
+  const { user, profile } = useAuth();
 
   useEffect(() => {
     if (!candidateId) return;
@@ -133,6 +135,17 @@ export function CandidateProfilePage() {
     setDrawerPosition(pos);
     setDrawerOpen(true);
   }
+
+  // Who may answer questions / edit promises and claim analysis for THIS
+  // candidate. This used to be `!!verifiedClaim` -- i.e. "the candidate has
+  // been claimed by someone" -- so every signed-in visitor saw the Answer,
+  // Add and Update buttons on any claimed candidate (and, before migration
+  // 2500, could actually publish an answer in the candidate's name).
+  const canManage = !!user && (
+    !!profile?.is_admin
+    || verifiedClaim?.user_id === user.id
+    || teamMembers.some((m) => m.user_id === user.id && m.status === 'active')
+  );
 
   usePageMeta({
     title: candidate ? `${candidate.first_name} ${candidate.last_name}${candidate.party ? ` (${candidate.party})` : ''}` : undefined,
@@ -443,17 +456,17 @@ export function CandidateProfilePage() {
 
         {/* QUESTIONS (AMA) */}
         <TabsContent value="questions" className="mt-6">
-          <QuestionsSection candidateId={candidate.id} canAnswer={!!verifiedClaim} />
+          <QuestionsSection candidateId={candidate.id} canAnswer={canManage} />
         </TabsContent>
 
         {/* CLAIMS VS PLANS */}
         <TabsContent value="claims" className="mt-6">
-          <ClaimsVsPlans candidateId={candidate.id} canEdit={!!verifiedClaim} />
+          <ClaimsVsPlans candidateId={candidate.id} canEdit={canManage} />
         </TabsContent>
 
         {/* PROMISES TRACKER */}
         <TabsContent value="promises" className="mt-6">
-          <PromisesTracker candidateId={candidate.id} canEdit={!!verifiedClaim} />
+          <PromisesTracker candidateId={candidate.id} canEdit={canManage} />
         </TabsContent>
 
         {/* WHERE THEY STAND */}

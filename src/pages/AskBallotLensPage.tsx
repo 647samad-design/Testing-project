@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { MessageSquare, Send, ExternalLink, ShieldAlert, Sparkles, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { SourceBadge } from '@/components/shared/SourceBadge';
 import { DemoBanner } from '@/components/shared/DemoBanner';
 import { LoadingState } from '@/components/shared/StateComponents';
 import { askBallotLensAI, assessClaim, getAiUsageStatus, consumeAiUsage, type AiUsageStatus } from '@/services/ai';
+import { consumeAnonAiQuestion, ANON_DAILY_LIMIT } from '@/lib/anon-ai-allowance';
 import { getCandidates } from '@/services/candidates';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ const exampleQuestions = [
 export function AskBallotLensPage() {
   usePageMeta({ title: 'Ask BallotLens AI', description: 'Get sourced answers about candidates, positions, and voting records.' });
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialCandidate = searchParams.get('c') ?? undefined;
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -63,6 +65,10 @@ export function AskBallotLensPage() {
         );
         return;
       }
+    } else if (!consumeAnonAiQuestion()) {
+      toast.error(`You've used today's ${ANON_DAILY_LIMIT} questions without an account. Sign in (free) for 5 questions a day.`);
+      navigate('/signin');
+      return;
     }
 
     setLoading(true);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { ClipboardList, CheckCircle2, XCircle, ExternalLink, Plus, FileText, Scale } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,8 +58,8 @@ export function ClaimsVsPlans({ candidateId, canEdit }: { candidateId: string; c
       setAuthority('');
       setShowAdd(false);
       await load();
-    } catch {
-      // ignore
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save this analysis.');
     }
   }
 
