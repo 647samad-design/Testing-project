@@ -340,12 +340,18 @@ async function createNotificationsForState(
   // Send in-app notifications (to the bell in the header — notifications
   // table, NOT user_election_notifications, which nothing in the UI reads)
   // and instant emails (if the recipient has opted in) to users in this state.
-  const { data: usersInState } = await supabase
+  // locations.state holds the full state name ("Florida", from zip_districts)
+  // but AP data uses the postal code ("FL"). Matching on the postal code alone
+  // found nobody, so race-called / certified alerts reached no one. Match both.
+  const stateNames = [statePostal, STATE_NAMES[statePostal.toUpperCase()]].filter(Boolean) as string[];
+  const usersInState = await fetchAll<{ user_id: string }>((from, to) => supabase
     .from("locations")
     .select("user_id")
-    .eq("state", statePostal);
+    .in("state", stateNames)
+    .order("user_id")
+    .range(from, to));
 
-  if (!usersInState || usersInState.length === 0) return;
+  if (usersInState.length === 0) return;
 
   const notifications = usersInState.map((u: { user_id: string }) => ({
     user_id: u.user_id,
@@ -363,13 +369,15 @@ async function createNotificationsForState(
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const userIds = usersInState.map((u: { user_id: string }) => u.user_id);
-  const { data: prefs } = await supabase
+  const prefs = await fetchAllIn<{ user_id: string }>(userIds, (chunk, from, to) => supabase
     .from("notification_preferences")
     .select("user_id, instant_election_reminders, instant_followed_updates")
-    .in("user_id", userIds)
-    .or("instant_election_reminders.eq.true,instant_followed_updates.eq.true");
+    .in("user_id", chunk)
+    .or("instant_election_reminders.eq.true,instant_followed_updates.eq.true")
+    .order("user_id")
+    .range(from, to));
 
-  for (const pref of prefs ?? []) {
+  for (const pref of prefs) {
     try {
       await fetch(`${supabaseUrl}/functions/v1/send-email`, {
         method: "POST",
@@ -385,3 +393,40 @@ async function createNotificationsForState(
     }
   }
 }
+
+const STATE_NAMES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut",
+  DE: "Delaware", DC: "District of Columbia", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+  IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana",
+  NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York",
+  NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania",
+  RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah",
+  VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
+
+// ── paging helpers (each edge function deploys standalone, so these live here) ──
+// PostgREST returns at most 1,000 rows per request and silently drops the rest,
+// and a long .in() list in a GET URL can be rejected by the gateway. Recipient
+// lists here can exceed both.
+type DbPage = { data: unknown; error: { message: string } | null };
+async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<DbPage>): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await page(from, from + 999);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < 1000) return out;
+  }
+}
+async function fetchAllIn<T>(ids: string[], page: (chunk: string[], from: number, to: number) => PromiseLike<DbPage>): Promise<T[]> {
+  const unique = [...new Set(ids)];
+  const out: T[] = [];
+  for (let i = 0; i < unique.length; i += 150) {
+    const chunk = unique.slice(i, i + 150);
+    out.push(...await fetchAll<T>((from, to) => page(chunk, from, to)));
+  }
+  return out;
+}
+// ── end paging helpers ──

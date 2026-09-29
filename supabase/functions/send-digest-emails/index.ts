@@ -53,17 +53,29 @@ Deno.serve(async (req: Request) => {
     const dryRun = body.dryRun === true;
 
     const now = new Date();
-    const dayOfWeek = now.getUTCDay(); // 0 = Sunday
-    const isWeeklySendDay = dayOfWeek === 1; // Monday
 
-    const { data: allPrefs, error: prefsError } = await admin
-      .from("notification_preferences")
-      .select("user_id, digest_frequency, digest_candidate_updates, digest_ballot_measure_updates, digest_news_updates, digest_new_elections, last_digest_sent_at")
-      .neq("digest_frequency", "off");
+    let allPrefs: Prefs[];
+    try {
+      allPrefs = await fetchAll<Prefs>((from, to) => admin
+        .from("notification_preferences")
+        .select("user_id, digest_frequency, digest_candidate_updates, digest_ballot_measure_updates, digest_news_updates, digest_new_elections, last_digest_sent_at")
+        .neq("digest_frequency", "off")
+        .order("user_id")
+        .range(from, to));
+    } catch (e) {
+      return json({ error: e instanceof Error ? e.message : "Failed to load preferences" }, 500);
+    }
 
-    if (prefsError) return json({ error: prefsError.message }, 500);
-
-    const due = (allPrefs as Prefs[]).filter((p) => p.digest_frequency === "daily" || (p.digest_frequency === "weekly" && isWeeklySendDay));
+    // Due = enough time has passed since this user's last digest. This used to
+    // be "weekly users only on a UTC Monday" -- but the digest is run manually
+    // from the admin panel (there is no scheduler), so running it on any other
+    // day silently skipped every weekly subscriber. Elapsed time works whether
+    // it's triggered by hand or by a future cron, and never double-sends.
+    const HOUR = 60 * 60 * 1000;
+    const minGap = (f: string) => (f === "daily" ? 20 * HOUR : 6.5 * 24 * HOUR);
+    const due = allPrefs.filter((p) =>
+      (p.digest_frequency === "daily" || p.digest_frequency === "weekly") &&
+      (!p.last_digest_sent_at || now.getTime() - new Date(p.last_digest_sent_at).getTime() >= minGap(p.digest_frequency)));
 
     let sent = 0;
     let skippedEmpty = 0;
@@ -168,3 +180,29 @@ function escapeHtml(s: string): string {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
+
+// ── paging helpers (each edge function deploys standalone, so these live here) ──
+// PostgREST returns at most 1,000 rows per request and silently drops the rest,
+// and a long .in() list in a GET URL can be rejected by the gateway. Recipient
+// lists here can exceed both.
+type DbPage = { data: unknown; error: { message: string } | null };
+async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<DbPage>): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await page(from, from + 999);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < 1000) return out;
+  }
+}
+async function fetchAllIn<T>(ids: string[], page: (chunk: string[], from: number, to: number) => PromiseLike<DbPage>): Promise<T[]> {
+  const unique = [...new Set(ids)];
+  const out: T[] = [];
+  for (let i = 0; i < unique.length; i += 150) {
+    const chunk = unique.slice(i, i + 150);
+    out.push(...await fetchAll<T>((from, to) => page(chunk, from, to)));
+  }
+  return out;
+}
+// ── end paging helpers ──
