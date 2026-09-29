@@ -585,7 +585,7 @@ describe('story editor', () => {
   it('stamps published_at and read time on first publish', async () => {
     insertMock.mockReturnValueOnce(Promise.resolve({ error: null }) as unknown as ReturnType<typeof insertMock>);
     await saveStory(base);
-    const row = insertMock.mock.calls[0][0];
+    const row = (insertMock.mock.calls[0] as unknown as [Record<string, unknown>])[0];
     expect(row.slug).toBe('why-local-races-matter');
     expect(row.read_time_minutes).toBe(2);
     expect(typeof row.published_at).toBe('string');
