@@ -58,6 +58,7 @@ export function ClaimsVsPlans({ candidateId, canEdit }: { candidateId: string; c
       setAuthority('');
       setShowAdd(false);
       await load();
+      toast.success('Saved. It will appear publicly after a BallotLens reviewer approves it.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not save this analysis.');
     }
@@ -184,6 +185,9 @@ function ClaimAnalysisCard({ claim }: { claim: CandidateClaimAnalysis }) {
       {/* What they say */}
       <div className="mb-3">
         <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">What They Say</p>
+        {claim.review_status === 'pending' && (
+          <p className="mb-1 inline-block rounded-md bg-warning/10 px-2 py-0.5 text-[10px] font-bold text-warning">Awaiting BallotLens review — only your campaign can see this</p>
+        )}
         <p className="text-sm font-semibold text-foreground">"{claim.claim_text}"</p>
         {claim.issue && (
           <Badge variant="secondary" className="mt-1.5 rounded-lg text-[10px]">{claim.issue.name}</Badge>

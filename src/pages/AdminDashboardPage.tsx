@@ -38,6 +38,7 @@ import { getElections as getElectionsList } from '@/services/elections';
 import { getSources } from '@/services/sources';
 import { deleteElection, deleteSource, deleteBallotMeasure, addBallotContest, listBallotMeasuresForAdmin, type AdminBallotMeasure } from '@/services/admin';
 import { getPendingFactChecks, publishFactCheck, dismissFactCheck, type PendingFactCheck, type FactCheckVerdict } from '@/services/admin';
+import { getPromiseProposals, applyPromiseProposal, discardPromiseProposal, getPendingClaimAnalyses, reviewClaimAnalysis, type PromiseProposal, type PendingClaimAnalysis } from '@/services/admin';
 import { getDistricts as getDistrictsList } from '@/services/elections';
 import { addVotingRecord, addCandidatePosition } from '@/services/admin';
 import { getIssues } from '@/services/districts';
@@ -342,6 +343,10 @@ function SubmissionsTab() {
       <div className="border-t border-border pt-6">
         <FactCheckReviewSection />
       </div>
+
+      <div className="border-t border-border pt-6">
+        <CandidateSelfReportReviewSection />
+      </div>
     </div>
   );
 }
@@ -498,6 +503,66 @@ const VERDICTS: { value: FactCheckVerdict; label: string }[] = [
   { value: 'false', label: 'False' },
   { value: 'unverified', label: 'Unverified' },
 ];
+
+function CandidateSelfReportReviewSection() {
+  const [proposals, setProposals] = useState<PromiseProposal[]>([]);
+  const [analyses, setAnalyses] = useState<PendingClaimAnalysis[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([getPromiseProposals(), getPendingClaimAnalyses()])
+      .then(([p, a]) => { setProposals(p); setAnalyses(a); })
+      .catch((err) => toast.error(err instanceof Error ? err.message : 'Failed to load.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function run(id: string, action: () => Promise<void>, done: string, remove: () => void) {
+    setBusyId(id);
+    try { await action(); toast.success(done); remove(); }
+    catch (err) { toast.error(err instanceof Error ? err.message : 'Failed.'); }
+    finally { setBusyId(null); }
+  }
+
+  if (loading) return <LoadingState message="Loading candidate self-reports…" />;
+  const who = (c?: { first_name: string; last_name: string } | null) => (c ? `${c.first_name} ${c.last_name}` : 'Unknown candidate');
+
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold">Promise Status Proposals &amp; Claim Analyses</h3>
+      <p className="text-sm text-muted-foreground">
+        Candidates can't grade their own promises or publish analysis of their own claims. Check the evidence before applying.
+      </p>
+      {proposals.length === 0 && analyses.length === 0 && <p className="text-sm text-muted-foreground">Nothing pending.</p>}
+      {proposals.map((p) => (
+        <Card key={p.id} className="p-4 space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Promise status · {who(p.candidate)}</p>
+          <p className="text-sm font-medium">"{p.promise_text}"</p>
+          <p className="text-sm">Currently <b>{p.status.replace(/_/g, ' ')}</b> → proposed <b>{p.proposed_status.replace(/_/g, ' ')}</b></p>
+          {p.proposed_evidence && <p className="text-sm text-muted-foreground">{p.proposed_evidence}</p>}
+          {p.proposed_source_url && <a href={p.proposed_source_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Evidence link</a>}
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" disabled={busyId === p.id} onClick={() => run(p.id, () => applyPromiseProposal(p), 'Status applied.', () => setProposals((x) => x.filter((y) => y.id !== p.id)))}>Apply</Button>
+            <Button size="sm" variant="outline" disabled={busyId === p.id} onClick={() => run(p.id, () => discardPromiseProposal(p.id), 'Proposal discarded.', () => setProposals((x) => x.filter((y) => y.id !== p.id)))}>Discard</Button>
+          </div>
+        </Card>
+      ))}
+      {analyses.map((a) => (
+        <Card key={a.id} className="p-4 space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Claim analysis · {who(a.candidate)}</p>
+          <p className="text-sm font-medium">"{a.claim_text}"</p>
+          <p className="text-sm">Specific plan: <b>{a.has_specific_plan ? 'yes' : 'no'}</b>{a.authority_assessment ? <> · Authority: <b>{a.authority_assessment.replace(/_/g, ' ')}</b></> : null}</p>
+          {a.plan_details && <p className="text-sm text-muted-foreground">{a.plan_details}</p>}
+          {a.analysis_notes && <p className="text-sm text-muted-foreground">{a.analysis_notes}</p>}
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" disabled={busyId === a.id} onClick={() => run(a.id, () => reviewClaimAnalysis(a.id, 'published'), 'Published.', () => setAnalyses((x) => x.filter((y) => y.id !== a.id)))}>Publish</Button>
+            <Button size="sm" variant="outline" disabled={busyId === a.id} onClick={() => run(a.id, () => reviewClaimAnalysis(a.id, 'rejected'), 'Rejected.', () => setAnalyses((x) => x.filter((y) => y.id !== a.id)))}>Reject</Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 function FactCheckReviewSection() {
   const [items, setItems] = useState<PendingFactCheck[]>([]);

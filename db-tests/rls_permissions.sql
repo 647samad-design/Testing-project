@@ -359,6 +359,39 @@ SELECT rlstest.as_owner();
 SELECT rlstest.check('[3400] pre-claim conversation still reaches the verified claimant',
   rlstest.cnt($$SELECT count(*) FROM notifications WHERE user_id='bbbbbbbb-0000-0000-0000-000000000002' AND type='new_message' AND body='Early question'$$) = 1);
 
+-- ───────── promises & claim analysis review (20260913003500) ─────────
+-- claimant f0330000 manages candidate 55555555 (Maria Lopez)
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3500] candidate can add a promise; it starts unverified even if they send "completed"',
+  rlstest.rc($$INSERT INTO candidate_promises (id, candidate_id, promise_text, status) VALUES ('9e000000-0000-0000-0000-000000000001','55555555-0000-0000-0000-000000000005','Build 500 homes','completed')$$) = 1
+  AND rlstest.cnt($$SELECT count(*) FROM candidate_promises WHERE id='9e000000-0000-0000-0000-000000000001' AND status='unverified'$$) = 1);
+SELECT rlstest.check('[3500] candidate CANNOT mark their own promise completed',
+  rlstest.fails($$UPDATE candidate_promises SET status='completed', status_evidence='trust me' WHERE id='9e000000-0000-0000-0000-000000000001'$$));
+SELECT rlstest.check('[3500] candidate CAN propose a status with evidence',
+  rlstest.rc($$UPDATE candidate_promises SET proposed_status='completed', proposed_evidence='Ribbon cutting 3 May', proposed_source_url='https://city.gov/x' WHERE id='9e000000-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3500] public still sees "unverified" while the proposal is pending',
+  rlstest.cnt($$SELECT count(*) FROM candidate_promises WHERE id='9e000000-0000-0000-0000-000000000001' AND status='unverified'$$) = 1);
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[3500] admin applies the proposal',
+  rlstest.rc($$UPDATE candidate_promises SET status=proposed_status, status_evidence=proposed_evidence, status_source_url=proposed_source_url, status_updated_at=now(), proposed_status=NULL, proposed_evidence=NULL, proposed_source_url=NULL WHERE id='9e000000-0000-0000-0000-000000000001'$$) = 1
+  AND rlstest.cnt($$SELECT count(*) FROM candidate_promises WHERE id='9e000000-0000-0000-0000-000000000001' AND status='completed' AND proposed_status IS NULL$$) = 1);
+
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3500] candidate''s claim analysis is saved as pending even if they send published',
+  rlstest.rc($$INSERT INTO candidate_claim_analysis (id, candidate_id, claim_text, has_specific_plan, authority_assessment, review_status) VALUES ('9a000000-0000-0000-0000-000000000001','55555555-0000-0000-0000-000000000005','I will cut taxes 50%',true,'within','published')$$) = 1
+  AND rlstest.cnt($$SELECT count(*) FROM candidate_claim_analysis WHERE id='9a000000-0000-0000-0000-000000000001' AND review_status='pending'$$) = 1);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3500] public cannot see pending analysis', rlstest.cnt($$SELECT count(*) FROM candidate_claim_analysis WHERE id='9a000000-0000-0000-0000-000000000001'$$) = 0);
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[3500] admin publishes it', rlstest.rc($$UPDATE candidate_claim_analysis SET review_status='published' WHERE id='9a000000-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3500] now public', rlstest.cnt($$SELECT count(*) FROM candidate_claim_analysis WHERE id='9a000000-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.rc($$UPDATE candidate_claim_analysis SET authority_assessment='within', analysis_notes='edited' WHERE id='9a000000-0000-0000-0000-000000000001'$$);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3500] a candidate edit sends a published analysis back to review', rlstest.cnt($$SELECT count(*) FROM candidate_claim_analysis WHERE id='9a000000-0000-0000-0000-000000000001'$$) = 0);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

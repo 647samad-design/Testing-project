@@ -466,7 +466,7 @@ export function CandidateProfilePage() {
 
         {/* PROMISES TRACKER */}
         <TabsContent value="promises" className="mt-6">
-          <PromisesTracker candidateId={candidate.id} canEdit={canManage} />
+          <PromisesTracker candidateId={candidate.id} canEdit={canManage} isAdmin={!!profile?.is_admin} />
         </TabsContent>
 
         {/* WHERE THEY STAND */}

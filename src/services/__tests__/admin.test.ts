@@ -29,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra, publishFactCheck, dismissFactCheck, addBallotContest } from '@/services/admin';
+import { updateCandidate, deleteCandidate, addCandidate, setAdminRole, compCandidateManagement, revokeCandidateManagement, getPendingClaims, approveClaim, rejectClaim, approveEvent, rejectEvent, approveQuestionnaireResponse, rejectQuestionnaireResponse, getPendingAds, approveAd, rejectAd, bulkImportCandidates, expireOverdueComps, getUnresearchedClaims, assessClaimInLibrary, getRevenueSummary, searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest, getSourceCountsForPositions, linkSourceToPosition, addClaimEvidence, getPendingProfileExtras, reviewProfileExtra, publishFactCheck, dismissFactCheck, addBallotContest, applyPromiseProposal, discardPromiseProposal, reviewClaimAnalysis } from '@/services/admin';
 
 describe('admin service', () => {
   beforeEach(() => {
@@ -543,5 +543,30 @@ describe('bulkImportCandidates past 1,000 existing candidates', () => {
     expect(rangeCalls).toEqual([[0, 999], [1000, 1999]]);
     expect(result.skippedDuplicates).toEqual(['First1499 Last1499']);
     expect(result.inserted).toBe(0);
+  });
+});
+
+describe('candidate self-reports are admin-reviewed', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('applyPromiseProposal copies the proposal into the public status and clears it', async () => {
+    await applyPromiseProposal({ id: 'p1', promise_text: 'x', status: 'unverified', proposed_status: 'completed',
+      proposed_evidence: 'Ribbon cutting', proposed_source_url: 'https://city.gov', proposed_at: null });
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'completed', status_evidence: 'Ribbon cutting', status_source_url: 'https://city.gov',
+      proposed_status: null, proposed_evidence: null, proposed_source_url: null,
+    }));
+    expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({ p_action: 'apply_promise_proposal' }));
+  });
+
+  it('discardPromiseProposal clears only the proposal', async () => {
+    await discardPromiseProposal('p1');
+    expect(updateMock).toHaveBeenCalledWith({ proposed_status: null, proposed_evidence: null, proposed_source_url: null });
+  });
+
+  it('reviewClaimAnalysis sets review_status', async () => {
+    await reviewClaimAnalysis('a1', 'published');
+    expect(fromMock).toHaveBeenCalledWith('candidate_claim_analysis');
+    expect(updateMock).toHaveBeenCalledWith({ review_status: 'published' });
   });
 });

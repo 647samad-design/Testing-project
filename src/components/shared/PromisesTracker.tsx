@@ -4,7 +4,7 @@ import { CheckCircle2, Clock, Circle, XCircle, HelpCircle, Target, ExternalLink,
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getCandidatePromises, addCandidatePromise, updatePromiseStatus } from '@/services/civic';
+import { getCandidatePromises, addCandidatePromise, updatePromiseStatus, proposePromiseStatus } from '@/services/civic';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { parseDateOnly } from '@/lib/date-utils';
@@ -18,7 +18,10 @@ const STATUS_STYLES: Record<PromiseStatus, { label: string; icon: typeof CheckCi
   unverified: { label: 'Unable to Verify', icon: HelpCircle, color: 'text-muted-foreground', bg: 'bg-secondary', dot: 'bg-muted-foreground/50' },
 };
 
-export function PromisesTracker({ candidateId, canEdit }: { candidateId: string; canEdit: boolean }) {
+export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { candidateId: string; canEdit: boolean; isAdmin?: boolean }) {
+  const [proposing, setProposing] = useState<{ id: string; status: PromiseStatus } | null>(null);
+  const [proposalEvidence, setProposalEvidence] = useState('');
+  const [proposalUrl, setProposalUrl] = useState('');
   const { user } = useAuth();
   const [promises, setPromises] = useState<CandidatePromise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +54,24 @@ export function PromisesTracker({ candidateId, canEdit }: { candidateId: string;
     }
   }
 
+  async function handleProposal() {
+    if (!proposing) return;
+    try {
+      await proposePromiseStatus(proposing.id, proposing.status, proposalEvidence, proposalUrl);
+      toast.success('Sent for review. The status changes once a BallotLens reviewer checks your evidence.');
+      setProposing(null); setProposalEvidence(''); setProposalUrl('');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not submit this for review.');
+    }
+  }
+
   async function handleStatusUpdate(promiseId: string, status: PromiseStatus) {
+    if (!isAdmin) {
+      // Candidates propose; only reviewers set the public status.
+      setProposing({ id: promiseId, status });
+      return;
+    }
     try {
       await updatePromiseStatus(promiseId, status);
       await load();
@@ -174,7 +194,27 @@ export function PromisesTracker({ candidateId, canEdit }: { candidateId: string;
                       <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{promise.status_evidence}</p>
                     )}
 
-                    {/* Status selector for editors */}
+                    {promise.proposed_status && canEdit && (
+                      <p className="mt-2 text-xs rounded-lg bg-warning/10 text-warning px-2 py-1">
+                        Proposed: {STATUS_STYLES[promise.proposed_status].label} — awaiting BallotLens review
+                      </p>
+                    )}
+
+                    {proposing?.id === promise.id && (
+                      <div className="mt-2 space-y-2 rounded-xl border border-border p-3 bg-background">
+                        <p className="text-xs font-medium">Propose “{STATUS_STYLES[proposing.status].label}” — a reviewer will check your evidence before it's shown.</p>
+                        <textarea value={proposalEvidence} onChange={(e) => setProposalEvidence(e.target.value)} rows={2}
+                          placeholder="What happened? (required)" className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs" />
+                        <input value={proposalUrl} onChange={(e) => setProposalUrl(e.target.value)} placeholder="Evidence link (recommended)"
+                          className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs" />
+                        <div className="flex gap-2">
+                          <Button size="sm" className="rounded-lg h-7 text-xs" disabled={!proposalEvidence.trim()} onClick={handleProposal}>Submit for review</Button>
+                          <Button size="sm" variant="outline" className="rounded-lg h-7 text-xs" onClick={() => setProposing(null)}>Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Status selector: admins set it; the candidate's side proposes */}
                     {canEdit && user && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {Object.entries(STATUS_STYLES).map(([key, s]) => (

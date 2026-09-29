@@ -704,6 +704,11 @@ export interface CandidatePromise {
   status_updated_at: string | null;
   created_at: string;
   issue?: Issue | null;
+  /** Candidate-submitted status change awaiting admin review. */
+  proposed_status?: PromiseStatus | null;
+  proposed_evidence?: string | null;
+  proposed_source_url?: string | null;
+  proposed_at?: string | null;
 }
 
 export type AuthorityAssessment = 'within' | 'partially_within' | 'outside' | 'unclear';
@@ -726,6 +731,8 @@ export interface CandidateClaimAnalysis {
   analysis_notes: string | null;
   created_at: string;
   issue?: Issue | null;
+  /** 'pending' rows are visible only to the candidate's side and admins. */
+  review_status?: 'pending' | 'published' | 'rejected';
 }
 
 // === Candidate Profile Enhancements ===

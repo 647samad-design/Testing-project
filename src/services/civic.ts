@@ -93,6 +93,23 @@ export async function addCandidatePromise(
   if (error) throw error;
 }
 
+/** Candidate/team side: propose a status change with evidence. Only an admin
+ * can apply it (enforced by trigger candidate_promises_guard_status). */
+export async function proposePromiseStatus(
+  promiseId: string,
+  status: PromiseStatus,
+  evidence: string,
+  sourceUrl?: string,
+): Promise<void> {
+  if (!evidence.trim()) throw new Error('Add evidence for the reviewer.');
+  const { error } = await supabase
+    .from('candidate_promises')
+    .update({ proposed_status: status, proposed_evidence: evidence.trim(), proposed_source_url: sourceUrl?.trim() || null })
+    .eq('id', promiseId);
+  if (error) throw error;
+}
+
+/** Admin only (the database rejects this for anyone else). */
 export async function updatePromiseStatus(
   promiseId: string,
   status: PromiseStatus,

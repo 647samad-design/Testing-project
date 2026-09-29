@@ -910,3 +910,63 @@ export async function listBallotMeasuresForAdmin(): Promise<AdminBallotMeasure[]
     .order('id')
     .range(from, to));
 }
+
+export interface PromiseProposal {
+  id: string; promise_text: string; status: string;
+  proposed_status: string; proposed_evidence: string | null; proposed_source_url: string | null; proposed_at: string | null;
+  candidate?: { first_name: string; last_name: string } | null;
+}
+
+/** Candidate-proposed promise status changes awaiting review. Candidates used
+ * to set the public status themselves (see migration 20260913003500). */
+export async function getPromiseProposals(): Promise<PromiseProposal[]> {
+  const { data, error } = await supabase
+    .from('candidate_promises')
+    .select('id, promise_text, status, proposed_status, proposed_evidence, proposed_source_url, proposed_at, candidate:candidates(first_name, last_name)')
+    .not('proposed_status', 'is', null)
+    .order('proposed_at', { ascending: true });
+  if (error || !data) return [];
+  return data as unknown as PromiseProposal[];
+}
+
+export async function applyPromiseProposal(p: PromiseProposal): Promise<void> {
+  const { error } = await supabase.from('candidate_promises').update({
+    status: p.proposed_status,
+    status_evidence: p.proposed_evidence,
+    status_source_url: p.proposed_source_url,
+    status_updated_at: new Date().toISOString(),
+    proposed_status: null, proposed_evidence: null, proposed_source_url: null,
+  }).eq('id', p.id);
+  if (error) throw error;
+  await logAdminAction('apply_promise_proposal', 'candidate_promises', p.id, { status: p.proposed_status });
+}
+
+export async function discardPromiseProposal(id: string): Promise<void> {
+  const { error } = await supabase.from('candidate_promises').update({
+    proposed_status: null, proposed_evidence: null, proposed_source_url: null,
+  }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction('discard_promise_proposal', 'candidate_promises', id);
+}
+
+export interface PendingClaimAnalysis {
+  id: string; claim_text: string; has_specific_plan: boolean; authority_assessment: string | null;
+  analysis_notes: string | null; plan_details: string | null; created_at: string;
+  candidate?: { first_name: string; last_name: string } | null;
+}
+
+export async function getPendingClaimAnalyses(): Promise<PendingClaimAnalysis[]> {
+  const { data, error } = await supabase
+    .from('candidate_claim_analysis')
+    .select('id, claim_text, has_specific_plan, authority_assessment, analysis_notes, plan_details, created_at, candidate:candidates(first_name, last_name)')
+    .eq('review_status', 'pending')
+    .order('created_at', { ascending: true });
+  if (error || !data) return [];
+  return data as unknown as PendingClaimAnalysis[];
+}
+
+export async function reviewClaimAnalysis(id: string, decision: 'published' | 'rejected'): Promise<void> {
+  const { error } = await supabase.from('candidate_claim_analysis').update({ review_status: decision }).eq('id', id);
+  if (error) throw error;
+  await logAdminAction(decision === 'published' ? 'publish_claim_analysis' : 'reject_claim_analysis', 'candidate_claim_analysis', id);
+}
