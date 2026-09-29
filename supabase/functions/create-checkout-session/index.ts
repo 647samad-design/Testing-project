@@ -150,8 +150,10 @@ Deno.serve(async (req: Request) => {
       subscription_data: {
         metadata: candidateId ? { candidate_id: candidateId, plan } : { plan },
       },
-      success_url: `${siteUrl}/account?checkout=success`,
-      cancel_url: `${siteUrl}/pricing?checkout=canceled`,
+      // Management is bought from the Candidate Portal and should return there;
+      // voter plans return to Account > Billing (success) or Pricing (cancel).
+      success_url: plan === "candidate_management" ? `${siteUrl}/candidate-portal?checkout=success` : `${siteUrl}/account?checkout=success`,
+      cancel_url: plan === "candidate_management" ? `${siteUrl}/candidate-portal?checkout=canceled` : `${siteUrl}/pricing?checkout=canceled`,
     });
 
     return json({ url: session.url });

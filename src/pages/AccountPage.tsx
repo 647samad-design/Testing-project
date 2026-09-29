@@ -1127,7 +1127,7 @@ function BillingTab() {
               <div key={c.candidate_id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
                 <span className="font-medium">{c.first_name} {c.last_name}</span>
                 <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                  {c.is_comped ? 'Comped' : c.status}
+                  {c.is_comped ? (c.status === 'active' ? 'Comped (free)' : `Comped — ${c.status}`) : c.status}
                 </Badge>
               </div>
             ))}

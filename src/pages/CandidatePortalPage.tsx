@@ -51,6 +51,29 @@ export function CandidatePortalPage() {
   useEffect(() => {
     async function load() {
       if (!user) { setLoading(false); return; }
+
+      // Returning from Stripe Checkout for Candidate Management. This used to
+      // land on /account (the voter plan screen), which then said "payment is
+      // finishing setup" because the voter plan never changes for a
+      // Management purchase. Wait briefly for the webhook, then confirm here.
+      const checkoutResult = new URLSearchParams(window.location.search).get('checkout');
+      if (checkoutResult === 'success') {
+        let managed = await getMyManagedCandidates().catch(() => []);
+        for (let i = 0; i < 5 && !managed.some((m) => m.status === 'active'); i++) {
+          await new Promise((r) => setTimeout(r, 1200));
+          managed = await getMyManagedCandidates().catch(() => []);
+        }
+        if (managed.some((m) => m.status === 'active')) {
+          toast.success('Payment successful — Candidate Management is active. Your Team and Campaign tools are unlocked.');
+        } else {
+          toast.success("Payment received — Candidate Management is finishing setup. Refresh in a minute if the tools aren't unlocked yet.");
+        }
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (checkoutResult === 'canceled') {
+        toast('Checkout was canceled — no charge was made.');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+
       const data = await getMyClaimedCandidates();
       setClaimed(data);
       setLoading(false);
@@ -394,7 +417,7 @@ function TeamTab({ candidateId }: { candidateId: string }) {
     setLoading(true);
     try {
       const managed = await getMyManagedCandidates();
-      const active = managed.some((m) => m.candidate_id === candidateId && (m.status === 'active' || m.is_comped));
+      const active = managed.some((m) => m.candidate_id === candidateId && m.status === 'active');
       setHasManagement(active);
       if (active) setMembers(await getTeamMembers(candidateId));
     } catch (err) {
@@ -553,7 +576,7 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
     setLoading(true);
     try {
       const managed = await getMyManagedCandidates();
-      const active = managed.some((m) => m.candidate_id === candidateId && (m.status === 'active' || m.is_comped));
+      const active = managed.some((m) => m.candidate_id === candidateId && m.status === 'active');
       setHasManagement(active);
       if (active) {
         const [camp, evs] = await Promise.all([
@@ -1125,7 +1148,7 @@ function AnalyticsTab({ candidateId }: { candidateId: string }) {
       setLoading(true);
       try {
         const managed = await getMyManagedCandidates();
-        const active = managed.some((m) => m.candidate_id === candidateId && (m.status === 'active' || m.is_comped));
+        const active = managed.some((m) => m.candidate_id === candidateId && m.status === 'active');
         setHasManagement(active);
         if (active) setStats(await getCandidateAnalytics(candidateId));
       } catch (err) {

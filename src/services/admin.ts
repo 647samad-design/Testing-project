@@ -374,8 +374,8 @@ export interface BillingOverview {
 export async function getBillingOverview(): Promise<BillingOverview> {
   const [{ count: totalUsers }, { data: subs }, { data: mgmt }] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('subscriptions').select('id, plan, status, created_at, current_period_end, user_id'),
-    supabase.from('candidate_management_subscriptions').select('status, is_comped'),
+    fetchAllRows<{ id: string; plan: string; status: string; created_at: string; current_period_end: string | null; user_id: string }>((from, to) => supabase.from('subscriptions').select('id, plan, status, created_at, current_period_end, user_id').order('id').range(from, to)).then((data) => ({ data, error: null })),
+    fetchAllRows<{ status: string; is_comped: boolean }>((from, to) => supabase.from('candidate_management_subscriptions').select('status, is_comped').order('candidate_id').range(from, to)).then((data) => ({ data, error: null })),
   ]);
 
   const rows = subs ?? [];
@@ -672,13 +672,14 @@ export interface RevenueSummary {
 export async function getRevenueSummary(): Promise<RevenueSummary> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data: allPayments } = await supabase
-    .from('payments')
-    .select('id, amount, payment_type, description, created_at')
-    .eq('status', 'succeeded')
-    .order('created_at', { ascending: false });
-
-  const rows = allPayments ?? [];
+  // Paged: a single request stops at 1,000 rows, which would silently
+  // under-report revenue once there are more payments than that.
+  const rows = await fetchAllRows<{ id: string; amount: number; payment_type: string; description: string | null; created_at: string }>((from, to) =>
+    supabase.from('payments')
+      .select('id, amount, payment_type, description, created_at')
+      .eq('status', 'succeeded')
+      .order('created_at', { ascending: false }).order('id')
+      .range(from, to));
   const totalCents = rows.reduce((sum, p) => sum + p.amount, 0);
   const last30DaysCents = rows
     .filter((p) => p.created_at >= thirtyDaysAgo)

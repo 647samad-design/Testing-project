@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Crown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -47,6 +47,14 @@ const yearlyPlans: Record<string, { id: CheckoutPlan; price: number }> = {
 };
 
 export function PricingPage() {
+  // Stripe sends a canceled checkout back here; say so instead of showing the
+  // pricing page as if nothing happened.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('checkout') === 'canceled') {
+      toast('Checkout was canceled — no charge was made.');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
   usePageMeta({ title: 'Pricing', description: 'Simple, transparent pricing for voters and candidates.' });
   const { user } = useAuth();
   const navigate = useNavigate();
