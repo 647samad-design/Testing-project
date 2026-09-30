@@ -14,7 +14,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const FROM_ADDRESS = "BallotLens <notifications@ballotlens.com>";
+// Must be an address on a domain verified in Resend. Configurable so a
+// different domain doesn't require a code change (every send fails if the
+// domain here isn't verified).
+const FROM_ADDRESS = Deno.env.get("EMAIL_FROM") ?? "BallotLens <notifications@ballotlens.com>";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
