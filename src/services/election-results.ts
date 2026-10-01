@@ -125,7 +125,7 @@ export async function markAllElectionNotificationsRead(): Promise<void> {
     .eq('is_read', false);
 }
 
-export async function triggerNewsFetch(): Promise<{ success: boolean; articlesAdded: number; error?: string }> {
+export async function triggerNewsFetch(): Promise<{ success: boolean; articlesAdded: number; failedInserts?: number; lastInsertError?: string; error?: string }> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData.session?.access_token;

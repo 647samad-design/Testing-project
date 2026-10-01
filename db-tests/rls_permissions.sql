@@ -431,6 +431,26 @@ SELECT rlstest.as_anon();
 SELECT rlstest.check('[3700] changing an approved answer sends it back to review (was live unreviewed)',
   rlstest.cnt($$SELECT count(*) FROM candidate_quiz_answers WHERE candidate_id='55555555-0000-0000-0000-000000000005'$$) = 0);
 
+-- ───────── source posts: election results & news (20260913003800) ─────────
+SELECT rlstest.as_owner();
+SELECT rlstest.check('[3800] system can save an AP election-result post (was always rejected)',
+  rlstest.rc($$INSERT INTO feed_posts (post_type, body, source_name, source_url, is_pinned) VALUES ('election_result','Jane Doe has won the race.','AP Elections','https://apnews.com/x',false)$$) = 1);
+SELECT rlstest.check('[3800] system can save a news post (was always rejected)',
+  rlstest.rc($$INSERT INTO feed_posts (post_type, body, source_name, source_url, link_url) VALUES ('news','Headline','Florida Politics','https://example.com/a','https://example.com/a')$$) = 1);
+SELECT rlstest.check('[3800] a post with no candidate AND no source is still rejected',
+  rlstest.fails($$INSERT INTO feed_posts (post_type, body, source_name) VALUES ('news','orphan',NULL)$$));
+SELECT rlstest.check('[3800] a candidate post cannot pretend to be an election result',
+  rlstest.fails($$INSERT INTO feed_posts (candidate_id, post_type, body) VALUES ('55555555-0000-0000-0000-000000000005','election_result','I won!')$$));
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3800] a verified candidate CANNOT forge an "AP Elections" post',
+  rlstest.fails($$INSERT INTO feed_posts (post_type, body, source_name, author_user_id) VALUES ('election_result','I won!','AP Elections',auth.uid())$$));
+SELECT rlstest.check('[3800] candidates still post normal updates', rlstest.rc($$INSERT INTO feed_posts (candidate_id, author_user_id, post_type, body) VALUES ('55555555-0000-0000-0000-000000000005', auth.uid(), 'update', 'Still works')$$) = 1);
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3800] a voter cannot forge a news post', rlstest.fails($$INSERT INTO feed_posts (post_type, body, source_name) VALUES ('news','fake','Reuters')$$));
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3800] election results are publicly visible in the feed',
+  rlstest.cnt($$SELECT count(*) FROM feed_posts WHERE source_name = 'AP Elections' AND candidate_id IS NULL$$) = 1);
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

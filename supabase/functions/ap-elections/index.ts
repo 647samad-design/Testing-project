@@ -1,6 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
+// supabase-js can't infer table types without generated types; treat the
+// client as untyped instead of fighting mismatched generics.
+// deno-lint-ignore no-explicit-any
+type Db = any;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -11,7 +16,7 @@ const corsHeaders = {
 async function requireAdmin(
   req: Request,
   supabaseUrl: string,
-  adminClient: ReturnType<typeof createClient>
+  adminClient: Db
 ): Promise<Response | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
@@ -296,14 +301,14 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
 
 async function createNotificationsForState(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Db,
   raceId: string,
   race: Record<string, unknown>,
   type: "race_called" | "results_certified"
@@ -329,13 +334,16 @@ async function createNotificationsForState(
       ? `${winnerName} has won the ${officeName} race in ${statePostal}${winnerParty ? ` (${winnerParty})` : ''}. AP has called the race.`
       : `The ${officeName} race in ${statePostal} has been officially certified. Final results are now available.`;
 
-  await supabase.from("feed_posts").insert({
+  const { error: feedErr } = await supabase.from("feed_posts").insert({
     post_type: "election_result",
     body: feedBody,
     source_name: type === "race_called" ? "AP Elections" : "AP Elections (Certified)",
     source_url: `https://apnews.com/hub/election-2026`,
     is_pinned: false,
   }).select("id").maybeSingle();
+  // Previously unchecked -- and it always failed (see migration 20260913003800).
+  // Log rather than throw so voters' notifications below still go out.
+  if (feedErr) console.error(`ap-elections: could not save ${type} feed post: ${feedErr.message}`);
 
   // Send in-app notifications (to the bell in the header — notifications
   // table, NOT user_election_notifications, which nothing in the UI reads)
@@ -361,7 +369,8 @@ async function createNotificationsForState(
     is_read: false,
   }));
 
-  await supabase.from("notifications").insert(notifications);
+  const { error: notifErr } = await supabase.from("notifications").insert(notifications);
+  if (notifErr) console.error(`ap-elections: could not save ${type} notifications: ${notifErr.message}`);
 
   // Instant email — only to users who opted into election/followed-content
   // alerts. Best-effort: a failure here shouldn't block the notifications

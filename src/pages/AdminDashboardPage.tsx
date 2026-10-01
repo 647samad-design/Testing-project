@@ -1285,7 +1285,10 @@ function DataFeedsTab() {
     try {
       const result = await triggerNewsFetch();
       if (result.success) {
-        setNewsResult(`✅ Added ${result.articlesAdded} new article${result.articlesAdded === 1 ? '' : 's'}.`);
+        setNewsResult(
+          `✅ Added ${result.articlesAdded} new article${result.articlesAdded === 1 ? '' : 's'}.`
+          + (result.failedInserts ? ` ⚠️ ${result.failedInserts} could not be saved${result.lastInsertError ? `: ${result.lastInsertError}` : ''}.` : '')
+        );
       } else {
         toast.error(result.error ?? 'News fetch failed.');
       }

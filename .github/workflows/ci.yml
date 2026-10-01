@@ -59,12 +59,11 @@ jobs:
       - name: Let Deno auto-install npm dependencies
         run: |
           echo '{ "nodeModulesDir": "auto" }' > deno.json
-      - name: Type-check (functions that are clean today; add others as they're fixed)
+      - name: Type-check every edge function
         working-directory: supabase/functions
         run: |
           status=0
-          for f in create-checkout-session create-portal-session delete-my-account stripe-webhook \
-                   send-email send-message-notification send-team-invite-notification email-unsubscribe; do
+          for f in $(ls -d */ | sed 's#/##' | grep -v '^tests$'); do
             if ! out=$(deno check "$f/index.ts" 2>&1); then
               status=1
               # Surface each error as an annotation (visible on the run page and via the API).

@@ -10,6 +10,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
+// supabase-js can't infer table types without generated types; treat the
+// client as untyped instead of fighting mismatched generics.
+// deno-lint-ignore no-explicit-any
+type Db = any;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -18,7 +23,7 @@ const corsHeaders = {
 
 const REMINDER_WINDOW_DAYS = 14; // remind for elections within the next 2 weeks
 
-async function requireAdmin(req: Request, supabaseUrl: string, adminClient: ReturnType<typeof createClient>): Promise<Response | null> {
+async function requireAdmin(req: Request, supabaseUrl: string, adminClient: Db): Promise<Response | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return new Response(JSON.stringify({ error: "Missing Authorization header" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;

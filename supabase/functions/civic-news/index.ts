@@ -1,6 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
+// supabase-js can't infer table types without generated types; treat the
+// client as untyped instead of fighting mismatched generics.
+// deno-lint-ignore no-explicit-any
+type Db = any;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -11,7 +16,7 @@ const corsHeaders = {
 async function requireAdmin(
   req: Request,
   supabaseUrl: string,
-  adminClient: ReturnType<typeof createClient>
+  adminClient: Db
 ): Promise<Response | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
@@ -146,6 +151,8 @@ Deno.serve(async (req: Request) => {
 
       const maxPerSource = parseInt(url.searchParams.get("max") ?? "3", 10);
       let totalInserted = 0;
+      let failedInserts = 0;
+      let lastInsertError: string | null = null;
 
       for (const source of NEWS_SOURCES) {
         try {
@@ -181,7 +188,7 @@ Deno.serve(async (req: Request) => {
               ? `${item.title}\n\n${item.description}`
               : item.title;
 
-            await supabase.from("feed_posts").insert({
+            const { error: insertErr } = await supabase.from("feed_posts").insert({
               post_type: "news",
               body: postBody,
               source_name: source.name,
@@ -189,6 +196,14 @@ Deno.serve(async (req: Request) => {
               link_url: item.link,
               is_pinned: false,
             });
+            // Count only rows that were actually saved. This used to count
+            // every attempt, so the admin saw "N posts added" while every
+            // insert was being rejected (see migration 20260913003800).
+            if (insertErr) {
+              failedInserts++;
+              lastInsertError = insertErr.message;
+              continue;
+            }
 
             totalInserted++;
           }
@@ -203,6 +218,8 @@ Deno.serve(async (req: Request) => {
           success: true,
           sourcesChecked: NEWS_SOURCES.length,
           articlesAdded: totalInserted,
+          failedInserts,
+          ...(lastInsertError ? { lastInsertError } : {}),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -223,7 +240,7 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
