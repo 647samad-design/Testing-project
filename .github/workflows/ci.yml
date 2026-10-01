@@ -53,6 +53,11 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      # The repo root has a package.json, so Deno expects a pre-installed node_modules
+      # and won't fetch npm: imports by itself. Let it auto-install for the checks.
+      # (CI-only file; not committed, so Supabase deploys are unaffected.)
+      - name: Let Deno auto-install npm dependencies
+        run: echo '{ "nodeModulesDir": "auto" }' > deno.json
       - name: Type-check (functions that are clean today; add others as they're fixed)
         working-directory: supabase/functions
         run: |
