@@ -108,7 +108,7 @@ export function ContestDetailPage() {
           <p className="mt-1 text-sm text-muted-foreground">Term: {contest.term_length}</p>
         )}
         <div className="mt-4">
-          <DemoBanner compact />
+          <DemoBanner compact show={candidates.some((c) => c.is_demo)} />
         </div>
       </div>
 

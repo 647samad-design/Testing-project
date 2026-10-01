@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MapPin, ArrowLeft, FileText, Gavel, Vote, Building2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { CalendarDays, MapPin, ArrowLeft, FileText, Gavel, Vote, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { BallotContestCard } from '@/components/shared/BallotContestCard';
 import { BallotMeasureCard } from '@/components/shared/BallotMeasureCard';
 import { DemoBanner } from '@/components/shared/DemoBanner';
@@ -14,6 +13,7 @@ import { getLocation } from '@/services/districts';
 import { useAuth } from '@/hooks/use-auth';
 import type { BallotContest, BallotMeasure, Election, DistrictResult } from '@/types';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { parseDateOnly } from '@/lib/date-utils';
 import { ElectionResultsCard } from '@/components/shared/ElectionResultsCard';
 import { toStatePostal } from '@/lib/us-states';
 
@@ -29,14 +29,14 @@ export function MyBallotPage() {
   usePageMeta({ title: 'My Ballot', description: 'See your personalized ballot with every race and measure for your address.' });
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { contestId } = useParams();
-  const [address, setAddress] = useState('');
+  const [, setAddress] = useState('');
   const [addressInput, setAddressInput] = useState('');
   const [needsAddress, setNeedsAddress] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [election, setElection] = useState<Election | null>(null);
   const [contests, setContests] = useState<BallotContest[]>([]);
+  const [isDemoBallot, setIsDemoBallot] = useState(false);
   const [measures, setMeasures] = useState<BallotMeasure[]>([]);
   const [districts, setDistricts] = useState<DistrictResult | null>(null);
   const [ballotScope, setBallotScope] = useState<'district' | 'state' | undefined>(undefined);
@@ -58,6 +58,7 @@ export function MyBallotPage() {
       setContests(result.contests);
       setMeasures(result.measures);
       setBallotScope(result.scope);
+      setIsDemoBallot(!!result.isDemo);
     }
     setLoading(false);
   }
@@ -167,8 +168,26 @@ export function MyBallotPage() {
           Change address
         </Link>
         <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight">
-          My 2026 Ballot
+          My Ballot
         </h1>
+        {/* The election was loaded but never shown; its date is the most
+            important fact on this page. */}
+        {election && (
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            <CalendarDays className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-foreground">{election.name}</span>
+            {election.election_date && (() => {
+              const d = parseDateOnly(election.election_date);
+              const days = Math.round((d.getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
+              return (
+                <span className="text-muted-foreground">
+                  · {d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  {days > 1 ? ` · in ${days} days` : days === 1 ? ' · tomorrow' : days === 0 ? ' · today' : ''}
+                </span>
+              );
+            })()}
+          </p>
+        )}
         <div className="mt-2 flex items-center gap-2 text-muted-foreground">
           <MapPin className="h-4 w-4" />
           <span className="text-sm">
@@ -188,7 +207,7 @@ export function MyBallotPage() {
         )}
 
         <div className="mt-4">
-          <DemoBanner compact />
+          <DemoBanner compact show={isDemoBallot} />
         </div>
 
         {ballotScope === 'state' && (

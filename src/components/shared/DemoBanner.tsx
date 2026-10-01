@@ -1,12 +1,19 @@
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isDemoMode } from '@/lib/demo-mode';
 
 interface DemoBannerProps {
   className?: string;
   compact?: boolean;
+  /** Pass true when the data on this page is demo data. */
+  show?: boolean;
 }
 
-export function DemoBanner({ className, compact }: DemoBannerProps) {
+/** Shown only when demo data is actually on screen: the page says so via
+ * `show`, or the visitor is in demo mode. It used to render unconditionally on
+ * 10 pages, telling voters that real candidates were "fictional". */
+export function DemoBanner({ className, compact, show = false }: DemoBannerProps) {
+  if (!show && !isDemoMode()) return null;
   return (
     <div
       className={cn(

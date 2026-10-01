@@ -117,7 +117,7 @@ export function ComparePage() {
           Issues you care about are highlighted.
         </p>
         <div className="mt-4">
-          <DemoBanner compact />
+          <DemoBanner compact show={allCandidates.filter((c) => selectedIds.includes(c.id)).some((c) => c.is_demo)} />
         </div>
       </div>
 

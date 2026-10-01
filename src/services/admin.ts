@@ -101,7 +101,9 @@ export async function addCandidate(candidate: {
 }): Promise<void> {
   const { data, error } = await supabase
     .from('candidates')
-    .insert({ ...candidate, is_demo: candidate.is_demo ?? true })
+    // Candidates added by an admin are real. This defaulted to true, so every
+    // hand-added candidate was flagged demo and showed the "fictional" banner.
+    .insert({ ...candidate, is_demo: candidate.is_demo ?? false })
     .select('id')
     .single();
   if (error) throw error;

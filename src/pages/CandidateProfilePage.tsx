@@ -219,7 +219,7 @@ export function CandidateProfilePage() {
             )}
             {candidate.is_demo && (
               <div className="mt-2">
-                <DemoBanner compact />
+                <DemoBanner compact show />
               </div>
             )}
             <div className="mt-4 flex flex-wrap gap-2">

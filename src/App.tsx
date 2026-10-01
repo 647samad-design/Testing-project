@@ -33,6 +33,7 @@ import { MethodologyPage } from '@/pages/company/MethodologyPage';
 import { SourcesPage } from '@/pages/company/SourcesPage';
 import { AccessibilityPage } from '@/pages/company/AccessibilityPage';
 import { UnsubscribePage } from '@/pages/UnsubscribePage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ContactPage } from '@/pages/company/ContactPage';
 import { Toaster } from '@/components/ui/sonner';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
@@ -101,7 +102,7 @@ function App() {
               <Route path="/accessibility" element={<AccessibilityPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
-              <Route path="*" element={<LandingPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
             </Suspense>
             </ErrorBoundary>

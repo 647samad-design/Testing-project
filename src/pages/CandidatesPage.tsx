@@ -8,8 +8,9 @@ import { CandidateCard } from '@/components/shared/CandidateCard';
 import { DemoBanner } from '@/components/shared/DemoBanner';
 import { AdSlot } from '@/components/shared/AdSlot';
 import { LoadingState, EmptyState, ErrorState } from '@/components/shared/StateComponents';
-import { getStoredRegion } from '@/services/elections';
-import { getAllRegionCandidates, buildRegionBallot, getAllStatesCandidates, getAllStatesBallots, ALL_REGION_CONFIGS, type RegionConfig } from '@/services/regions';
+import { getStoredRegion, getVoterBallot, getVoterDistricts } from '@/services/elections';
+import { getAllContestsWithCandidates } from '@/services/candidates';
+import { getAllStatesBallots, type RegionConfig } from '@/services/regions';
 import type { Candidate, BallotContest } from '@/types';
 import { usePageMeta } from '@/hooks/use-page-meta';
 
@@ -28,32 +29,52 @@ export function CandidatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('district');
+  // Start on the voter's district when we know their address, otherwise on everyone.
+  const [viewMode, setViewMode] = useState<ViewMode>(() => (sessionStorage.getItem('ballotlens_address') ? 'district' : 'all'));
   const [region, setRegion] = useState<RegionConfig | null>(null);
   const [districtContests, setDistrictContests] = useState<BallotContest[]>([]);
   const [districtCandidates, setDistrictCandidates] = useState<Candidate[]>([]);
   const [allCandidates, setAllCandidates] = useState<Candidate[]>([]);
   const [allContests, setAllContests] = useState<BallotContest[]>([]);
+  const [districtIsDemo, setDistrictIsDemo] = useState(false);
+  const [knownDistricts, setKnownDistricts] = useState<string[]>([]);
+  const [allIsDemo, setAllIsDemo] = useState(false);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const stored = getStoredRegion();
-        setRegion(stored);
-        if (stored) {
-          const ballot = buildRegionBallot(stored);
+        // Real data. This page used to build everything from generated sample
+        // candidates (buildRegionBallot / getAllStatesCandidates) and never
+        // queried the database, so real candidates never appeared here.
+        const address = sessionStorage.getItem('ballotlens_address');
+        if (address) {
+          const ballot = await getVoterBallot(address);
           setDistrictContests(ballot.contests);
-          setDistrictCandidates(getAllRegionCandidates(stored));
+          setDistrictCandidates(ballot.contests.flatMap((c) => c.candidates ?? []));
+          setDistrictIsDemo(!!ballot.isDemo);
+          setRegion(getStoredRegion());
+          const d = await getVoterDistricts(address).catch(() => null);
+          setKnownDistricts(d ? [d.congressional, d.state_senate, d.state_house, d.municipal, d.judicial, d.school].filter((x): x is string => !!x) : []);
         } else {
-          // No stored region — district view should be empty until user sets an address
           setDistrictContests([]);
           setDistrictCandidates([]);
+          setViewMode('all');
         }
-        setAllCandidates(getAllStatesCandidates());
-        const { contests } = getAllStatesBallots();
+
+        let contests: BallotContest[] = [];
+        try {
+          contests = await getAllContestsWithCandidates();
+        } catch {
+          contests = [];
+        }
+        // Sample data only when the database has no candidates at all.
+        const usingSamples = contests.length === 0;
+        if (usingSamples) contests = getAllStatesBallots().contests;
+        setAllIsDemo(usingSamples);
         setAllContests(contests);
+        setAllCandidates(contests.flatMap((c) => c.candidates ?? []));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load candidates.');
       } finally {
@@ -103,7 +124,7 @@ export function CandidatesPage() {
           Explore biographies, positions, voting records and public statements.
         </p>
         <div className="mt-4">
-          <DemoBanner compact />
+          <DemoBanner compact show={viewMode === 'district' ? districtIsDemo : allIsDemo} />
         </div>
       </div>
 
@@ -138,9 +159,12 @@ export function CandidatesPage() {
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-foreground">{region.county}, {region.state}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {region.congressional} · {region.state_senate} · {region.state_house}
-                </p>
+                {/* Only districts we actually know for this ZIP. The region
+                    config fills unknown ones with placeholders like
+                    "Congressional District 1", which were shown here as fact. */}
+                {knownDistricts.length > 0 && (
+                  <p className="mt-0.5 text-sm text-muted-foreground">{knownDistricts.join(' · ')}</p>
+                )}
                 <Link to="/" className="mt-1 inline-block text-xs font-medium text-primary hover:underline">
                   Change address
                 </Link>
@@ -149,16 +173,6 @@ export function CandidatesPage() {
           </Card>
         )}
 
-        {viewMode === 'district' && !region && (
-          <Card className="p-4 rounded-2xl text-center">
-            <p className="text-sm text-muted-foreground">
-              Enter your address on the home page to see candidates running in your district. Showing all states below.
-            </p>
-            <Link to="/" className="mt-2 inline-block">
-              <Button variant="outline" size="sm">Find My District</Button>
-            </Link>
-          </Card>
-        )}
 
         {/* Search */}
         <div className="relative max-w-md">
@@ -191,7 +205,7 @@ export function CandidatesPage() {
                     <div key={contest.id}>
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="font-bold text-foreground">{contest.office_name}</h3>
-                        <span className="text-sm text-muted-foreground">{contest.seat_description}</span>
+                        <span className="text-sm text-muted-foreground">{(contest as BallotContest & { district?: { name: string } | null }).district?.name ?? contest.seat_description}</span>
                       </div>
                       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {contestCands.map((c) => (
@@ -228,7 +242,7 @@ export function CandidatesPage() {
                   <div key={contest.id}>
                     <div className="mb-3 flex items-center justify-between">
                       <h3 className="font-bold text-foreground">{contest.office_name}</h3>
-                      <span className="text-sm text-muted-foreground">{contest.seat_description}</span>
+                      <span className="text-sm text-muted-foreground">{(contest as BallotContest & { district?: { name: string } | null }).district?.name ?? contest.seat_description}</span>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {contestCands.map((c) => (

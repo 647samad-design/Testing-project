@@ -71,10 +71,11 @@ describe('admin service', () => {
     }));
   });
 
-  it('addCandidate inserts with is_demo defaulted to true and logs with the new id', async () => {
+  it('addCandidate creates a REAL candidate (is_demo false) and logs with the new id', async () => {
+    // Defaulting to true made every hand-added candidate show the "fictional" banner.
     await addCandidate({ first_name: 'John', last_name: 'Doe', party: 'Independent', bio: 'Bio' });
 
-    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ is_demo: true, first_name: 'John' }));
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ is_demo: false, first_name: 'John' }));
     expect(rpcMock).toHaveBeenCalledWith('log_admin_action', expect.objectContaining({
       p_action: 'add_candidate',
       p_target_id: 'new-id',

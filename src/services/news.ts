@@ -3,6 +3,7 @@ import {
   demoNewsArticles, demoVideos, demoSocialPosts,
   getDemoNewsByCandidate, getDemoVideosByCandidate, getDemoSocialByCandidate,
 } from '@/services/demo-data';
+import { isDemoMode } from '@/lib/demo-mode';
 import type { NewsArticle, Video, SocialPost, MediaCategory } from '@/types';
 
 export async function getNews(candidateId?: string): Promise<NewsArticle[]> {
@@ -22,9 +23,9 @@ export async function getNews(candidateId?: string): Promise<NewsArticle[]> {
 
     const { data, error } = await query;
     if (error) throw error;
-    if (data && data.length > 0) return data as unknown as NewsArticle[];
+    if ((data && data.length > 0) || !isDemoMode()) return (data ?? []) as unknown as NewsArticle[];
   } catch {
-    // Database unreachable — fall through to demo data
+    if (!isDemoMode()) return [];
   }
   if (candidateId) return getDemoNewsByCandidate(candidateId);
   return demoNewsArticles;
@@ -42,10 +43,11 @@ export async function getNewsByCategory(category: MediaCategory): Promise<NewsAr
       .eq('media_category', category)
       .order('published_date', { ascending: false });
     if (error) throw error;
-    if (data && data.length > 0) return data as unknown as NewsArticle[];
+    if ((data && data.length > 0) || !isDemoMode()) return (data ?? []) as unknown as NewsArticle[];
   } catch {
     // Database unreachable — fall through to demo data
   }
+  if (!isDemoMode()) return [];
   return demoNewsArticles.filter((a) => a.media_category === category);
 }
 
@@ -64,10 +66,11 @@ export async function getVideos(candidateId?: string): Promise<Video[]> {
 
     const { data, error } = await query;
     if (error) throw error;
-    if (data && data.length > 0) return data as unknown as Video[];
+    if ((data && data.length > 0) || !isDemoMode()) return (data ?? []) as unknown as Video[];
   } catch {
     // Database unreachable — fall through to demo data
   }
+  if (!isDemoMode()) return [];
   if (candidateId) return getDemoVideosByCandidate(candidateId);
   return demoVideos;
 }
@@ -86,10 +89,11 @@ export async function getSocialPosts(candidateId?: string): Promise<SocialPost[]
 
     const { data, error } = await query;
     if (error) throw error;
-    if (data && data.length > 0) return data as unknown as SocialPost[];
+    if ((data && data.length > 0) || !isDemoMode()) return (data ?? []) as unknown as SocialPost[];
   } catch {
     // Database unreachable — fall through to demo data
   }
+  if (!isDemoMode()) return [];
   if (candidateId) return getDemoSocialByCandidate(candidateId);
   return demoSocialPosts;
 }

@@ -43,4 +43,14 @@ describe.skipIf(!PGRST_URL)('getVoterBallot against real PostgREST', () => {
     expect(names).not.toContain('Otherstate House 9');
     expect(r.measures.map((m) => m.title)).not.toContain('Otherstate bond');
   }, 30000);
+
+  it('getAllContestsWithCandidates returns real races with their real candidates (Candidates page)', async () => {
+    const { getAllContestsWithCandidates } = await import('@/services/candidates');
+    const contests = await getAllContestsWithCandidates();
+    const house1 = contests.find((c) => c.office_name === 'Testland House 1');
+    expect(house1?.candidates?.map((c) => c.last_name)).toEqual(['Landry']);
+    // only races that actually have candidates
+    expect(contests.find((c) => c.office_name === 'Testland House 2')).toBeUndefined();
+    expect(contests.every((c) => (c.candidates ?? []).length > 0)).toBe(true);
+  });
 });

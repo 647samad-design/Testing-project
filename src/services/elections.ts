@@ -158,6 +158,8 @@ export async function getVoterBallot(address: string): Promise<{
   measures: BallotMeasure[];
   error: string | null;
   scope?: BallotScope;
+  /** True when this is the generated sample ballot (no real data for the area). */
+  isDemo?: boolean;
 }> {
   const districts = await getVoterDistricts(address);
   const cfg: RegionConfig = {
@@ -174,7 +176,10 @@ export async function getVoterBallot(address: string): Promise<{
 
   try {
     const result = await loadBallotFromDB(cfg.state, districts.district_ids ?? []);
-    if (result) return result;
+    if (result) {
+      const isDemo = result.contests.some((c) => (c.candidates ?? []).some((cand) => cand.is_demo));
+      return { ...result, isDemo };
+    }
   } catch {
     // Database unreachable — fall through to demo data
   }
@@ -184,6 +189,7 @@ export async function getVoterBallot(address: string): Promise<{
     contests: regionBallot.contests,
     measures: regionBallot.measures,
     error: null,
+    isDemo: true,
   };
 }
 

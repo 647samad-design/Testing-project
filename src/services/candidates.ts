@@ -1,9 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import { fetchAllRows } from '@/lib/fetch-all';
-import { demoCandidates } from '@/services/demo-data';
 import { getStoredRegion } from '@/services/elections';
 import { getAllRegionCandidates, getAllStatesCandidates } from '@/services/regions';
 import type {
+  BallotContest,
   Candidate, CandidatePosition, CandidateStatement,
   VotingRecord, Source, Issue, JudicialRecord,
 } from '@/types';
@@ -78,7 +78,7 @@ export async function getCandidatePositions(candidateId: string): Promise<Candid
 
   // Fetch sources via candidate_sources join
   const positionIds = positions.map((p) => p.id);
-  let sourcesByPosition: Record<string, Source[]> = {};
+  const sourcesByPosition: Record<string, Source[]> = {};
 
   if (positionIds.length > 0) {
     const { data: cs } = await supabase
@@ -87,7 +87,7 @@ export async function getCandidatePositions(candidateId: string): Promise<Candid
       .in('candidate_position_id', positionIds);
 
     const sourceIds = [...new Set((cs ?? []).map((c) => c.source_id).filter(Boolean))] as string[];
-    let sourceMap: Record<string, Source> = {};
+    const sourceMap: Record<string, Source> = {};
 
     if (sourceIds.length > 0) {
       const { data: srcs } = await supabase
@@ -320,4 +320,29 @@ export async function getCandidateContestIds(candidateIds: string[]): Promise<Re
     result[row.candidate_id].push(row.contest_id);
   }
   return result;
+}
+
+/** Every race that has at least one candidate, with its candidates attached,
+ * for the Candidates page "All Candidates" view. Real data from the database;
+ * the page previously showed generated sample candidates for every state and
+ * never queried the candidates table at all. Paged past the 1,000-row cap. */
+export async function getAllContestsWithCandidates(): Promise<BallotContest[]> {
+  type Row = {
+    id: string; election_id: string; district_id: string | null; office_name: string;
+    contest_level: BallotContest['contest_level']; seat_description: string | null; term_length: string | null;
+    candidate_offices: Array<{ candidate: Candidate | null }>;
+    district: { name: string; state: string } | null;
+  };
+  const rows = await fetchAllRows<Row>((from, to) => supabase
+    .from('ballot_contests')
+    .select('id, election_id, district_id, office_name, contest_level, seat_description, term_length, district:districts(name, state), candidate_offices!inner(candidate:candidates(*))')
+    .order('contest_level').order('office_name').order('id')
+    .range(from, to));
+  return rows.map(({ candidate_offices, ...c }) => ({
+    ...c,
+    candidates: candidate_offices
+      .map((o) => o.candidate)
+      .filter((cand): cand is Candidate => !!cand)
+      .sort((a, b) => a.last_name.localeCompare(b.last_name)),
+  })) as unknown as BallotContest[];
 }
