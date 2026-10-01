@@ -181,7 +181,8 @@ export function MyBallotPage() {
               const days = Math.round((d.getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
               return (
                 <span className="text-muted-foreground">
-                  · {d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  <span className="hidden sm:inline">· </span>
+                  {d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                   {days > 1 ? ` · in ${days} days` : days === 1 ? ' · tomorrow' : days === 0 ? ' · today' : ''}
                 </span>
               );

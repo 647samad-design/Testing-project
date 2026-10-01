@@ -3,6 +3,7 @@ import { Check, Crown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { startCheckout, type CheckoutPlan } from '@/services/stripe';
 import { toast } from 'sonner';
@@ -149,14 +150,21 @@ export function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  variant={plan.highlight ? 'default' : 'outline'}
-                  className="mt-6 w-full rounded-xl"
-                  disabled={plan.id === 'free' || isLoading}
-                  onClick={() => handleSubscribe(plan.id)}
-                >
-                  {plan.id === 'free' ? plan.cta : isLoading ? 'Redirecting…' : plan.cta}
-                </Button>
+                {plan.id === 'free' && !user ? (
+                  // Signed-out visitors were shown a disabled "Current Plan".
+                  <Button asChild variant="outline" className="mt-6 w-full rounded-xl">
+                    <Link to="/signin">Get started free</Link>
+                  </Button>
+                ) : (
+                  <Button
+                    variant={plan.highlight ? 'default' : 'outline'}
+                    className="mt-6 w-full rounded-xl"
+                    disabled={plan.id === 'free' || isLoading}
+                    onClick={() => handleSubscribe(plan.id)}
+                  >
+                    {plan.id === 'free' ? plan.cta : isLoading ? 'Redirecting…' : plan.cta}
+                  </Button>
+                )}
               </Card>
             );
           })}

@@ -346,3 +346,18 @@ export async function getAllContestsWithCandidates(): Promise<BallotContest[]> {
       .sort((a, b) => a.last_name.localeCompare(b.last_name)),
   })) as unknown as BallotContest[];
 }
+
+/** The office of the race a candidate is running in (e.g. "State Representative"),
+ * or null if they aren't linked to a race. Used for the "What does this office
+ * do?" card, which previously defaulted to "County Commissioner" for every
+ * candidate without a verified claim. */
+export async function getCandidateRaceOffice(candidateId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('candidate_offices')
+    .select('contest:ballot_contests(office_name)')
+    .eq('candidate_id', candidateId)
+    .limit(1)
+    .maybeSingle();
+  const contest = (data as { contest: { office_name: string } | null } | null)?.contest;
+  return contest?.office_name ?? null;
+}

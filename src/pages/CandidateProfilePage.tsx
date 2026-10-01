@@ -13,7 +13,7 @@ import { DemoBanner } from '@/components/shared/DemoBanner';
 import { VerificationBadge } from '@/components/shared/VerificationBadge';
 import { SourceBadge } from '@/components/shared/SourceBadge';
 import { LoadingState, ErrorState } from '@/components/shared/StateComponents';
-import { getCandidate, getCandidatePositions, getCandidateStatements, getVotingRecord, getJudicialRecord } from '@/services/candidates';
+import { getCandidate, getCandidatePositions, getCandidateStatements, getVotingRecord, getJudicialRecord, getCandidateRaceOffice } from '@/services/candidates';
 import { getNews, getVideos, getSocialPosts } from '@/services/news';
 import { getVerifiedClaim, getApprovedSubmissions, getApprovedQuestionnaire, getApprovedEvents } from '@/services/candidate-portal';
 import { NewsCard } from '@/components/shared/NewsCard';
@@ -77,6 +77,7 @@ export function CandidateProfilePage() {
   const [teamMembers, setTeamMembers] = useState<CampaignTeamMember[]>([]);
   const [campaign, setCampaign] = useState<CampaignType | null>(null);
   const { user, profile } = useAuth();
+  const [raceOffice, setRaceOffice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!candidateId) return;
@@ -106,6 +107,7 @@ export function CandidateProfilePage() {
           return;
         }
         setCandidate(cand);
+        getCandidateRaceOffice(candidateId!).then(setRaceOffice).catch(() => setRaceOffice(null));
         setPositions(pos);
         setStatements(stmts);
         setVotingRecords(votes);
@@ -201,7 +203,7 @@ export function CandidateProfilePage() {
             {/* Verification levels */}
             <div className="mt-2">
               <VerificationBadges
-                levels={getVerificationLevels(!!verifiedClaim, positions.length > 0, !candidate.is_demo)}
+                levels={getVerificationLevels(!!verifiedClaim, positions.some((p) => (p.sources?.length ?? 0) > 0), !candidate.is_demo)}
                 size="xs"
               />
             </div>
@@ -334,7 +336,7 @@ export function CandidateProfilePage() {
 
       {/* What Does This Office Do? */}
       <div className="mt-4">
-        <OfficeDescriptionCard officeName={verifiedClaim?.office || 'County Commissioner'} />
+        {(verifiedClaim?.office || raceOffice) && <OfficeDescriptionCard officeName={(verifiedClaim?.office || raceOffice)!} />}
       </div>
 
       {/* Get to Know Me */}
