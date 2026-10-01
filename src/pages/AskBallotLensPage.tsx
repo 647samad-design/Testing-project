@@ -16,14 +16,21 @@ import type { AIResponse, Candidate, ClaimAssessment } from '@/types';
 import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
 
-const exampleQuestions = [
-  'What has Alex Morgan said about healthcare?',
-  'What bills has Jordan Rivera voted for?',
-  'What is Taylor Brooks\' position on immigration?',
-  'Compare these candidates on healthcare.',
-  'Show me the evidence.',
-  'What sources support this information?',
-];
+/** Example questions use REAL candidates from the database. They used to name
+ * fictional demo candidates (Alex Morgan, Jordan Rivera, Taylor Brooks), which
+ * real visitors would click and get nothing back. */
+function buildExampleQuestions(candidates: Candidate[]): string[] {
+  const real = candidates.filter((c) => !c.is_demo).slice(0, 3);
+  const name = (c: Candidate) => `${c.first_name} ${c.last_name}`;
+  const generic = ['Compare candidates on healthcare', 'Show me the evidence sources', 'What sources support this information?'];
+  if (real.length === 0) return generic;
+  const templates = [
+    (c: Candidate) => `What has ${name(c)} said about healthcare?`,
+    (c: Candidate) => `What is ${name(c)}'s position on the economy?`,
+    (c: Candidate) => `What bills has ${name(c)} voted for?`,
+  ];
+  return [...real.map((c, i) => templates[i](c)), ...generic.slice(0, 2)];
+}
 
 export function AskBallotLensPage() {
   usePageMeta({ title: 'Ask BallotLens AI', description: 'Get sourced answers about candidates, positions, and voting records.' });
@@ -189,7 +196,7 @@ export function AskBallotLensPage() {
             <div className="mt-4">
               <p className="text-xs font-medium text-muted-foreground mb-2">Example questions:</p>
               <div className="flex flex-wrap gap-2">
-                {exampleQuestions.map((q) => (
+                {buildExampleQuestions(candidates).map((q) => (
                   <button
                     key={q}
                     onClick={() => setQuestion(q)}
