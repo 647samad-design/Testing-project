@@ -156,7 +156,7 @@ export function CandidatePortalPage() {
 
           {verifiedClaim && (
             <>
-              <div className="mt-8 flex gap-2 rounded-xl border border-border bg-secondary/30 p-1">
+              <div className="mt-8 flex flex-wrap gap-1 rounded-xl border border-border bg-secondary/30 p-1">
                 {([
                   { id: 'overview', label: 'Overview', icon: FileText },
                   { id: 'bio', label: 'Update Bio', icon: FileText },
@@ -171,7 +171,7 @@ export function CandidatePortalPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
                       activeTab === tab.id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >

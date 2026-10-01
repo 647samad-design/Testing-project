@@ -157,7 +157,7 @@ export function AdminDashboardPage() {
                         onAttached={() => setPositionSourceCounts((prev) => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 }))}
                       />
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex flex-wrap gap-2 sm:shrink-0">
                       <Button
                         size="sm"
                         variant="outline"
@@ -571,7 +571,7 @@ function CandidateQuizReviewSection() {
                 ))}
               </ul>
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button size="sm" disabled={busy === g.candidate_id} onClick={() => decide(g, 'approved')}>Approve all</Button>
               <Button size="sm" variant="outline" disabled={busy === g.candidate_id} onClick={() => decide(g, 'rejected')}>Reject</Button>
             </div>
@@ -725,7 +725,7 @@ function FactCheckReviewSection() {
               placeholder="Evidence link (recommended)"
               className="text-sm"
             />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button size="sm" disabled={busyId === fc.id || !(explanation[fc.id] ?? '').trim()} onClick={() => handlePublish(fc.id)}>Publish</Button>
               <Button size="sm" variant="outline" disabled={busyId === fc.id} onClick={() => handleDismiss(fc.id)}>Dismiss</Button>
             </div>
@@ -1352,7 +1352,7 @@ function DataFeedsTab() {
           Mondays, daily subscribers every day) and has something new to report. Requires{' '}
           <code>RESEND_API_KEY</code> to be set as an Edge Function secret.
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={() => handleDigestRun(true)} disabled={digestLoading} size="sm" variant="outline" className="gap-1.5">
             <RefreshCw className={`h-3.5 w-3.5 ${digestLoading ? 'animate-spin' : ''}`} />
             Preview (dry run)
@@ -1372,7 +1372,7 @@ function DataFeedsTab() {
           who follow a candidate in that race or set an explicit reminder — deduplicated, so it's
           safe to run repeatedly. Also requires <code>RESEND_API_KEY</code>.
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={() => handleReminderRun(true)} disabled={reminderLoading} size="sm" variant="outline" className="gap-1.5">
             <RefreshCw className={`h-3.5 w-3.5 ${reminderLoading ? 'animate-spin' : ''}`} />
             Preview (dry run)
@@ -1506,13 +1506,13 @@ function ManageCandidatesTab() {
                   <Input value={draft.last_name} onChange={(e) => setDraft((d) => ({ ...d, last_name: e.target.value }))} placeholder="Last name" />
                 </div>
                 <Input value={draft.party} onChange={(e) => setDraft((d) => ({ ...d, party: e.target.value }))} placeholder="Party" />
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" disabled={saving} onClick={() => saveEdit(c.id)}>{saving ? 'Saving…' : 'Save'}</Button>
                   <Button size="sm" variant="outline" disabled={saving} onClick={() => setEditingId(null)}>Cancel</Button>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-secondary">
                     {c.photo_url && <img src={c.photo_url} alt={`${c.first_name} ${c.last_name}`} className="h-full w-full object-cover" />}
@@ -1522,7 +1522,7 @@ function ManageCandidatesTab() {
                     <p className="text-xs text-muted-foreground">{c.party || 'No party listed'}{c.is_demo ? ' · Demo data' : ''}{managedIds.has(c.id) ? ' · Management active' : ''}</p>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex flex-wrap gap-2 sm:shrink-0">
                   {managedIds.has(c.id) ? (
                     <Button size="sm" variant="outline" disabled={managementBusyId === c.id} className="gap-1.5 text-warning border-warning/30" onClick={() => handleRevokeManagement(c.id, `${c.first_name} ${c.last_name}`)}>
                       Revoke Management
@@ -1638,7 +1638,7 @@ function RaceLinkingPanel({ candidateId }: { candidateId: string }) {
       </div>
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Link to a Race</p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} placeholder="Search office name (e.g. 'City Council')" className="text-xs h-8" />
           <Button size="sm" onClick={handleSearch} disabled={searching}>Search</Button>
         </div>
@@ -2033,7 +2033,7 @@ function StoriesAdminTab() {
           <label className="flex items-center gap-2"><input type="checkbox" checked={draft.is_published} onChange={(e) => set('is_published', e.target.checked)} /> Published (visible to everyone)</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={draft.is_featured} onChange={(e) => set('is_featured', e.target.checked)} /> Featured</label>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={handleSave} disabled={saving || !draft.title.trim() || !draft.body.trim()}>{saving ? 'Saving…' : 'Save'}</Button>
           <Button variant="outline" onClick={() => { setDraft(null); setEditing(null); }}>Cancel</Button>
         </div>
