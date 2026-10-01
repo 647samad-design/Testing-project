@@ -93,7 +93,7 @@ export function AdminDashboardPage() {
 
       {/* Metrics */}
       {metrics && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7 mb-8">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8 mb-8">
           <MetricCard icon={Users} label="Candidates" value={metrics.candidates} />
           <MetricCard icon={Vote} label="Elections" value={metrics.elections} />
           <MetricCard icon={FileText} label="Contests" value={metrics.ballotContests} />
@@ -106,7 +106,7 @@ export function AdminDashboardPage() {
       )}
 
       <Tabs defaultValue="claims">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start gap-1">
           <TabsTrigger value="claims">Review Claims</TabsTrigger>
           <TabsTrigger value="review">Verify Positions</TabsTrigger>
           <TabsTrigger value="submissions">Content Submissions</TabsTrigger>

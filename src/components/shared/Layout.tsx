@@ -45,14 +45,14 @@ export function Header() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'rounded-xl px-4 py-2.5 text-sm font-semibold transition-all touch-target',
+                    'whitespace-nowrap rounded-xl px-3 2xl:px-4 py-2.5 text-sm font-semibold transition-all touch-target',
                     isActive
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
@@ -66,7 +66,7 @@ export function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            <Link to="/ask" className="hidden md:block">
+            <Link to="/ask" className="hidden xl:block">
               <Button variant="ghost" size="sm" className="gap-2 font-semibold text-accent hover:text-accent/80 touch-target rounded-xl">
                 <Sparkles className="h-4 w-4" />
                 Ask AI
@@ -81,22 +81,22 @@ export function Header() {
               // app, was the single biggest source of "it sent me to sign-in
               // even though I was logged in" reports: a click during that
               // flash would do exactly that.
-              <div className="hidden md:block h-9 w-24 rounded-xl bg-secondary/50 animate-pulse" />
+              <div className="hidden xl:block h-9 w-24 rounded-xl bg-secondary/50 animate-pulse" />
             ) : user ? (
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden xl:flex items-center gap-1.5">
                 <NotificationBell />
                 {profile?.is_admin && (
                   <Link to="/admin">
-                    <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target">
+                    <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target" aria-label="Admin">
                       <ShieldCheck className="h-4 w-4" />
-                      Admin
+                      <span className="hidden 2xl:inline">Admin</span>
                     </Button>
                   </Link>
                 )}
                 <Link to="/account">
                   <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target">
-                    <User className="h-4 w-4" />
-                    {profile?.full_name ?? 'Account'}
+                    <User className="h-4 w-4 shrink-0" />
+                    <span className="max-w-[9rem] truncate">{profile?.full_name ?? 'Account'}</span>
                     {isDemo && <span className="ml-1.5 rounded-md bg-warning/20 px-1.5 py-0.5 text-[10px] font-bold text-warning">DEMO</span>}
                   </Button>
                 </Link>
@@ -104,14 +104,15 @@ export function Header() {
                   variant="outline"
                   size="sm"
                   onClick={() => signOut()}
-                  className="gap-2 rounded-xl touch-target"
+                  className="rounded-xl touch-target"
+                  aria-label="Sign out"
+                  title="Sign out"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign Out
                 </Button>
               </div>
             ) : (
-              <Link to="/signin" className="hidden md:block">
+              <Link to="/signin" className="hidden xl:block">
                 <Button size="sm" className="gap-2 rounded-xl touch-target font-semibold">
                   <LogIn className="h-4 w-4" />
                   Sign In
@@ -120,11 +121,11 @@ export function Header() {
             )}
 
             {/* Mobile menu trigger */}
-            {user && <div className="md:hidden"><NotificationBell /></div>}
+            {user && <div className="xl:hidden"><NotificationBell /></div>}
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden rounded-xl touch-target"
+              className="xl:hidden rounded-xl touch-target"
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
             >
