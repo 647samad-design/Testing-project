@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Loader2, ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -19,6 +20,12 @@ export function CandidateQuizPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('loading');
+  const [draftAnswers, setDraftAnswersState] = useState<Record<string, string>>({});
+  // QuizCard reads initialAnswers only when it mounts. The page can render it
+  // before the session has restored (empty answers) and load the real answers
+  // a moment later, so bump a key to remount it whenever the draft changes.
+  const [draftKey, setDraftKey] = useState(0);
+  const setDraftAnswers = (a: Record<string, string>) => { setDraftAnswersState(a); setDraftKey((k) => k + 1); };
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [candidateId, setCandidateId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,10 +83,10 @@ export function CandidateQuizPage() {
       const questionsWithAnswers = allQuestions;
       setQuestions(questionsWithAnswers);
 
-      // Store existing answers in localStorage so QuizCard can pre-fill
-      if (Object.keys(existingAnswers).length > 0) {
-        localStorage.setItem('candidate_quiz_existing', JSON.stringify(existingAnswers));
-      }
+      // Pre-fill previously submitted answers. (This used to write them to
+      // localStorage, which QuizCard never read, so every return visit
+      // started from a blank quiz.)
+      setDraftAnswers(existingAnswers);
 
       setPhase('quiz');
     }
@@ -93,15 +100,30 @@ export function CandidateQuizPage() {
     }
 
     setPhase('saving');
+    const entries = Object.entries(answers);
     let savedCount = 0;
+    let lastError: string | undefined;
 
-    for (const [questionId, answer] of Object.entries(answers)) {
+    for (const [questionId, answer] of entries) {
       const result = await saveCandidateQuizAnswer(
         candidateId,
         questionId,
         answer as 'a' | 'b' | 'c' | 'd',
       );
       if (result.success) savedCount++;
+      else lastError = result.error;
+    }
+
+    // The count used to be ignored: the "submitted for review" screen showed
+    // even if every answer had failed to save.
+    if (savedCount < entries.length) {
+      toast.error(
+        `${entries.length - savedCount} of ${entries.length} answers couldn't be saved${lastError ? ` (${lastError})` : ''}. ` +
+        'Your answers are still here — please try submitting again.'
+      );
+      setDraftAnswers(answers);
+      setPhase('quiz');
+      return;
     }
 
     setPhase('done');
@@ -166,12 +188,14 @@ export function CandidateQuizPage() {
 
   return (
     <QuizCard
+      key={draftKey}
       questions={questions}
       onComplete={handleComplete}
       title="Where Do You Stand?"
       subtitle="Answer these questions so voters can find candidates who share their values. All answers are reviewed before going live."
       accentColor="accent"
       saveLabel="Submit for Review"
+      initialAnswers={draftAnswers}
     />
   );
 }

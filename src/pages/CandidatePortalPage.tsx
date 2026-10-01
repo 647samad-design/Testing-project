@@ -558,7 +558,7 @@ const EMPTY_EVENT_DRAFT = { title: '', description: '', location: '', event_date
 
 function CampaignManagementTab({ candidateId }: { candidateId: string }) {
   const [hasManagement, setHasManagement] = useState<boolean | null>(null);
-  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [, setCampaign] = useState<Campaign | null>(null);
   const [events, setEvents] = useState<CampaignEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

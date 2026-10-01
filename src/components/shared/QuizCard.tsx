@@ -12,6 +12,8 @@ interface QuizCardProps {
   subtitle: string;
   accentColor?: 'primary' | 'accent';
   saveLabel?: string;
+  /** Answers to start with (e.g. previously submitted ones, or a draft after a failed save). */
+  initialAnswers?: Record<string, string>;
 }
 
 export function QuizCard({
@@ -21,9 +23,10 @@ export function QuizCard({
   subtitle,
   accentColor = 'primary',
   saveLabel = 'Save My Answers',
+  initialAnswers,
 }: QuizCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(() => initialAnswers ?? {});
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
 
   const total = questions.length;
