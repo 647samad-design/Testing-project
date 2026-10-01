@@ -7,8 +7,10 @@
 // unsubscribe (RFC 8058 List-Unsubscribe-Post), or mail gets spam-foldered.
 //
 // Links are signed (HMAC of user id + list), so nobody can unsubscribe someone
-// else by guessing ids. GET shows a confirmation page; POST is the RFC 8058
-// one-click request mail providers send.
+// else by guessing ids. POST is the RFC 8058 one-click request mail providers
+// send. GET (a person clicking the link) redirects to the site's /unsubscribe
+// page: Supabase serves function responses on *.supabase.co as text/plain, so
+// an HTML page returned from here showed up as raw HTML source in the browser.
 //
 // Deploy with JWT verification OFF (mail clients send no auth header), the
 // same as stripe-webhook.
@@ -25,8 +27,9 @@ Deno.serve(async (req: Request) => {
   const list = (url.searchParams.get("l") ?? "") as List;
   const token = url.searchParams.get("t") ?? "";
 
+  const isPost = req.method === "POST";
   if (!/^[0-9a-f-]{36}$/i.test(userId) || !LISTS.includes(list) || !(await tokensEqual(token, await unsubscribeToken(userId, list)))) {
-    return page("This unsubscribe link is invalid or has expired. You can manage emails any time from your BallotLens account settings.", 400);
+    return isPost ? new Response("Invalid unsubscribe link", { status: 400 }) : result("invalid", list);
   }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -34,12 +37,27 @@ Deno.serve(async (req: Request) => {
   const { error } = await admin
     .from("notification_preferences")
     .upsert({ user_id: userId, ...change, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-  if (error) return page("Something went wrong and you were not unsubscribed. Please try again, or turn emails off from your account settings.", 500);
+  if (error) return isPost ? new Response("Could not unsubscribe", { status: 500 }) : result("error", list);
 
-  if (req.method === "POST") return new Response("Unsubscribed", { status: 200 });
-  const what = list === "digest" ? "the BallotLens Digest" : "election reminder emails";
-  return page(`You've been unsubscribed from ${what}. You can turn it back on any time from Account → Notifications.`, 200);
+  if (isPost) return new Response("Unsubscribed", { status: 200 });
+  return result("ok", list);
 });
+
+/** Sends a person to the site's /unsubscribe page with the outcome. Falls back
+ * to a plain-text message if SITE_URL isn't configured. */
+function result(status: "ok" | "invalid" | "error", list: string): Response {
+  const site = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
+  if (site) {
+    const to = `${site}/unsubscribe?status=${status}&list=${encodeURIComponent(LISTS.includes(list as List) ? list : "")}`;
+    return new Response(null, { status: 303, headers: { Location: to } });
+  }
+  const text = status === "ok"
+    ? "You've been unsubscribed. You can turn these emails back on any time from Account > Notifications."
+    : status === "invalid"
+    ? "This unsubscribe link is invalid or has expired. You can manage emails from your BallotLens account settings."
+    : "Something went wrong and you were not unsubscribed. Please try again, or turn emails off from your account settings.";
+  return new Response(text, { status: status === "ok" ? 200 : status === "invalid" ? 400 : 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+}
 
 async function tokensEqual(a: string, b: string): Promise<boolean> {
   if (a.length !== b.length) return false;
@@ -48,10 +66,6 @@ async function tokensEqual(a: string, b: string): Promise<boolean> {
   return diff === 0;
 }
 
-function page(message: string, status: number): Response {
-  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BallotLens email preferences</title></head><body style="font-family:system-ui,sans-serif;max-width:520px;margin:64px auto;padding:0 20px;color:#222"><h1 style="font-size:20px">BallotLens</h1><p>${message}</p></body></html>`;
-  return new Response(html, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
-}
 
 // ── unsubscribe token (keep IDENTICAL in send-email and email-unsubscribe; a test enforces this) ──
 async function unsubscribeToken(userId: string, list: string): Promise<string> {

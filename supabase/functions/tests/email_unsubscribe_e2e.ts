@@ -10,6 +10,7 @@ const fakeDb = Deno.serve({ port: 54399, onListen() {} }, async (req) => {
 Deno.env.set("SUPABASE_URL", "http://127.0.0.1:54399");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "svc");
 Deno.env.set("EMAIL_UNSUBSCRIBE_SECRET", "s3cret");
+Deno.env.set("SITE_URL", "https://ballotlens.test/");
 await import("../email-unsubscribe/index.ts"); // starts the real function on :8000
 await new Promise((r) => setTimeout(r, 300));
 
@@ -21,19 +22,20 @@ async function tok(u: string, l: string) {
 const U = "11111111-1111-1111-1111-111111111111", V = "22222222-2222-2222-2222-222222222222", B = "http://127.0.0.1:8000";
 const T = await tok(U, "digest"), TR = await tok(U, "reminders");
 let fails = 0;
-async function check(label: string, url: string, expectStatus: number, method = "GET", expectText?: string) {
-  const r = await fetch(url, { method, body: method === "POST" ? "List-Unsubscribe=One-Click" : undefined, signal: AbortSignal.timeout(4000) });
-  const text = await r.text();
-  const ok = r.status === expectStatus && (!expectText || text.includes(expectText));
+async function check(label: string, url: string, expectStatus: number, method = "GET", expect?: string) {
+  const r = await fetch(url, { method, redirect: "manual", body: method === "POST" ? "List-Unsubscribe=One-Click" : undefined, signal: AbortSignal.timeout(4000) });
+  const where = r.headers.get("location") ?? await r.text();
+  const ok = r.status === expectStatus && (!expect || where.includes(expect));
   if (!ok) fails++;
-  console.log(`${ok ? "PASS" : "FAIL"}  ${label}  -> ${r.status}${expectText && !text.includes(expectText) ? "  missing: " + expectText : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${label}  -> ${r.status} ${where}`);
 }
-await check("valid digest link unsubscribes", `${B}/?u=${U}&l=digest&t=${T}`, 200, "GET", "unsubscribed from the BallotLens Digest");
-await check("tampered token rejected", `${B}/?u=${U}&l=digest&t=${T.slice(0, -1)}0`, 400, "GET", "invalid");
-await check("token reused for another user rejected", `${B}/?u=${V}&l=digest&t=${T}`, 400);
-await check("digest token reused for reminders rejected", `${B}/?u=${U}&l=reminders&t=${T}`, 400);
-await check("unknown list rejected", `${B}/?u=${U}&l=marketing&t=${T}`, 400);
+await check("valid digest link -> site page, ok", `${B}/?u=${U}&l=digest&t=${T}`, 303, "GET", "https://ballotlens.test/unsubscribe?status=ok&list=digest");
+await check("tampered token -> site page, invalid", `${B}/?u=${U}&l=digest&t=${T.slice(0, -1)}0`, 303, "GET", "status=invalid");
+await check("token reused for another user -> invalid", `${B}/?u=${V}&l=digest&t=${T}`, 303, "GET", "status=invalid");
+await check("digest token reused for reminders -> invalid", `${B}/?u=${U}&l=reminders&t=${T}`, 303, "GET", "status=invalid");
+await check("unknown list -> invalid, list not echoed", `${B}/?u=${U}&l=marketing&t=${T}`, 303, "GET", "status=invalid&list=");
 await check("RFC 8058 one-click POST works", `${B}/?u=${U}&l=reminders&t=${TR}`, 200, "POST", "Unsubscribed");
+await check("one-click POST with bad token is refused", `${B}/?u=${U}&l=reminders&t=${T}`, 400, "POST", "Invalid");
 console.log("--- database writes requested ---");
 for (const r of received) console.log("  " + r);
 const wrote = received.join("\n");
