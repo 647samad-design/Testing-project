@@ -23,8 +23,12 @@ BEGIN
     (e, '7e570000-0000-0000-0000-000000000001', 'Testland House 1 bond', 'local'),
     (e, '07e50000-0000-0000-0000-000000000003', 'Otherstate bond', 'local');
 
-  INSERT INTO candidates (id, first_name, last_name) VALUES ('ca7e0000-0000-0000-0000-000000000001', 'Tess', 'Landry');
+  INSERT INTO candidates (id, first_name, last_name, is_demo) VALUES ('ca7e0000-0000-0000-0000-000000000001', 'Tess', 'Landry', false);
   INSERT INTO candidate_offices (candidate_id, contest_id) VALUES ('ca7e0000-0000-0000-0000-000000000001', 'c7e50000-0000-0000-0000-000000000001');
+  -- A leftover sample candidate in the same race (the live DB still has the
+  -- fictional seed). It must never show up next to the real one.
+  INSERT INTO candidates (id, first_name, last_name, is_demo) VALUES ('ca7e0000-0000-0000-0000-00000000de30', 'Taylor', 'Brooks', true);
+  INSERT INTO candidate_offices (candidate_id, contest_id) VALUES ('ca7e0000-0000-0000-0000-00000000de30', 'c7e50000-0000-0000-0000-000000000001');
 
   INSERT INTO zip_districts (zip_code, state, county, state_house_district_id) VALUES ('99901', 'Testland', 'Test County', '7e570000-0000-0000-0000-000000000001');
   INSERT INTO zip_districts (zip_code, state, county) VALUES ('99902', 'Testland', 'Test County');

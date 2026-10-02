@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { fetchAllRows } from '@/lib/fetch-all';
+import { isDemoMode } from '@/lib/demo-mode';
 import { getStoredRegion } from '@/services/elections';
 import { getAllRegionCandidates, getAllStatesCandidates } from '@/services/regions';
 import type {
@@ -17,9 +18,13 @@ export async function getCandidates(): Promise<Candidate[]> {
       .order('first_name')
       .order('id')
       .range(from, to));
-    if (data.length > 0) return data;
+    // Sample candidates (is_demo) can sit in the same table as real ones -- the
+    // live database still has the original fictional seed. Never list them
+    // next to real candidates outside demo mode.
+    const visible = isDemoMode() ? data : data.filter((c) => !c.is_demo);
+    if (visible.length > 0 || !isDemoMode()) return visible;
   } catch {
-    // Database unreachable — fall through to demo data
+    if (!isDemoMode()) return [];
   }
   const region = getStoredRegion();
   if (region) {
@@ -338,13 +343,14 @@ export async function getAllContestsWithCandidates(): Promise<BallotContest[]> {
     .select('id, election_id, district_id, office_name, contest_level, seat_description, term_length, district:districts(name, state), candidate_offices!inner(candidate:candidates(*))')
     .order('contest_level').order('office_name').order('id')
     .range(from, to));
+  const demo = isDemoMode();
   return rows.map(({ candidate_offices, ...c }) => ({
     ...c,
     candidates: candidate_offices
       .map((o) => o.candidate)
-      .filter((cand): cand is Candidate => !!cand)
+      .filter((cand): cand is Candidate => !!cand && (demo || !cand.is_demo))
       .sort((a, b) => a.last_name.localeCompare(b.last_name)),
-  })) as unknown as BallotContest[];
+  })).filter((c) => c.candidates.length > 0) as unknown as BallotContest[];
 }
 
 /** The office of the race a candidate is running in (e.g. "State Representative"),

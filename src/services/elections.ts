@@ -4,6 +4,7 @@ import {
 } from '@/services/demo-data';
 import { buildRegionBallot, type RegionConfig } from '@/services/regions';
 import { fetchAllRows, fetchInChunks } from '@/lib/fetch-all';
+import { isDemoMode } from '@/lib/demo-mode';
 import type {
   Election, BallotContest, District, BallotMeasure,
   DistrictResult, Candidate,
@@ -288,7 +289,10 @@ async function loadBallotFromDB(voterState: string, voterDistrictIds: string[]):
 
     const candidateMap: Record<string, Candidate> = {};
     const cands = await fetchInChunks<Candidate>(offices.map((o) => o.candidate_id), (chunk) =>
-      supabase.from('candidates').select('*').in('id', chunk));
+      // Sample (is_demo) candidates never appear on a real ballot outside demo mode.
+      isDemoMode()
+        ? supabase.from('candidates').select('*').in('id', chunk)
+        : supabase.from('candidates').select('*').in('id', chunk).eq('is_demo', false));
     cands.forEach((c) => { candidateMap[c.id] = c; });
 
     offices.forEach((o) => {
