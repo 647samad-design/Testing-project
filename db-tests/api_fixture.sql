@@ -33,3 +33,16 @@ BEGIN
   INSERT INTO zip_districts (zip_code, state, county, state_house_district_id) VALUES ('99901', 'Testland', 'Test County', '7e570000-0000-0000-0000-000000000001');
   INSERT INTO zip_districts (zip_code, state, county) VALUES ('99902', 'Testland', 'Test County');
 END $$;
+
+-- Signed-in actors for the candidate-data write tests:
+-- an admin, and the verified claimant (owner) of Tess Landry's profile.
+INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES
+  ('ad300000-0000-0000-0000-00000000000a', 'admin@testland.example', '{"full_name":"Ada Admin"}'),
+  ('c1a10000-0000-0000-0000-00000000000c', 'tess@testland.example', '{"full_name":"Tess Landry"}')
+ON CONFLICT DO NOTHING;
+UPDATE profiles SET role = 'admin', is_admin = true WHERE id = 'ad300000-0000-0000-0000-00000000000a';
+INSERT INTO candidate_claims (candidate_id, user_id, full_name, email, status)
+VALUES ('ca7e0000-0000-0000-0000-000000000001', 'c1a10000-0000-0000-0000-00000000000c', 'Tess Landry', 'tess@testland.example', 'verified');
+-- Tess's owner has bought the Management plan.
+INSERT INTO candidate_management_subscriptions (candidate_id, status, is_comped)
+VALUES ('ca7e0000-0000-0000-0000-000000000001', 'active', false);

@@ -33,4 +33,4 @@ trap 'kill $PID 2>/dev/null; rm -f "$CONF"' EXIT
 for i in $(seq 1 60); do
   [ "$(curl -s -m 1 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/issues?select=id&limit=1")" = "200" ] && break; sleep 0.5
 done
-PGRST_URL="http://127.0.0.1:$PORT" npx vitest run src/services/__tests__/ballot-scope.integration.test.ts
+PGRST_URL="http://127.0.0.1:$PORT" npx vitest run src/services/__tests__/*.integration.test.ts

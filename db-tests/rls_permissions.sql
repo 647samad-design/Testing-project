@@ -451,6 +451,27 @@ SELECT rlstest.as_anon();
 SELECT rlstest.check('[3800] election results are publicly visible in the feed',
   rlstest.cnt($$SELECT count(*) FROM feed_posts WHERE source_name = 'AP Elections' AND candidate_id IS NULL$$) = 1);
 
+-- ───────── candidate owner manages own campaign (20260913004200) ─────────
+SELECT rlstest.as_owner();
+INSERT INTO candidate_management_subscriptions (candidate_id, status, is_comped) VALUES ('55555555-0000-0000-0000-000000000005', 'active', true);
+INSERT INTO auth.users (id, email) VALUES ('7ea70000-0000-0000-0000-00000000000e', 'teammate@x.example') ON CONFLICT DO NOTHING;
+INSERT INTO feed_posts (id, candidate_id, author_user_id, post_type, body) VALUES ('fee00000-0000-0000-0000-0000000000f1', '55555555-0000-0000-0000-000000000005', '7ea70000-0000-0000-0000-00000000000e', 'update', 'Written by a teammate');
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.check('[4200] owner WITH Management can save their campaign page (was RLS-denied)',
+  rlstest.rc($$INSERT INTO campaigns (candidate_id, headline) VALUES ('55555555-0000-0000-0000-000000000005', 'Owner headline')$$) = 1);
+SELECT rlstest.check('[4200] owner WITH Management can add a campaign event',
+  rlstest.rc($$INSERT INTO campaign_events (candidate_id, title, event_date) VALUES ('55555555-0000-0000-0000-000000000005', 'Rally', now() + interval '7 days')$$) = 1);
+SELECT rlstest.check('[4200] owner can remove a post their teammate wrote on their profile',
+  rlstest.rc($$DELETE FROM feed_posts WHERE id = 'fee00000-0000-0000-0000-0000000000f1'$$) = 1);
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[4200] a voter still cannot write someone''s campaign',
+  rlstest.fails($$INSERT INTO campaigns (candidate_id, headline) VALUES ('55555555-0000-0000-0000-000000000005', 'hijack')$$));
+SELECT rlstest.as_owner();
+DELETE FROM candidate_management_subscriptions WHERE candidate_id = '55555555-0000-0000-0000-000000000005';
+SELECT rlstest.as_user('f0330000-0000-0000-0000-000000000003');
+SELECT rlstest.check('[4200] owner WITHOUT Management still cannot write campaign data (paid feature)',
+  rlstest.fails($$INSERT INTO campaign_events (candidate_id, title, event_date) VALUES ('55555555-0000-0000-0000-000000000005', 'Free rally', now())$$));
+
 -- ───────── regression: earlier security fixes still hold ─────────
 SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
 SELECT rlstest.check('[2200] voter can submit a pending claim',

@@ -26,7 +26,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ci-placeholder
 
   database:
-    name: Database — replay all migrations + RLS security suite
+    name: Database — migrations, RLS suite, schema cross-check, PostgREST integration
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -44,6 +44,18 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
       - run: ./db-tests/run.sh
+      # Real app code against a real PostgREST (the server Supabase runs): ballot
+      # scoping past the 1,000-row cap, and every candidate-data save/update
+      # path signed in as an admin and as a verified candidate, read back.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install PostgREST 12.2.3
+        run: curl -sSL https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz | tar -xJ -C /tmp
+      - name: Integration tests (real PostgREST)
+        run: POSTGREST_BIN=/tmp/postgrest ./db-tests/run-api-tests.sh
 
   edge-functions:
     name: Edge functions — type-check + unsubscribe tests
