@@ -138,7 +138,7 @@ export function AdminDashboardPage() {
             <div className="space-y-3">
               {unverified.map((p) => (
                 <Card key={p.id} className="p-4">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground">
                         {p.candidate ? `${p.candidate.first_name} ${p.candidate.last_name}` : 'Unknown candidate'}
@@ -1069,7 +1069,7 @@ function ClaimsReviewTab() {
       </p>
       {claims.map((claim) => (
         <Card key={claim.id} className="p-5 rounded-2xl">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div className="min-w-0">
               <p className="font-semibold">
                 {claim.full_name} <span className="font-normal text-muted-foreground">claims to be</span>{' '}
@@ -1794,7 +1794,7 @@ function ContentReportsTab() {
       </p>
       {reports.map((r) => (
         <Card key={r.id} className="p-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div className="min-w-0">
               <p className="text-sm font-medium">{r.reason} <span className="font-normal text-muted-foreground">— {r.content_type.replace(/_/g, ' ')}</span></p>
               <p className="mt-1 text-sm bg-secondary/40 rounded-lg px-2.5 py-1.5 break-words">
@@ -1803,7 +1803,7 @@ function ContentReportsTab() {
               {r.description && <p className="mt-1 text-sm text-muted-foreground">Reporter's note: {r.description}</p>}
               <p className="mt-1 text-xs text-muted-foreground">Reported {new Date(r.created_at).toLocaleDateString()}</p>
             </div>
-            <div className="shrink-0 flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-col">
               {r.content_type === 'feed_post' && previews[r.id] && (
                 <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" disabled={busyId === r.id} onClick={() => handleRemovePost(r)}>Remove Post</Button>
               )}

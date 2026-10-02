@@ -252,25 +252,32 @@ export function AccountPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-start gap-5">
-            {/* Photo with upload */}
-            <div className="relative shrink-0 group">
-              <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                {photoUrl ? (
-                  <AvatarImage src={photoUrl} alt={displayName} />
-                ) : (
-                  <AvatarFallback className="text-2xl font-extrabold bg-gradient-to-br from-primary to-accent text-primary-foreground">
-                    {initials}
-                  </AvatarFallback>
+            {/* Photo. Change/remove controls only in Edit mode; the camera
+                button is anchored to the photo itself so it can't sit on top
+                of the "Remove photo" link (it used to cover it). */}
+            <div className="shrink-0 flex flex-col items-center">
+              <div className="relative">
+                <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                  {photoUrl ? (
+                    <AvatarImage src={photoUrl} alt={displayName} />
+                  ) : (
+                    <AvatarFallback className="text-2xl font-extrabold bg-gradient-to-br from-primary to-accent text-primary-foreground">
+                      {initials}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                {editMode && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:scale-110 transition-transform touch-target"
+                    aria-label={photoUrl ? 'Change photo' : 'Upload photo'}
+                    title={photoUrl ? 'Change photo' : 'Upload photo'}
+                  >
+                    <Camera className="h-4 w-4" />
+                  </button>
                 )}
-              </Avatar>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingPhoto}
-                className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:scale-110 transition-transform touch-target"
-                aria-label="Upload photo"
-              >
-                <Camera className="h-4 w-4" />
-              </button>
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -278,11 +285,11 @@ export function AccountPage() {
                 onChange={handlePhotoUpload}
                 className="hidden"
               />
-              {photoUrl && !isDemo && (
+              {editMode && photoUrl && !isDemo && (
                 <button
                   onClick={handleRemovePhoto}
                   disabled={uploadingPhoto}
-                  className="mt-2 block w-24 text-center text-xs font-medium text-muted-foreground hover:text-destructive"
+                  className="mt-3 text-xs font-medium text-muted-foreground hover:text-destructive"
                 >
                   Remove photo
                 </button>
@@ -293,10 +300,12 @@ export function AccountPage() {
             <div className="flex-1 min-w-0">
               <h1 className="font-display text-3xl font-bold tracking-tight">{displayName}</h1>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                {location && (
+                {/* Only the parts we know. This printed "Unknown, Unknown" (or
+                    "Unknown," with a dangling comma) for ZIPs we have no data for. */}
+                {location && [location.city, location.state].some(Boolean) && (
                   <span className="flex items-center gap-1">
                     <MapPin className="h-3.5 w-3.5" />
-                    {location.city ?? 'Unknown'}, {location.state ?? 'Unknown'}
+                    {[location.city, location.state].filter(Boolean).join(', ')}
                   </span>
                 )}
                 <span className="flex items-center gap-1 font-bold text-accent">
@@ -1299,7 +1308,7 @@ function UpcomingElectionsCard() {
                 <Clock className="h-5 w-5 text-warning" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground truncate">{e.name}</p>
+                <p className="text-sm font-bold leading-snug text-foreground line-clamp-2">{e.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
                   {date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
