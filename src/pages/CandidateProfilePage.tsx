@@ -360,9 +360,7 @@ export function CandidateProfilePage() {
       )}
 
       {/* Ad slot on candidate profile */}
-      <div className="mt-6">
-        <AdSlot placement="candidate_profile" />
-      </div>
+      <AdSlot placement="candidate_profile" className="mt-6" />
 
       {/* Tabs */}
       <Tabs defaultValue="about" className="mt-6">

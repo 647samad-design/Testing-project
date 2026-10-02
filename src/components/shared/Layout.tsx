@@ -285,8 +285,8 @@ function LanguageSelector() {
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/60 bg-secondary/20 mt-12 pb-24 md:pb-0">
-      <div className="mx-auto max-w-content px-4 sm:px-6 py-10">
+    <footer className="border-t border-border/60 bg-secondary/20 mt-4 pb-24 md:pb-0">
+      <div className="mx-auto max-w-content px-4 sm:px-6 py-8">
         <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5">

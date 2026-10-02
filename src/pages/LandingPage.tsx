@@ -75,7 +75,7 @@ export function LandingPage() {
         <div className="absolute top-10 right-1/4 h-72 w-72 rounded-full bg-accent/8 blur-3xl animate-float" />
         <div className="absolute top-20 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
 
-        <div className="relative mx-auto max-w-content px-4 sm:px-6 py-16 md:py-28">
+        <div className="relative mx-auto max-w-content px-4 sm:px-6 pt-10 pb-12 md:pt-20 md:pb-16">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 flex justify-center">
               <DemoBanner compact />
@@ -91,7 +91,7 @@ export function LandingPage() {
             </p>
 
             {/* Address search */}
-            <div className="mt-10 mx-auto max-w-2xl">
+            <div className="mt-8 mx-auto max-w-2xl">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -137,7 +137,7 @@ export function LandingPage() {
       </section>
 
       {/* YOUR BALLOT IS PERSONAL */}
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-16">
+      <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
         <div className="mx-auto max-w-3xl text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
             <MapPin className="h-7 w-7 text-primary" />
@@ -154,7 +154,7 @@ export function LandingPage() {
 
       {/* RESEARCH. DON'T GUESS. */}
       <section className="bg-secondary/30 border-y border-border/60">
-        <div className="mx-auto max-w-content px-4 sm:px-6 py-20">
+        <div className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16">
           <div className="text-center">
             <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">
               Research. Don't guess.
@@ -164,7 +164,7 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <div className="mt-8 md:mt-10 grid gap-5 md:grid-cols-3">
             <Card className="p-8 text-center hover:shadow-xl hover:shadow-primary/5 transition-all rounded-2xl touch-target">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
                 <FileText className="h-8 w-8 text-primary" strokeWidth={1.8} />
@@ -199,8 +199,8 @@ export function LandingPage() {
       </section>
 
       {/* SOCIAL FEED SHOWCASE */}
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-20">
-        <div className="text-center mb-12">
+      <section className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16">
+        <div className="text-center mb-8 md:mb-10">
           <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">
             More than research. It's a movement.
           </h2>
@@ -275,7 +275,7 @@ export function LandingPage() {
           </Card>
         </div>
 
-        <div className="mt-10 text-center">
+        <div className="mt-8 text-center">
           <Link to="/feed">
             <Button size="lg" variant="outline" className="rounded-2xl gap-2 touch-target">
               <Rss className="h-4 w-4" />
@@ -287,12 +287,11 @@ export function LandingPage() {
       </section>
 
       {/* HOMEPAGE AD SLOT */}
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-8">
-        <AdSlot placement="homepage" />
-      </section>
+      {/* Renders nothing (no empty band) when there's no active ad. */}
+      <AdSlot placement="homepage" className="mx-auto max-w-content px-4 sm:px-6 py-8" />
 
       {/* BUILT FOR VOTERS, NOT CAMPAIGNS */}
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-16">
+      <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
         <div className="mx-auto max-w-3xl text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
             <Heart className="h-7 w-7 text-accent" />
@@ -314,11 +313,11 @@ export function LandingPage() {
 
       {/* HOW BALLOTLENS WORKS */}
       <section className="bg-secondary/30 border-y border-border/60">
-        <div className="mx-auto max-w-content px-4 sm:px-6 py-20">
+        <div className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16">
           <h2 className="text-center font-display text-3xl font-semibold sm:text-4xl tracking-tight">
             How it works
           </h2>
-          <div className="mt-12 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <div className="mt-8 md:mt-10 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             {[
               { step: 1, title: 'Enter your location', icon: MapPin },
               { step: 2, title: 'Find your ballot', icon: FileText },
@@ -336,7 +335,7 @@ export function LandingPage() {
               </Card>
             ))}
           </div>
-          <p className="mt-10 text-center text-sm font-semibold text-muted-foreground">
+          <p className="mt-8 text-center text-sm font-semibold text-muted-foreground">
             BallotLens does not tell you who to vote for.
           </p>
         </div>
@@ -345,7 +344,7 @@ export function LandingPage() {
       {/* CIVIC STORIES — keep users engaged year-round */}
       {stories.length > 0 && (
         <section className="bg-secondary/30 border-y border-border/60">
-          <div className="mx-auto max-w-content px-4 sm:px-6 py-16">
+          <div className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
             <div className="mb-8 flex items-end justify-between">
               <div>
                 <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">
@@ -399,7 +398,7 @@ export function LandingPage() {
       )}
 
       {/* FINAL CTA */}
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-20 text-center">
+      <section className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16 text-center">
         <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">
           Ready to see your ballot?
         </h2>

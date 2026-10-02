@@ -233,9 +233,7 @@ export function MyBallotPage() {
       )}
 
       {/* Election guide sponsor */}
-      <div className="mb-6">
-        <SponsorBadge placement="election_guide" />
-      </div>
+      <SponsorBadge placement="election_guide" className="mb-6" />
 
       {/* Contests by level */}
       {contestsByLevel.map((group) => (
@@ -266,9 +264,7 @@ export function MyBallotPage() {
       )}
 
       {/* Election page ad */}
-      <div className="mt-8">
-        <AdSlot placement="election_page" />
-      </div>
+      <AdSlot placement="election_page" className="mt-8" />
     </div>
   );
 }

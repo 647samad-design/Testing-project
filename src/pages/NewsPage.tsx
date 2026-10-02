@@ -177,9 +177,7 @@ export function NewsPage() {
         )}
       </Tabs>
 
-      <div className="mt-8">
-        <AdSlot placement="news_page" />
-      </div>
+      <AdSlot placement="news_page" className="mt-8" />
     </div>
   );
 }

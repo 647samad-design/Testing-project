@@ -19,7 +19,7 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
-import { PhotoUpload } from '@/components/shared/PhotoUpload';
+import { PhotoUpload, explainUploadError } from '@/components/shared/PhotoUpload';
 import { toast } from 'sonner';
 
 function makeFile(name: string, type: string, sizeBytes: number) {
@@ -69,7 +69,7 @@ describe('PhotoUpload', () => {
     expect(uploadMock).toHaveBeenCalledWith(
       expect.stringMatching(/^cand-1\//),
       goodFile,
-      expect.objectContaining({ upsert: true })
+      expect.objectContaining({ upsert: false, contentType: 'image/jpeg' })
     );
   });
 
@@ -80,7 +80,7 @@ describe('PhotoUpload', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [makeFile('headshot.jpg', 'image/jpeg', 1000)] } });
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('network error'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/Couldn.t reach the server/)));
     expect(onUploaded).not.toHaveBeenCalled();
   });
 
@@ -91,5 +91,22 @@ describe('PhotoUpload', () => {
     expect(screen.getByAltText('Candidate')).toHaveAttribute('src', 'https://cdn.example.com/existing.jpg');
     fireEvent.click(screen.getByText(/Remove/));
     expect(onUploaded).toHaveBeenCalledWith('');
+  });
+});
+
+
+describe('explainUploadError', () => {
+  it('explains a permission denial instead of showing the raw RLS text', () => {
+    expect(explainUploadError(new Error('new row violates row-level security policy for table "objects"'))).toMatch(/permission/);
+  });
+  it('explains a missing bucket', () => {
+    expect(explainUploadError({ message: 'Bucket not found' })).toMatch(/isn’t set up/);
+  });
+  it('explains size and network problems', () => {
+    expect(explainUploadError(new Error('The object exceeded the maximum allowed size'))).toMatch(/5MB/);
+    expect(explainUploadError(new TypeError('Failed to fetch'))).toMatch(/connection/);
+  });
+  it('falls back to the original message', () => {
+    expect(explainUploadError(new Error('weird'))).toBe('Photo upload failed: weird');
   });
 });

@@ -50,7 +50,7 @@ export function AdvertisingPage() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/8 via-background to-background" />
         <div className="absolute top-10 right-1/4 h-72 w-72 rounded-full bg-accent/8 blur-3xl animate-float" />
-        <div className="relative mx-auto max-w-content px-4 sm:px-6 py-16 md:py-24 text-center">
+        <div className="relative mx-auto max-w-content px-4 sm:px-6 pt-10 pb-12 md:pt-16 md:pb-14 text-center">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Megaphone className="h-8 w-8 text-primary" />
           </div>
@@ -75,10 +75,10 @@ export function AdvertisingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-16">
+      <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
         <h2 className="text-center text-3xl font-bold tracking-tight">Who advertises on BallotLens?</h2>
         <p className="mt-3 text-center text-muted-foreground">Organizations that want to reach informed, civically engaged audiences.</p>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 md:mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {audienceTypes.map((a) => (
             <Card key={a.title} className="p-6 text-center rounded-2xl hover:shadow-lg transition-all">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
@@ -92,7 +92,7 @@ export function AdvertisingPage() {
       </section>
 
       <section className="bg-secondary/30 border-y border-border/60">
-        <div className="mx-auto max-w-content px-4 sm:px-6 py-16">
+        <div className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
           <h2 className="text-center text-3xl font-bold tracking-tight">Where your ad appears</h2>
           <p className="mt-3 text-center text-muted-foreground">Choose from multiple placements across the platform.</p>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -108,10 +108,10 @@ export function AdvertisingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-16">
+      <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
         <h2 className="text-center text-3xl font-bold tracking-tight">Simple, transparent pricing</h2>
         <p className="mt-3 text-center text-muted-foreground">Admin-configurable. No hidden fees. Cancel anytime.</p>
-        <div className={`mt-12 mx-auto grid max-w-5xl gap-5 md:grid-cols-2 ${plans.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+        <div className={`mt-8 md:mt-10 mx-auto grid max-w-5xl gap-5 md:grid-cols-2 ${plans.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
           {plans.map((plan, idx) => (
             <Card key={plan.id} className={`relative p-6 rounded-2xl transition-all hover:shadow-xl ${idx === 1 ? 'border-2 border-primary ring-2 ring-primary/10' : ''}`}>
               {idx === 1 && (
@@ -140,7 +140,7 @@ export function AdvertisingPage() {
       </section>
 
       <section className="bg-secondary/30 border-y border-border/60">
-        <div className="mx-auto max-w-content px-4 sm:px-6 py-16">
+        <div className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
               <MapPin className="h-7 w-7 text-primary" />
@@ -159,7 +159,7 @@ export function AdvertisingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-16">
+      <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
         <div className="mx-auto max-w-3xl text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
             <ShieldCheck className="h-7 w-7 text-accent" />
@@ -196,7 +196,7 @@ export function AdvertisingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-content px-4 sm:px-6 py-16">
+      <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
         <Card className="p-8 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5">
           <h2 className="text-2xl font-bold tracking-tight">Our commitment to nonpartisanship</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -217,9 +217,9 @@ export function AdvertisingPage() {
         </Card>
       </section>
 
-      <div className="mx-auto max-w-content px-4 sm:px-6 pb-16 space-y-4">
-        <AdSlot placement="footer" />
-        <SponsorBadge placement="civic_page" />
+      <div className="mx-auto max-w-content px-4 sm:px-6 space-y-4">
+        <AdSlot placement="footer" className="pb-4" />
+        <SponsorBadge placement="civic_page" className="pb-4" />
       </div>
     </div>
   );

@@ -198,9 +198,7 @@ export function IssuesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="mt-8">
-        <AdSlot placement="issues_page" />
-      </div>
+      <AdSlot placement="issues_page" className="mt-8" />
     </div>
   );
 }

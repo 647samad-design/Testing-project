@@ -152,9 +152,7 @@ export function StoriesPage() {
           })}
         </div>
 
-        <div className="mb-8">
-          <AdSlot placement="homepage" />
-        </div>
+        <AdSlot placement="homepage" className="mb-8" />
 
         <section>
           <h2 className="mb-5 text-2xl font-bold tracking-tight">
@@ -288,9 +286,7 @@ export function StoryDetailPage() {
         </p>
       </div>
 
-      <div className="mt-8">
-        <AdSlot placement="homepage" />
-      </div>
+      <AdSlot placement="homepage" className="mt-8" />
     </div>
   );
 }

@@ -301,9 +301,7 @@ export function CandidatesPage() {
       )}
 
       {/* Candidates page ad */}
-      <div className="mt-8">
-        <AdSlot placement="candidates_page" />
-      </div>
+      <AdSlot placement="candidates_page" className="mt-8" />
     </div>
   );
 }

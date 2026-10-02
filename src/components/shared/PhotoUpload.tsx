@@ -30,7 +30,10 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
     if (!file) return;
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error('Please upload a JPEG, PNG, or WebP image.');
+      const isHeic = /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
+      toast.error(isHeic
+        ? 'iPhone HEIC photos aren\u2019t supported. On iPhone, share the photo as JPEG (or set Camera \u2192 Formats \u2192 Most Compatible), then upload it again.'
+        : 'Please upload a JPEG, PNG, or WebP image.');
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
@@ -40,12 +43,15 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
 
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg';
+      // Extension from the MIME type, not the file name (names may lack one).
+      const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
       const path = `${candidateId}/${Date.now()}.${ext}`;
 
+      // Paths are unique per upload, so no upsert (upsert also needs UPDATE rights).
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
         cacheControl: '3600',
-        upsert: true,
+        upsert: false,
+        contentType: file.type,
       });
       if (uploadError) throw uploadError;
 
@@ -54,7 +60,7 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
       onUploaded(publicUrlData.publicUrl);
       toast.success('Photo uploaded.');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Photo upload failed. Please try again.');
+      toast.error(explainUploadError(err));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = '';
@@ -102,4 +108,21 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
       </div>
     </div>
   );
+}
+
+/** Turns raw Storage errors into something a person can act on. The raw text
+ * ("new row violates row-level security policy for table objects") explained
+ * nothing about why an upload failed. */
+export function explainUploadError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : typeof err === 'object' && err && 'message' in err ? String((err as { message: unknown }).message) : '';
+  if (/row-level security|unauthorized|not authorized|permission|403/i.test(msg)) {
+    return 'You don\u2019t have permission to upload a photo for this candidate. Admins can upload for any candidate; a candidate can only upload to their own verified profile.';
+  }
+  if (/bucket not found/i.test(msg)) {
+    return 'Photo storage isn\u2019t set up on the server yet (the \u201ccandidate-photos\u201d bucket is missing). Please contact the site administrator.';
+  }
+  if (/mime|content type|not supported/i.test(msg)) return 'This file type isn\u2019t allowed. Please upload a JPEG, PNG, or WebP image.';
+  if (/too large|exceeded|payload|size/i.test(msg)) return 'Image must be smaller than 5MB.';
+  if (/failed to fetch|network/i.test(msg)) return 'Couldn\u2019t reach the server. Check your connection and try again.';
+  return msg ? `Photo upload failed: ${msg}` : 'Photo upload failed. Please try again.';
 }
