@@ -12,13 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { getLocation, getUserIssues, saveLocation, updateProfile } from '@/services/districts';
 import { LoadingState } from '@/components/shared/StateComponents';
-import { JOURNEY_STEPS, getJourneySteps, toggleJourneyStep, uploadProfilePhoto } from '@/services/voter-profile';
+import { JOURNEY_STEPS, getJourneySteps, toggleJourneyStep, uploadProfilePhoto, removeProfilePhoto, changePassword } from '@/services/voter-profile';
 import { getMySubscription, getMyManagedCandidates, openBillingPortal, startCheckout, type MySubscription, type MyManagedCandidate } from '@/services/stripe';
 import { invalidateSubscriptionCache } from '@/services/subscription-cache';
 import { getFollowedCandidates } from '@/services/social';
@@ -32,7 +33,7 @@ import { parseDateOnly } from '@/lib/date-utils';
 
 export function AccountPage() {
   usePageMeta({ title: 'Account', noindex: true });
-  const { user, profile, signOut, isDemo, loading: authLoading } = useAuth();
+  const { user, profile, signOut, isDemo, refreshProfile, loading: authLoading } = useAuth();
   const [fullName, setFullName] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [bio, setBio] = useState('');
@@ -154,9 +155,35 @@ export function AccountPage() {
     const result = await uploadProfilePhoto(file);
     if (result.url) {
       setPhotoUrl(result.url);
-      await updateProfile({ photo_url: result.url });
+      try {
+        await updateProfile({ photo_url: result.url });
+        await refreshProfile();
+        toast.success('Profile photo updated.');
+      } catch (err) {
+        toast.error(`Photo uploaded but not saved to your profile: ${err instanceof Error ? err.message : 'unknown error'}`);
+      }
+    } else {
+      // Previously ignored, so a failed upload showed nothing at all.
+      toast.error(result.error ?? 'Photo upload failed. Please try again.');
     }
     setUploadingPhoto(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  async function handleRemovePhoto() {
+    if (!window.confirm('Remove your profile photo?')) return;
+    setUploadingPhoto(true);
+    const removed = await removeProfilePhoto();
+    let saveError: string | undefined;
+    try { await updateProfile({ photo_url: null }); await refreshProfile(); }
+    catch (err) { saveError = err instanceof Error ? err.message : 'unknown error'; }
+    setUploadingPhoto(false);
+    if (removed.error || saveError) {
+      toast.error(removed.error ?? saveError ?? 'Could not remove the photo.');
+      return;
+    }
+    setPhotoUrl(null);
+    toast.success('Profile photo removed.');
   }
 
   async function handleToggleStep(stepNumber: number, currentCompleted: boolean) {
@@ -182,7 +209,9 @@ export function AccountPage() {
     }
   }
 
-  const displayName = fullName || 'Demo Voter';
+  // A real account without a name used to show "Demo Voter", which looked like
+  // the user had been put in demo mode.
+  const displayName = fullName || (isDemo ? 'Demo Voter' : (user?.email?.split('@')[0] ?? 'Your profile'));
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   const quizDone = localStorage.getItem('ballotlens_quiz_done') === 'true';
   const civicLevel = profile?.civic_level ?? Math.floor(civicScore / 20) + 1;
@@ -245,10 +274,19 @@ export function AccountPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handlePhotoUpload}
                 className="hidden"
               />
+              {photoUrl && !isDemo && (
+                <button
+                  onClick={handleRemovePhoto}
+                  disabled={uploadingPhoto}
+                  className="mt-2 block w-24 text-center text-xs font-medium text-muted-foreground hover:text-destructive"
+                >
+                  Remove photo
+                </button>
+              )}
             </div>
 
             {/* Identity */}
@@ -916,8 +954,56 @@ function NotificationSettingsTab() {
 
       {saving && <p className="text-xs text-muted-foreground">Saving…</p>}
 
+      <ChangePasswordCard />
+
       <DangerZoneCard />
     </div>
+  );
+}
+
+function ChangePasswordCard() {
+  const { isDemo } = useAuth();
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const mismatch = confirm.length > 0 && next !== confirm;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (next !== confirm) return;
+    setSaving(true);
+    const { error } = await changePassword(current, next);
+    setSaving(false);
+    if (error) { toast.error(error); return; }
+    setCurrent(''); setNext(''); setConfirm('');
+    toast.success('Password changed.');
+  }
+
+  if (isDemo) return null;
+  return (
+    <Card className="p-6 rounded-3xl">
+      <h3 className="font-bold text-lg">Change password</h3>
+      <p className="mt-1 text-sm text-muted-foreground">Use at least 8 characters. You'll stay signed in on this device.</p>
+      <form onSubmit={handleSubmit} className="mt-4 grid gap-3 sm:max-w-md">
+        <div>
+          <Label htmlFor="pw-current" className="text-xs">Current password</Label>
+          <Input id="pw-current" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} required />
+        </div>
+        <div>
+          <Label htmlFor="pw-new" className="text-xs">New password</Label>
+          <Input id="pw-new" type="password" autoComplete="new-password" minLength={8} value={next} onChange={(e) => setNext(e.target.value)} required />
+        </div>
+        <div>
+          <Label htmlFor="pw-confirm" className="text-xs">Confirm new password</Label>
+          <Input id="pw-confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+          {mismatch && <p className="mt-1 text-xs text-destructive">Passwords don't match.</p>}
+        </div>
+        <Button type="submit" disabled={saving || !current || next.length < 8 || mismatch} className="w-fit">
+          {saving ? 'Changing…' : 'Change password'}
+        </Button>
+      </form>
+    </Card>
   );
 }
 

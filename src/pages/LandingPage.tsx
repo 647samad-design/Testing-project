@@ -75,7 +75,7 @@ export function LandingPage() {
         <div className="absolute top-10 right-1/4 h-72 w-72 rounded-full bg-accent/8 blur-3xl animate-float" />
         <div className="absolute top-20 left-1/4 h-64 w-64 rounded-full bg-primary/10 blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
 
-        <div className="relative mx-auto max-w-content px-4 sm:px-6 pt-10 pb-12 md:pt-20 md:pb-16">
+        <div className="relative mx-auto max-w-content px-4 sm:px-6 pt-8 pb-12 md:pt-8 md:pb-16">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 flex justify-center">
               <DemoBanner compact />

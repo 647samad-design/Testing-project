@@ -59,30 +59,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const savedLang = localStorage.getItem('ballotlens_lang') as LanguageName | null;
     document.documentElement.setAttribute('lang', savedLang ?? 'en');
 
-    // Check for demo mode first
-    const demoFlag = localStorage.getItem('ballotlens_demo') === 'true';
-    if (demoFlag) {
-      setIsDemo(true);
-      setUser({ id: 'demo-user', email: 'demo@ballotlens.app' } as unknown as User);
-      setProfile({ id: 'demo-user', full_name: 'Demo Voter', zip_code: '33101', is_admin: false, language_preference: 'en' });
-      setLoading(false);
-      return;
-    }
-
-    // Initial session
+    // A real session always wins over demo mode. Demo mode used to be checked
+    // first and return early, so once "Explore as Demo User" had been used in a
+    // browser, signing in with a real account still showed the demo profile
+    // (and disabled real actions like photo upload) until demo was exited.
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
       if (data.session?.user) {
+        localStorage.removeItem('ballotlens_demo');
+        setIsDemo(false);
+        setSession(data.session);
+        setUser(data.session.user);
         loadProfile(data.session.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
+        return;
       }
+      if (localStorage.getItem('ballotlens_demo') === 'true') {
+        setIsDemo(true);
+        setUser({ id: 'demo-user', email: 'demo@ballotlens.app' } as unknown as User);
+        setProfile({ id: 'demo-user', full_name: 'Demo Voter', zip_code: '33101', is_admin: false, language_preference: 'en' });
+        setLoading(false);
+        return;
+      }
+      setSession(null);
+      setUser(null);
+      setLoading(false);
     });
 
     // Listen for auth changes — wrap async work to avoid deadlock
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (_event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
+      if (!newSession?.user && localStorage.getItem('ballotlens_demo') === 'true') return; // stay in demo
+      if (newSession?.user) { localStorage.removeItem('ballotlens_demo'); setIsDemo(false); }
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {

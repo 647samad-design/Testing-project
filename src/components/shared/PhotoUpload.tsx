@@ -113,13 +113,15 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
 /** Turns raw Storage errors into something a person can act on. The raw text
  * ("new row violates row-level security policy for table objects") explained
  * nothing about why an upload failed. */
-export function explainUploadError(err: unknown): string {
+export function explainUploadError(err: unknown, context: 'candidate' | 'profile' = 'candidate'): string {
   const msg = err instanceof Error ? err.message : typeof err === 'object' && err && 'message' in err ? String((err as { message: unknown }).message) : '';
   if (/row-level security|unauthorized|not authorized|permission|403/i.test(msg)) {
-    return 'You don\u2019t have permission to upload a photo for this candidate. Admins can upload for any candidate; a candidate can only upload to their own verified profile.';
+    return context === 'profile'
+      ? 'Your photo couldn\u2019t be saved (permission denied). Please sign out, sign back in and try again.'
+      : 'You don\u2019t have permission to upload a photo for this candidate. Admins can upload for any candidate; a candidate can only upload to their own verified profile.';
   }
   if (/bucket not found/i.test(msg)) {
-    return 'Photo storage isn\u2019t set up on the server yet (the \u201ccandidate-photos\u201d bucket is missing). Please contact the site administrator.';
+    return `Photo storage isn\u2019t set up on the server yet (the \u201c${context === 'profile' ? 'avatars' : 'candidate-photos'}\u201d bucket is missing). Please contact the site administrator.`;
   }
   if (/mime|content type|not supported/i.test(msg)) return 'This file type isn\u2019t allowed. Please upload a JPEG, PNG, or WebP image.';
   if (/too large|exceeded|payload|size/i.test(msg)) return 'Image must be smaller than 5MB.';

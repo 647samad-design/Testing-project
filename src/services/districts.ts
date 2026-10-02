@@ -122,7 +122,7 @@ export async function updateProfile(updates: {
   bio?: string;
   occupation?: string;
   education?: string;
-  photo_url?: string;
+  photo_url?: string | null;
 }): Promise<void> {
   const { error } = await supabase.from('profiles').update(updates).eq('id', (await supabase.auth.getUser()).data.user?.id ?? '');
   if (error) throw error;
