@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { globSync } from 'node:fs';
 
 /**
  * The profile the app keeps in memory comes from ONE select in use-auth. If a
@@ -15,8 +14,14 @@ describe('use-auth loads every profile field the app reads', () => {
   const loaded = new Set(select.split(',').map((s) => s.trim()));
 
   const srcRoot = path.resolve(__dirname, '../..');
-  const files = (globSync as unknown as (p: string, o: { cwd: string }) => string[])('**/*.{ts,tsx}', { cwd: srcRoot })
-    .filter((f) => !f.includes('__tests__'));
+  // Plain recursive walk: fs.globSync only exists from Node 22, and CI runs Node 20.
+  const walk = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) return e.name === '__tests__' ? [] : walk(full);
+      return /\.(ts|tsx)$/.test(e.name) ? [path.relative(srcRoot, full)] : [];
+    });
+  const files = walk(srcRoot);
   const read = new Set<string>();
   for (const f of files) {
     const text = fs.readFileSync(path.join(srcRoot, f), 'utf8');
