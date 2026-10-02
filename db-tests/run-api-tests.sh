@@ -14,7 +14,7 @@ run() { if [ -n "${PSQL_AS:-}" ]; then su "$PSQL_AS" -c "$*"; else sh -c "$*"; f
 run "psql -q -d $DB -v ON_ERROR_STOP=1" >/dev/null <<SQL || { echo "fixture setup failed"; exit 1; }
 DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticator') THEN
   CREATE ROLE authenticator LOGIN PASSWORD 'pw' NOINHERIT; END IF; END \$\$;
-GRANT anon, authenticated TO authenticator;
+GRANT anon, authenticated, service_role TO authenticator;
 \i $PWD/db-tests/api_fixture.sql
 SQL
 

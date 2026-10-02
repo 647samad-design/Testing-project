@@ -49,11 +49,13 @@ vi.mock('@/lib/supabase', async () => {
 
 const as = (u: typeof ADMIN | null) => { state.user = u; };
 
-/** Read rows back as the admin (who can see everything), bypassing app code. */
+/** Read rows back as service_role (bypasses RLS), independent of app code. */
 async function readBack<T = Record<string, unknown>>(table: string, query: string): Promise<T[]> {
   const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const h = b64({ alg: 'HS256', typ: 'JWT' });
-  const p = b64({ sub: ADMIN.id, role: 'authenticated', exp: 2000000000 });
+  // service_role bypasses RLS (like Supabase's service key), so private rows
+  // (a voter's saved items, messages, notifications) can be verified too.
+  const p = b64({ role: 'service_role', exp: 2000000000 });
   const token = `${h}.${p}.${crypto.createHmac('sha256', SECRET).update(`${h}.${p}`).digest('base64url')}`;
   const r = await fetch(`${PGRST_URL}/${table}?${query}`, { headers: { Authorization: `Bearer ${token}` } });
   if (!r.ok) throw new Error(`readBack ${table}: ${r.status} ${await r.text()}`);

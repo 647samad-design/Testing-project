@@ -46,3 +46,7 @@ VALUES ('ca7e0000-0000-0000-0000-000000000001', 'c1a10000-0000-0000-0000-0000000
 -- Tess's owner has bought the Management plan.
 INSERT INTO candidate_management_subscriptions (candidate_id, status, is_comped)
 VALUES ('ca7e0000-0000-0000-0000-000000000001', 'active', false);
+-- A regular voter for the platform-wide write tests.
+INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES
+  ('b0e70000-0000-0000-0000-00000000000b', 'vera@testland.example', '{"full_name":"Vera Voter"}')
+ON CONFLICT DO NOTHING;

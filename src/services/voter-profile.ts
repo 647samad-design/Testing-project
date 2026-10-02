@@ -48,7 +48,10 @@ export async function toggleJourneyStep(
         completed,
         completed_at: completed ? new Date().toISOString() : null,
         progress_detail: progressDetail ?? null,
-      });
+      // Unique per (user, step). Without onConflict the upsert targeted the
+      // primary key, so the first tick worked and every later change
+      // (including unticking) failed with a duplicate-key error.
+      }, { onConflict: 'user_id,step_number' });
     if (error) throw error;
     return { success: true };
   } catch (e) {
