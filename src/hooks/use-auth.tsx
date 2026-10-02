@@ -35,7 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadProfile(userId: string) {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, zip_code, is_admin, language_preference')
+      // Every profile field the app reads. This used to fetch only id, name,
+      // zip, is_admin and language -- so photo_url, bio, occupation and
+      // education were saved but never loaded back: the Account page showed
+      // them empty (photo reverted to initials right after a successful
+      // upload), and the next Save overwrote the stored values with blanks.
+      .select('id, full_name, zip_code, is_admin, role, language_preference, photo_url, bio, occupation, education, civic_level, civic_xp, created_at')
       .eq('id', userId)
       .maybeSingle();
 
