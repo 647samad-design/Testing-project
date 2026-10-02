@@ -101,7 +101,9 @@ export async function getFollowedIssues(): Promise<(Follow & { issue?: Issue })[
   const issueIds = followRows.map((f: Follow) => f.followable_id);
   const { data: issues } = await supabase
     .from('issues')
-    .select('id, name, slug, description, color')
+    // issues has no description/color columns; asking for them made PostgREST
+    // reject the whole query, so followed issues never showed on the feed.
+    .select('id, name, slug, category')
     .in('id', issueIds);
 
   const issueById = new Map((issues ?? []).map((i) => [i.id as string, i as unknown as Issue]));

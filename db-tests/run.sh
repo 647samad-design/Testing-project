@@ -38,4 +38,10 @@ grep -E "NOTICE:  FAIL" /tmp/rls_suite.out
 echo "passed: $(grep -c 'NOTICE:  PASS' /tmp/rls_suite.out)  failed: $(grep -c 'NOTICE:  FAIL' /tmp/rls_suite.out)"
 grep -q "NOTICE:  FAIL" /tmp/rls_suite.out && exit 1
 grep -q "^psql:.*ERROR" /tmp/rls_suite.out && { grep "ERROR" /tmp/rls_suite.out | head -3; exit 1; }
+echo "--- code vs schema cross-check ---"
+if [ -n "${PSQL_AS:-}" ]; then
+  su "$PSQL_AS" -c "cd '$PWD' && PSQL='psql -d $DB' python3 db-tests/schema_crosscheck.py" || exit 1
+else
+  PSQL="psql -d $DB" python3 db-tests/schema_crosscheck.py || exit 1
+fi
 echo "ALL DATABASE TESTS PASSED"
