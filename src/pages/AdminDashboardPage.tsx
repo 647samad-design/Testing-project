@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { Link } from 'react-router-dom';
 import { Users, Vote, FileText, Bookmark, ShieldCheck, AlertCircle, User as UserIcon, BarChart3, Plus, Check, Flag, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -618,7 +619,7 @@ function CandidateSelfReportReviewSection() {
           <p className="text-sm font-medium">"{p.promise_text}"</p>
           <p className="text-sm">Currently <b>{p.status.replace(/_/g, ' ')}</b> → proposed <b>{p.proposed_status.replace(/_/g, ' ')}</b></p>
           {p.proposed_evidence && <p className="text-sm text-muted-foreground">{p.proposed_evidence}</p>}
-          {p.proposed_source_url && <a href={p.proposed_source_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Evidence link</a>}
+          {p.proposed_source_url && <a href={safeUrl(p.proposed_source_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Evidence link</a>}
           <div className="flex gap-2 pt-1">
             <Button size="sm" disabled={busyId === p.id} onClick={() => run(p.id, () => applyPromiseProposal(p), 'Status applied.', () => setProposals((x) => x.filter((y) => y.id !== p.id)))}>Apply</Button>
             <Button size="sm" variant="outline" disabled={busyId === p.id} onClick={() => run(p.id, () => discardPromiseProposal(p.id), 'Proposal discarded.', () => setProposals((x) => x.filter((y) => y.id !== p.id)))}>Discard</Button>
@@ -703,7 +704,7 @@ function FactCheckReviewSection() {
             <p className="text-sm font-medium break-words">"{fc.claim_text}"</p>
             <p className="text-xs text-muted-foreground">
               {fc.source_platform ? `Seen on ${fc.source_platform} · ` : ''}Submitted {new Date(fc.created_at).toLocaleDateString()}
-              {fc.source_url && (<> · <a href={fc.source_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">source</a></>)}
+              {fc.source_url && (<> · <a href={safeUrl(fc.source_url)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">source</a></>)}
             </p>
             <select
               value={verdict[fc.id] ?? 'unverified'}
@@ -854,7 +855,7 @@ function AdReviewSection() {
             </p>
             {ad.ad_description && <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{ad.ad_description}</p>}
             <p className="mt-1 text-xs text-muted-foreground">
-              Links to: <a href={ad.destination_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{ad.destination_url}</a>
+              Links to: <a href={safeUrl(ad.destination_url)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{ad.destination_url}</a>
             </p>
             <div className="mt-3 flex gap-2">
               <Button size="sm" disabled={busyId === ad.id} onClick={() => handleApprove(ad)}>Approve</Button>
@@ -1077,7 +1078,7 @@ function ClaimsReviewTab() {
               </p>
               <p className="mt-1 text-sm text-muted-foreground">Email: {claim.email}</p>
               {claim.campaign_website && (
-                <p className="text-sm text-muted-foreground">Website: <a href={claim.campaign_website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{claim.campaign_website}</a></p>
+                <p className="text-sm text-muted-foreground">Website: <a href={safeUrl(claim.campaign_website)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{claim.campaign_website}</a></p>
               )}
               {claim.office && <p className="text-sm text-muted-foreground">Office: {claim.office}</p>}
               {claim.verification_notes && (

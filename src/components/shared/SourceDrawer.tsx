@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -68,13 +69,13 @@ export function SourceDrawer({ open, onOpenChange, position }: SourceDrawerProps
               BallotLens presents evidence from available sources. Always verify important
               information using original sources and your official election authority.
               {' '}
-              <a
-                href="#"
+              {/* Was href="#" with the click cancelled, so it did nothing. */}
+              <Link
+                to="/methodology"
                 className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
-                onClick={(e) => e.preventDefault()}
               >
                 Learn about our methodology <ExternalLink className="h-3 w-3" />
-              </a>
+              </Link>
             </p>
           </div>
         </div>

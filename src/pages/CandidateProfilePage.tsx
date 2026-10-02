@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Scale, GitCompare, MessageSquare, Globe, GraduationCap, Briefcase, Award, Shield, Heart, Search, Vote as VoteIcon, Newspaper, Video as VideoIcon, Play, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -238,7 +239,7 @@ export function CandidateProfilePage() {
                 </Button>
               </Link>
               {candidate.website_url && (
-                <a href={candidate.website_url} target="_blank" rel="noopener noreferrer">
+                <a href={safeUrl(candidate.website_url)} target="_blank" rel="noopener noreferrer">
                   <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target">
                     <Globe className="h-4 w-4" />
                     Website
@@ -305,7 +306,7 @@ export function CandidateProfilePage() {
                   <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                     {ev.start_time && <span>{ev.start_time}</span>}
                     {ev.location_name && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{ev.location_name}{ev.city ? `, ${ev.city}` : ''}</span>}
-                    {ev.virtual_url && <a href={ev.virtual_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Virtual link</a>}
+                    {ev.virtual_url && <a href={safeUrl(ev.virtual_url)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Virtual link</a>}
                   </div>
                 </div>
               </div>
@@ -440,7 +441,7 @@ export function CandidateProfilePage() {
                     </div>
                   )}
                   {post.link_url && (
-                    <a href={post.link_url} target="_blank" rel="noopener noreferrer" className="mt-2 block text-sm text-primary hover:underline">
+                    <a href={safeUrl(post.link_url)} target="_blank" rel="noopener noreferrer" className="mt-2 block text-sm text-primary hover:underline">
                       {post.link_url}
                     </a>
                   )}
@@ -746,7 +747,7 @@ function CandidateNewsSection({
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {videos.filter((video) => video.url).map((video) => (
-              <a key={video.id} href={video.url!} target="_blank" rel="noopener noreferrer" className="block">
+              <a key={video.id} href={safeUrl(video.url)} target="_blank" rel="noopener noreferrer" className="block">
                 <Card className="group p-4 transition-all hover:border-primary/30 hover:shadow-sm">
                   <div className="flex items-start gap-3">
                     <div className="relative flex h-16 w-24 shrink-0 items-center justify-center rounded-lg bg-secondary overflow-hidden">
@@ -783,7 +784,7 @@ function CandidateNewsSection({
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {social.filter((post) => post.url).map((post) => (
-              <a key={post.id} href={post.url!} target="_blank" rel="noopener noreferrer" className="block">
+              <a key={post.id} href={safeUrl(post.url)} target="_blank" rel="noopener noreferrer" className="block">
                 <Card className="group p-4 transition-all hover:border-primary/30 hover:shadow-sm">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50">

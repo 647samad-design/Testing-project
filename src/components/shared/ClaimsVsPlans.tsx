@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { toast } from 'sonner';
 import { ClipboardList, CheckCircle2, XCircle, ExternalLink, Plus, FileText, Scale } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -244,7 +245,7 @@ function ClaimAnalysisCard({ claim }: { claim: CandidateClaimAnalysis }) {
         </div>
       )}
       {claim.evidence_url && (
-        <a href={claim.evidence_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+        <a href={safeUrl(claim.evidence_url)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
           <ExternalLink className="h-3 w-3" />
           View Source
         </a>

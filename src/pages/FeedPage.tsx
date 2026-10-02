@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { Link } from 'react-router-dom';
 import {
   Rss, Heart, MessageCircle, Calendar, MapPin, ExternalLink, Pin,
@@ -538,7 +539,7 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
 
         {/* Link preview / source link */}
         {sourceUrl && (
-          <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline mb-3 rounded-xl bg-secondary/30 p-2.5">
+          <a href={safeUrl(sourceUrl)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline mb-3 rounded-xl bg-secondary/30 p-2.5">
             <ExternalLink className="h-4 w-4 shrink-0" />
             <span className="truncate">{sourceUrl}</span>
           </a>

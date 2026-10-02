@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { MessageSquare, Send, ExternalLink, ShieldAlert, Sparkles, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -304,7 +305,7 @@ function AIResponseCard({ response }: { response: AIResponse }) {
             {response.sources.filter((src) => src.url).map((src) => (
               <a
                 key={src.id}
-                href={src.url!}
+                href={safeUrl(src.url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-lg border border-border p-3 text-sm transition-colors hover:border-primary/30 hover:bg-secondary/50"
@@ -398,7 +399,7 @@ function ClaimResultCard({ result }: { result: ClaimAssessment }) {
             {result.sources.filter((src) => src.url).map((src) => (
               <a
                 key={src.id}
-                href={src.url!}
+                href={safeUrl(src.url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-lg border border-border p-3 text-sm transition-colors hover:border-primary/30 hover:bg-secondary/50"

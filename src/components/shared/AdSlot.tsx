@@ -1,4 +1,5 @@
 import { useEffect, useState, memo } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { Megaphone, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { getActiveAds, trackAdEvent } from '@/services/advertising';
@@ -58,7 +59,7 @@ export const AdSlot = memo(function AdSlot({ placement, className = '' }: AdSlot
           </a>
         </div>
         <a
-          href={ad.destination_url}
+          href={safeUrl(ad.destination_url)}
           target="_blank"
           rel="noopener noreferrer sponsored"
           className="flex items-center gap-4 p-4"

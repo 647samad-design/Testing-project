@@ -1,4 +1,5 @@
 import { useEffect, useState, memo } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { Handshake, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { getActiveSponsorships, trackSponsorEvent } from '@/services/advertising';
@@ -55,7 +56,7 @@ export const SponsorBadge = memo(function SponsorBadge({ placement, className = 
               {sponsor.description && <p className="hidden sm:block text-xs text-muted-foreground line-clamp-1">{sponsor.description}</p>}
               {sponsor.website_url && (
                 <a
-                  href={sponsor.website_url}
+                  href={safeUrl(sponsor.website_url)}
                   target="_blank"
                   rel="noopener noreferrer sponsored"
                   className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"

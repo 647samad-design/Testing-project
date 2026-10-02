@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { useParams, Link } from 'react-router-dom';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { ArrowLeft, GitCompare } from 'lucide-react';
@@ -243,7 +244,7 @@ export function MeasureDetailPage() {
 
       {measure.full_text_url && (
         <div className="mt-4">
-          <a href={measure.full_text_url} target="_blank" rel="noopener noreferrer">
+          <a href={safeUrl(measure.full_text_url)} target="_blank" rel="noopener noreferrer">
             <button className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary">
               Read Full Text
             </button>

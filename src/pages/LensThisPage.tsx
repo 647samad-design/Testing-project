@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import {
@@ -12,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
+import { assessClaim } from '@/services/ai';
+import { isDemoMode } from '@/lib/demo-mode';
 import { getFactChecks, submitFactCheck } from '@/services/civic';
 import { cn } from '@/lib/utils';
 import type { FactCheck, FactCheckAssessment, FactCheckPlatform } from '@/types';
@@ -44,6 +47,9 @@ interface ScannedClaim {
   overallVerdict: Verdict;
   confidence: number;
   createdAt: string;
+  /** False when nothing reviewed matched: no verdict is shown, only `notice`. */
+  reviewed?: boolean;
+  notice?: string;
 }
 
 // ─── Config ────────────────────────────────────────────────────────────────
@@ -167,25 +173,57 @@ export function LensThisPage() {
     setScanning(true);
     setHasScanned(false);
 
-    // Simulate scanning + analysis (in production, this calls an edge function)
-    await new Promise((r) => setTimeout(r, 2200));
-
     const sourceType = platform || detectPlatformFromUrl(inputUrl);
     const sourceLabel = getPlatformLabel(sourceType);
-
-    const result: ScannedClaim = {
-      ...DEMO_SCAN,
+    const text = inputText.trim();
+    const base = {
       id: `scan-${Date.now()}`,
-      originalText: inputText.trim() || DEMO_SCAN.originalText,
-      sourceUrl: inputUrl.trim() || DEMO_SCAN.sourceUrl,
+      sourceUrl: inputUrl.trim(),
       sourceType,
       sourceLabel,
       previewTitle: inputUrl.trim() ? extractDomain(inputUrl) : 'Pasted Text',
-      previewDesc: inputText.trim()
-        ? `User-submitted text for analysis: "${inputText.trim().slice(0, 120)}..."`
-        : 'Content fetched from the provided URL for fact-checking analysis.',
+      previewDesc: text ? `Submitted text: "${text.slice(0, 120)}${text.length > 120 ? '\u2026' : ''}"` : 'Link submitted for fact-checking.',
       createdAt: new Date().toISOString(),
     };
+
+    let result: ScannedClaim;
+    if (isDemoMode()) {
+      // Demo mode only: the built-in sample analysis.
+      await new Promise((r) => setTimeout(r, 1200));
+      result = { ...DEMO_SCAN, ...base, originalText: text || DEMO_SCAN.originalText, sourceUrl: base.sourceUrl || DEMO_SCAN.sourceUrl, reviewed: true };
+    } else {
+      // Real check against claims BallotLens has actually reviewed. This used to
+      // wait 2.2s and return the same hard-coded analysis ("Crime has increased
+      // 40%... False", example.com sources) for ANY text or link a voter
+      // submitted -- an invented fact-check presented as real.
+      const assessment = await assessClaim(text || inputUrl.trim()).catch(() => null);
+      const verdict: Verdict =
+        assessment?.assessment === 'supported' ? 'true'
+        : assessment?.assessment === 'unsupported' ? 'false'
+        : assessment?.assessment === 'requires_context' ? 'needs_context'
+        : 'unverified';
+      const reviewed = !!assessment && verdict !== 'unverified';
+      const firstSource = assessment?.sources[0];
+      result = {
+        ...base,
+        originalText: text || inputUrl.trim(),
+        annotations: reviewed && text ? [{
+          id: 'a1', start: 0, end: text.length, text,
+          verdict,
+          evidence: assessment!.explanation || assessment!.evidence.join(' '),
+          sourceUrl: firstSource?.url ?? undefined,
+          sourceLabel: firstSource?.title,
+        }] : [],
+        overallVerdict: verdict,
+        confidence: 0,
+        reviewed,
+        notice: reviewed
+          ? `This matches a claim BallotLens has reviewed: \u201c${assessment!.claim}\u201d.`
+          : user
+            ? 'BallotLens hasn\u2019t reviewed this claim yet, so we won\u2019t label it true or false. We\u2019ve added it to the community fact-check queue; you\u2019ll see the result under Community Checks once a reviewer has examined the evidence.'
+            : 'BallotLens hasn\u2019t reviewed this claim yet, so we won\u2019t label it true or false. Sign in to submit it to our fact-check queue.',
+      };
+    }
 
     setScanResult(result);
     setScanning(false);
@@ -577,18 +615,24 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h2 className="font-display text-xl font-bold">
-                Verdict: {verdictStyle.label}
+                {result.reviewed === false ? 'Not reviewed yet' : `Verdict: ${verdictStyle.label}`}
               </h2>
-              <Badge variant="secondary" className="rounded-lg text-[10px] font-bold">
-                {result.confidence}% confidence
-              </Badge>
+              {result.confidence > 0 && (
+                <Badge variant="secondary" className="rounded-lg text-[10px] font-bold">
+                  {result.confidence}% confidence
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              We found {result.annotations.length} claim{result.annotations.length === 1 ? '' : 's'} in this content.
-              {' '}
-              {result.annotations.filter((a) => a.verdict === 'false').length} were false,
-              {' '}
-              {result.annotations.filter((a) => a.verdict === 'misleading').length} were misleading.
+              {result.notice ?? (
+                <>
+                  We found {result.annotations.length} claim{result.annotations.length === 1 ? '' : 's'} in this content.
+                  {' '}
+                  {result.annotations.filter((a) => a.verdict === 'false').length} were false,
+                  {' '}
+                  {result.annotations.filter((a) => a.verdict === 'misleading').length} were misleading.
+                </>
+              )}
             </p>
           </div>
           <Button
@@ -618,15 +662,18 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
                   {result.sourceLabel} • {timeAgo(result.createdAt)}
                 </p>
               </div>
-              <a
-                href={result.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline shrink-0"
-              >
-                <ExternalLink className="h-3 w-3" />
-                Source
-              </a>
+              {/* Pasted text has no source link; an empty href reloaded this page. */}
+              {/^https?:\/\//i.test(result.sourceUrl) && (
+                <a
+                  href={safeUrl(result.sourceUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline shrink-0"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Source
+                </a>
+              )}
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
               {result.previewDesc}
@@ -800,7 +847,7 @@ function EvidencePanel({ annotation }: { annotation: Annotation }) {
 
       {annotation.sourceUrl && (
         <a
-          href={annotation.sourceUrl}
+          href={safeUrl(annotation.sourceUrl)}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 rounded-2xl bg-card/80 p-3 hover:bg-card transition-colors group"
@@ -957,7 +1004,7 @@ function CommunityFactCheckCard({ check }: { check: FactCheck }) {
       )}
       {check.evidence_url && (
         <a
-          href={check.evidence_url}
+          href={safeUrl(check.evidence_url)}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"

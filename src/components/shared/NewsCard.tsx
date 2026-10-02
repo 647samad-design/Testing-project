@@ -1,4 +1,5 @@
 import { ExternalLink, Newspaper } from 'lucide-react';
+import { safeUrl } from '@/lib/safe-url';
 import { Card } from '@/components/ui/card';
 import { SourceBadge } from './SourceBadge';
 import type { NewsArticle } from '@/types';
@@ -17,7 +18,7 @@ export function NewsCard({ article, className }: NewsCardProps) {
   if (!article.url) return null;
 
   return (
-    <a href={article.url} target="_blank" rel="noopener noreferrer" className="block">
+    <a href={safeUrl(article.url)} target="_blank" rel="noopener noreferrer" className="block">
       <Card className={cn('group p-4 transition-all hover:border-primary/30 hover:shadow-sm', className)}>
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">

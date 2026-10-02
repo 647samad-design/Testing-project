@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { safeUrl } from '@/lib/safe-url';
 import { ExternalLink } from 'lucide-react';
 import { getSources } from '@/services/sources';
 import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
@@ -34,7 +35,7 @@ export function SourcesPage() {
           {sources.map((s) => (
             <a
               key={s.id}
-              href={s.url ?? undefined}
+              href={safeUrl(s.url)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-start justify-between gap-3 rounded-xl border border-border p-4 hover:bg-secondary/40 transition-colors"
