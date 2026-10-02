@@ -1,3 +1,4 @@
+import { extractZip, INVALID_ZIP_MESSAGE } from '@/lib/zip';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Search, MapPin, Navigation, ShieldCheck, Scale, FileText, ArrowRight, Sparkles, Heart, Clock, MessageCircle, Rss } from 'lucide-react';
@@ -37,6 +38,10 @@ export function LandingPage() {
   async function handleFindBallot() {
     if (!address.trim()) {
       setError('Please enter your address or ZIP code.');
+      return;
+    }
+    if (!extractZip(address)) {
+      setError(INVALID_ZIP_MESSAGE);
       return;
     }
     setError(null);

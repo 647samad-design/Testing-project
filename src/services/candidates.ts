@@ -41,10 +41,13 @@ export async function getCandidate(candidateId: string): Promise<Candidate | nul
       .select('*')
       .eq('id', candidateId)
       .maybeSingle();
-    if (error) throw error;
+    // 22P02 = not a valid UUID (e.g. a generated sample id): simply not in the DB.
+    if (error && error.code !== '22P02') throw error;
     if (data) return data as Candidate;
-  } catch {
-    // Database unreachable — fall through to demo data
+  } catch (e) {
+    // A real failure must surface as an error -- it used to fall through and end
+    // as "Candidate not found" for every profile during an outage.
+    if (!isDemoMode()) throw e;
   }
   const region = getStoredRegion();
   if (region) {

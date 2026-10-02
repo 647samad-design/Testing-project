@@ -182,7 +182,12 @@ export async function getVoterBallot(address: string): Promise<{
       return { ...result, isDemo };
     }
   } catch {
-    // Database unreachable — fall through to demo data
+    // The database didn't answer. Say so instead of presenting a generated
+    // sample ballot, which during an outage told Florida voters "we don't
+    // cover your area". Samples on failure only in demo mode.
+    if (!isDemoMode()) {
+      return { election: null, contests: [], measures: [], error: "We couldn’t load your ballot right now. Please check your connection and try again in a moment." };
+    }
   }
   const regionBallot = buildRegionBallot(cfg);
   return {

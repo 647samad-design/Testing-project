@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
+import { LoadingState, EmptyState, ErrorState } from '@/components/shared/StateComponents';
 import { PhotoUpload } from '@/components/shared/PhotoUpload';
 import { useAuth } from '@/hooks/use-auth';
 import { getMyClaimedCandidates, submitCandidateContent, submitQuestionnaireResponse, submitEvent } from '@/services/candidate-portal';
@@ -36,6 +36,7 @@ export function CandidatePortalPage() {
   usePageMeta({ title: 'Candidate Portal', noindex: true });
   const { user, loading: authLoading } = useAuth();
   const [claimed, setClaimed] = useState<ClaimedCandidate[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'bio' | 'questionnaire' | 'events' | 'quiz' | 'team' | 'campaign' | 'extras' | 'analytics'>('overview');
   const [submitting, setSubmitting] = useState(false);
@@ -74,8 +75,12 @@ export function CandidatePortalPage() {
         window.history.replaceState({}, '', window.location.pathname);
       }
 
-      const data = await getMyClaimedCandidates();
-      setClaimed(data);
+      try {
+        setClaimed(await getMyClaimedCandidates());
+        setLoadError(null);
+      } catch {
+        setLoadError("We couldn’t load your profiles right now. Please check your connection and try again.");
+      }
       setLoading(false);
     }
     load();
@@ -118,7 +123,12 @@ export function CandidatePortalPage() {
         Manage your candidate profile. All submissions are reviewed by our team before going live.
       </p>
 
-      {claimed.length === 0 && (
+      {loadError && (
+        <div className="mt-8">
+          <ErrorState title="Couldn’t load your profiles" message={loadError} onRetry={() => window.location.reload()} />
+        </div>
+      )}
+      {!loadError && claimed.length === 0 && (
         <div className="mt-8">
           <EmptyState
             title="No claimed profiles yet"

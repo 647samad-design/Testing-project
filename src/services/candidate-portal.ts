@@ -180,7 +180,9 @@ export async function getMyClaimedCandidates(): Promise<{ candidate_id: string; 
       .order('submitted_at', { ascending: false });
     if (error) throw error;
     return (data as { candidate_id: string; status: string; full_name: string }[]) ?? [];
-  } catch {
-    return [];
+  } catch (e) {
+    // Rethrow: returning [] made the portal say "No claimed profiles yet" during
+    // an outage, inviting candidates to file a second claim.
+    throw e;
   }
 }

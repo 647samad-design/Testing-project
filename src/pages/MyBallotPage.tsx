@@ -13,6 +13,8 @@ import { getLocation } from '@/services/districts';
 import { useAuth } from '@/hooks/use-auth';
 import type { BallotContest, BallotMeasure, Election, DistrictResult } from '@/types';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { extractZip, INVALID_ZIP_MESSAGE } from '@/lib/zip';
+import { isDemoMode } from '@/lib/demo-mode';
 import { parseDateOnly } from '@/lib/date-utils';
 import { ElectionResultsCard } from '@/components/shared/ElectionResultsCard';
 import { toStatePostal } from '@/lib/us-states';
@@ -32,6 +34,8 @@ export function MyBallotPage() {
   const [, setAddress] = useState('');
   const [addressInput, setAddressInput] = useState('');
   const [needsAddress, setNeedsAddress] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
+  const [showSample, setShowSample] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [election, setElection] = useState<Election | null>(null);
@@ -42,6 +46,17 @@ export function MyBallotPage() {
   const [ballotScope, setBallotScope] = useState<'district' | 'state' | undefined>(undefined);
 
   async function loadBallotFor(savedAddress: string) {
+    // A stored address that isn't a ZIP (e.g. typed before validation existed)
+    // goes back to the form instead of producing a made-up sample ballot.
+    if (!extractZip(savedAddress)) {
+      sessionStorage.removeItem('ballotlens_address');
+      setAddressInput(savedAddress);
+      setAddressError(INVALID_ZIP_MESSAGE);
+      setNeedsAddress(true);
+      setLoading(false);
+      return;
+    }
+    setShowSample(false);
     sessionStorage.setItem('ballotlens_address', savedAddress);
     setAddress(savedAddress);
     setNeedsAddress(false);
@@ -65,6 +80,8 @@ export function MyBallotPage() {
 
   function handleAddressSubmit() {
     if (!addressInput.trim()) return;
+    if (!extractZip(addressInput)) { setAddressError(INVALID_ZIP_MESSAGE); return; }
+    setAddressError(null);
     loadBallotFor(addressInput.trim());
   }
 
@@ -127,6 +144,27 @@ export function MyBallotPage() {
             See My Ballot
           </Button>
         </div>
+        {addressError && <p role="alert" className="mt-3 text-sm text-destructive">{addressError}</p>}
+      </div>
+    );
+  }
+
+  // No real ballot data for this area. Previously a full ballot of generated,
+  // fictional candidates was shown (with only a banner); a real voter should
+  // be told plainly, and see the sample only if they ask for it.
+  if (!loading && !error && isDemoBallot && !isDemoMode() && !showSample) {
+    return (
+      <div className="mx-auto max-w-lg px-4 sm:px-6 py-16 text-center animate-fade-in">
+        <MapPin className="mx-auto h-10 w-10 text-primary" />
+        <h1 className="mt-4 font-display text-2xl font-semibold">We don’t cover your area yet</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          BallotLens doesn’t have verified ballot information for {districts?.state ? `${districts.state}` : 'this ZIP code'} yet.
+          Check your state or county election office for your official sample ballot.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Button onClick={() => { sessionStorage.removeItem('ballotlens_address'); setAddressInput(''); setNeedsAddress(true); }}>Try another ZIP</Button>
+          <Button variant="outline" onClick={() => setShowSample(true)}>See an example ballot</Button>
+        </div>
       </div>
     );
   }
@@ -140,7 +178,7 @@ export function MyBallotPage() {
       <ErrorState
         title="Ballot unavailable"
         message={error}
-        onRetry={() => navigate('/')}
+        onRetry={() => window.location.reload()}
       />
     );
   }

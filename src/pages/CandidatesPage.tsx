@@ -63,12 +63,9 @@ export function CandidatesPage() {
           setViewMode('all');
         }
 
-        let contests: BallotContest[] = [];
-        try {
-          contests = await getAllContestsWithCandidates();
-        } catch {
-          contests = [];
-        }
+        // A failure is shown as an error (below); it used to swap in sample
+        // candidates. Samples only when the database answered with none.
+        let contests: BallotContest[] = await getAllContestsWithCandidates();
         // Sample data only when the database has no candidates at all.
         const usingSamples = contests.length === 0;
         if (usingSamples) contests = getAllStatesBallots().contests;
@@ -76,7 +73,7 @@ export function CandidatesPage() {
         setAllContests(contests);
         setAllCandidates(contests.flatMap((c) => c.candidates ?? []));
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load candidates.');
+        setError('We couldn’t load candidates right now. Please check your connection and try again in a moment.');
       } finally {
         setLoading(false);
       }

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Scale, GitCompare, MessageSquare, Globe, GraduationCap, Briefcase, Award, Shield, Heart, Search, Vote as VoteIcon, Newspaper, Video as VideoIcon, Play, MessageCircle } from 'lucide-react';
+import { UserX, ArrowLeft, Scale, GitCompare, MessageSquare, Globe, GraduationCap, Briefcase, Award, Shield, Heart, Search, Vote as VoteIcon, Newspaper, Video as VideoIcon, Play, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { SourceDrawer } from '@/components/shared/SourceDrawer';
 import { DemoBanner } from '@/components/shared/DemoBanner';
 import { VerificationBadge } from '@/components/shared/VerificationBadge';
 import { SourceBadge } from '@/components/shared/SourceBadge';
-import { LoadingState, ErrorState } from '@/components/shared/StateComponents';
+import { LoadingState, ErrorState, EmptyState } from '@/components/shared/StateComponents';
 import { getCandidate, getCandidatePositions, getCandidateStatements, getVotingRecord, getJudicialRecord, getCandidateRaceOffice } from '@/services/candidates';
 import { getNews, getVideos, getSocialPosts } from '@/services/news';
 import { getVerifiedClaim, getApprovedSubmissions, getApprovedQuestionnaire, getApprovedEvents } from '@/services/candidate-portal';
@@ -79,12 +79,14 @@ export function CandidateProfilePage() {
   const [campaign, setCampaign] = useState<CampaignType | null>(null);
   const { user, profile } = useAuth();
   const [raceOffice, setRaceOffice] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     if (!candidateId) return;
     async function load() {
       setLoading(true);
       setError(null);
+      setNotFound(false);
       try {
         const [cand, pos, stmts, votes, judicial, newsData, videoData, socialData, claim, subs, questRes, events, feed, team, campaignData] = await Promise.all([
           getCandidate(candidateId!),
@@ -104,7 +106,10 @@ export function CandidateProfilePage() {
           getCampaign(candidateId!),
         ]);
         if (!cand) {
-          setError("We couldn't find enough reliable information about this candidate.");
+          // Not an error: the profile doesn't exist (old link, removed sample
+          // candidate). This used to show "Something went wrong" with a
+          // "Try Again" button that could never succeed.
+          setNotFound(true);
           return;
         }
         setCandidate(cand);
@@ -170,7 +175,24 @@ export function CandidateProfilePage() {
   });
 
   if (loading) return <LoadingState message="Loading candidate profile…" />;
-  if (error || !candidate) return <ErrorState message={error ?? 'Candidate not found.'} onRetry={() => window.history.back()} />;
+  if (notFound) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16">
+        <EmptyState
+          icon={<UserX className="h-10 w-10" />}
+          title="Candidate not found"
+          description="This profile may have been removed, or the link may be incorrect."
+          action={
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button asChild><Link to="/candidates">Browse candidates</Link></Button>
+              <Button asChild variant="outline"><Link to="/ballot">See my ballot</Link></Button>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
+  if (error || !candidate) return <ErrorState message={error ?? 'Failed to load candidate.'} onRetry={() => window.location.reload()} />;
 
   const fullName = `${candidate.first_name} ${candidate.last_name}`;
   const initials = `${candidate.first_name[0] ?? ''}${candidate.last_name[0] ?? ''}`;

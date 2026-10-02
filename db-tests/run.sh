@@ -15,7 +15,10 @@ run() { if [ -n "${PSQL_AS:-}" ]; then su "$PSQL_AS" -c "$*"; else sh -c "$*"; f
 if ! run "psql -d postgres -Atc 'select 1'" >/dev/null 2>&1; then
   echo "Cannot connect to PostgreSQL -- is the server running? (e.g. pg_ctlcluster 16 main start)"; exit 2
 fi
-run "dropdb --if-exists $DB && createdb $DB" >/dev/null 2>&1
+# Close leftover connections first (e.g. a PostgREST from an earlier run):
+# otherwise dropdb fails silently and the migrations replay onto the old DB.
+run "psql -d postgres -Atc \"select pg_terminate_backend(pid) from pg_stat_activity where datname = '$DB' and pid <> pg_backend_pid()\"" >/dev/null 2>&1
+run "dropdb --if-exists $DB && createdb $DB" >/dev/null 2>&1 || { echo "could not recreate database $DB"; exit 1; }
 run "psql -q -d $DB -f '$PWD/db-tests/supabase_stub.sql'" >/dev/null 2>&1
 
 fail=0; n=0
