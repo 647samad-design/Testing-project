@@ -181,6 +181,7 @@ export function AskBallotLensPage() {
             <div className="mt-4">
               <label className="text-xs font-medium text-muted-foreground">Candidate (optional)</label>
               <select
+                aria-label="Candidate (optional)"
                 value={selectedCandidate ?? ''}
                 onChange={(e) => setSelectedCandidate(e.target.value || undefined)}
                 className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"

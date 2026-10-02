@@ -246,7 +246,7 @@ export function AccountPage() {
               <Settings className="h-4 w-4" />
               {editMode ? 'Cancel' : 'Edit'}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1.5 rounded-xl touch-target text-muted-foreground">
+            <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1.5 rounded-xl touch-target text-muted-foreground" aria-label="Sign out" title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

@@ -35,7 +35,7 @@ export function Header() {
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-content items-center justify-between px-4 sm:px-6">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 shrink-0 touch-target">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 touch-target" aria-label="BallotLens home">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shadow-primary/20">
               <Scale className="h-5 w-5 text-primary-foreground" />
             </div>

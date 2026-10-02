@@ -110,7 +110,7 @@ export function PricingPage() {
               onClick={() => setBilling('yearly')}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${billing === 'yearly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
             >
-              Yearly <span className="text-xs opacity-80">(save ~17%)</span>
+              Yearly <span className="text-xs">(save ~17%)</span>
             </button>
           </div>
         </div>

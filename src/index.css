@@ -10,23 +10,23 @@
     --card-foreground: 210 30% 12%;
     --popover: 0 0% 100%;
     --popover-foreground: 210 30% 12%;
-    --primary: 173 70% 36%;
+    --primary: 173 70% 27.5%; /* was 36% (white text 3.39:1); now >= 4.5:1, WCAG AA */
     --primary-foreground: 0 0% 100%;
     --secondary: 30 30% 96%;
     --secondary-foreground: 210 30% 12%;
     --muted: 30 20% 95%;
-    --muted-foreground: 210 12% 46%;
-    --accent: 14 85% 58%;
+    --muted-foreground: 210 12% 43.5%; /* was 46% (4.2:1 on secondary); now >= 4.5:1 */
+    --accent: 14 85% 41%; /* was 58% (3.1:1 on cream); now >= 4.5:1 incl. on accent/10 tints */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --success: 160 65% 40%;
+    --success: 160 65% 29%; /* was 40% (3.0:1); now >= 4.5:1 */
     --success-foreground: 0 0% 100%;
-    --warning: 38 90% 50%;
+    --warning: 38 90% 32%; /* was 50% (2.2:1 as text); now >= 4.5:1 */
     --warning-foreground: 0 0% 100%;
     --border: 30 20% 90%;
     --input: 30 20% 90%;
-    --ring: 173 70% 36%;
+    --ring: 173 70% 27.5%;
     --radius: 0.875rem;
     --chart-1: 173 70% 36%;
     --chart-2: 160 65% 40%;
@@ -37,7 +37,7 @@
     /* Party colors */
     --party-dem: 210 30% 12%;
     --party-rep: 210 30% 12%;
-    --party-ind: 210 12% 46%;
+    --party-ind: 210 12% 43.5%; /* was 46% (4.2:1); now >= 4.5:1 */
     --party-dem-bg: 30 20% 95%;
     --party-rep-bg: 30 20% 95%;
     --party-ind-bg: 30 20% 95%;
