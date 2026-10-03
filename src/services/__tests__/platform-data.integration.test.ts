@@ -287,4 +287,27 @@ describe.skipIf(!PGRST_URL)('platform features save, update and notify (real Pos
     const nobody = await askBallotLensAI('What will happen to taxes?');
     expect(nobody.answer).toMatch(/specify a candidate/);
   });
+
+  it('Claims Library: voter submits -> admin publishes -> admin revises -> admin moves back to research', async () => {
+    as(VOTER);
+    const { submitClaim } = await import('@/services/sources');
+    const claim = await submitClaim('Testland doubled its police budget');
+    expect(claim?.id).toBeTruthy();
+
+    as(ADMIN);
+    const { getUnresearchedClaims, getAssessedClaims, assessClaimInLibrary } = await import('@/services/admin');
+    expect((await getUnresearchedClaims()).map((c) => c.id)).toContain(claim!.id);
+    await assessClaimInLibrary(claim!.id, 'unsupported', 'Budget rose 12%.');
+    expect((await getAssessedClaims()).find((c) => c.id === claim!.id)).toMatchObject({ assessment: 'unsupported', explanation: 'Budget rose 12%.' });
+
+    // revise (previously impossible from the admin panel)
+    await assessClaimInLibrary(claim!.id, 'requires_context', 'Rose 12%; doubled only in one precinct.');
+    expect((await readBack('claims', `id=eq.${claim!.id}&select=assessment,explanation`))[0])
+      .toEqual({ assessment: 'requires_context', explanation: 'Rose 12%; doubled only in one precinct.' });
+
+    // take it down
+    await assessClaimInLibrary(claim!.id, 'insufficient_information', '');
+    expect((await getAssessedClaims()).map((c) => c.id)).not.toContain(claim!.id);
+    expect((await getUnresearchedClaims()).map((c) => c.id)).toContain(claim!.id);
+  });
 });

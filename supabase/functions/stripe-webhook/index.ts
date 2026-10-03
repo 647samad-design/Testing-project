@@ -110,6 +110,9 @@ Deno.serve(async (req: Request) => {
         case "payment_intent.payment_failed":
           await handlePaymentFailed(supabase, event.data.object as unknown as Row);
           break;
+        case "charge.refunded":
+          await handleChargeRefunded(supabase, event.data.object as unknown as Row);
+          break;
         default:
           break;
       }
@@ -323,6 +326,22 @@ async function handlePaymentSucceeded(supabase: Db, paymentIntent: Row): Promise
       status: "succeeded",
     }, { onConflict: "stripe_payment_intent_id", ignoreDuplicates: true }),
     "record one-off payment",
+  );
+}
+
+/** A refund (full or partial) issued in Stripe. Without this, refunded payments
+ * stayed 'succeeded' and kept counting as revenue in the admin panel. */
+async function handleChargeRefunded(supabase: Db, charge: Row): Promise<void> {
+  const paymentIntentId = charge.payment_intent as string | null;
+  if (!paymentIntentId) return;
+  const amount = charge.amount as number;
+  const refunded = (charge.amount_refunded as number) ?? 0;
+  const full = charge.refunded === true || refunded >= amount;
+  await must(
+    supabase.from("payments")
+      .update({ amount_refunded: refunded, status: full ? "refunded" : "succeeded" })
+      .eq("stripe_payment_intent_id", paymentIntentId),
+    "record refund",
   );
 }
 

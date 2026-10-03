@@ -325,7 +325,12 @@ describe('Claims Library admin research — the library existed with correct RLS
 });
 
 describe('getRevenueSummary — payments.amount is in cents, previously never summed or shown anywhere', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Drop any queued mockReturnValueOnce left by earlier tests, then restore the default.
+    fromMock.mockReset();
+    fromMock.mockImplementation(() => ({ insert: insertMock, update: updateMock, delete: deleteMock, upsert: upsertMock }) as unknown as ReturnType<typeof fromMock>);
+  });
 
   it('sums succeeded payments into total, last-30-days, and by-type breakdowns', async () => {
     const now = new Date();
@@ -340,11 +345,11 @@ describe('getRevenueSummary — payments.amount is in cents, previously never su
       error: null,
     });
     const eqMock = vi.fn(() => ({ order: () => ({ order: () => ({ range: orderMock }) }) }));
-    fromMock.mockReturnValueOnce({ select: () => ({ eq: eqMock }) } as unknown as ReturnType<typeof fromMock>);
+    fromMock.mockReturnValueOnce({ select: () => ({ in: eqMock }) } as unknown as ReturnType<typeof fromMock>);
 
     const result = await getRevenueSummary();
 
-    expect(eqMock).toHaveBeenCalledWith('status', 'succeeded');
+    expect(eqMock).toHaveBeenCalledWith('status', ['succeeded', 'refunded']);
     expect(result.totalCents).toBe(3400);
     expect(result.last30DaysCents).toBe(900);
     expect(result.byType).toEqual({ subscription: 900, advertising: 2500 });
@@ -352,7 +357,7 @@ describe('getRevenueSummary — payments.amount is in cents, previously never su
   });
 
   it('returns all zeros without erroring when there are no succeeded payments yet', async () => {
-    fromMock.mockReturnValueOnce({ select: () => ({ eq: () => ({ order: () => ({ order: () => ({ range: () => Promise.resolve({ data: [], error: null }) }) }) }) }) } as unknown as ReturnType<typeof fromMock>);
+    fromMock.mockReturnValueOnce({ select: () => ({ in: () => ({ order: () => ({ order: () => ({ range: () => Promise.resolve({ data: [], error: null }) }) }) }) }) } as unknown as ReturnType<typeof fromMock>);
     const result = await getRevenueSummary();
     expect(result.totalCents).toBe(0);
     expect(result.byType).toEqual({});
@@ -630,10 +635,29 @@ describe('getRevenueSummary past 1,000 payments', () => {
   beforeEach(() => vi.clearAllMocks());
   it('totals every payment, not just the first 1,000', async () => {
     const all = Array.from({ length: 1500 }, (_, i) => ({ id: `p${i}`, amount: 100, payment_type: 'subscription', description: null, created_at: '2026-01-01T00:00:00Z' }));
-    const page = () => ({ select: () => ({ eq: () => ({ order: () => ({ order: () => ({ range: (from: number, to: number) => Promise.resolve({ data: all.slice(from, to + 1), error: null }) }) }) }) }) });
+    const page = () => ({ select: () => ({ in: () => ({ order: () => ({ order: () => ({ range: (from: number, to: number) => Promise.resolve({ data: all.slice(from, to + 1), error: null }) }) }) }) }) });
     fromMock.mockImplementationOnce(page as unknown as Parameters<typeof fromMock.mockImplementationOnce>[0]);
     fromMock.mockImplementationOnce(page as unknown as Parameters<typeof fromMock.mockImplementationOnce>[0]);
     const r = await getRevenueSummary();
     expect(r.totalCents).toBe(150000);
+  });
+});
+
+describe('getRevenueSummary is net of refunds (charge.refunded used to be ignored)', () => {
+  it('subtracts refunded amounts and reports the refunded total', async () => {
+    const now = new Date().toISOString();
+    const rows = [
+      { id: 'a', amount: 1000, amount_refunded: 0, status: 'succeeded', payment_type: 'subscription', description: null, created_at: now },
+      { id: 'b', amount: 1500, amount_refunded: 1500, status: 'refunded', payment_type: 'subscription', description: null, created_at: now },
+      { id: 'c', amount: 2000, amount_refunded: 500, status: 'succeeded', payment_type: 'advertising', description: null, created_at: now },
+    ];
+    const inMock = vi.fn(() => ({ order: () => ({ order: () => ({ range: () => Promise.resolve({ data: rows, error: null }) }) }) }));
+    fromMock.mockReturnValueOnce({ select: () => ({ in: inMock }) } as unknown as ReturnType<typeof fromMock>);
+    const { getRevenueSummary } = await import('@/services/admin');
+    const r = await getRevenueSummary();
+    expect(inMock).toHaveBeenCalledWith('status', ['succeeded', 'refunded']);
+    expect(r.totalCents).toBe(1000 + 0 + 1500);
+    expect(r.refundedCents).toBe(2000);
+    expect(r.byType).toEqual({ subscription: 1000, advertising: 1500 });
   });
 });

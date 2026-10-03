@@ -25,7 +25,7 @@ import {
   getPendingProfileExtras, reviewProfileExtra, type PendingProfileExtra, type ProfileExtraKind,
 } from '@/services/admin';
 import { getPendingReports, markReportReviewed, getReportedContentPreview, removeReportedFeedPost, type ContentReport } from '@/services/content-reports';
-import { getUnresearchedClaims, assessClaimInLibrary, addClaimEvidence, type UnresearchedClaim } from '@/services/admin';
+import { getUnresearchedClaims, getAssessedClaims, getClaimEvidenceCounts, assessClaimInLibrary, addClaimEvidence, type UnresearchedClaim } from '@/services/admin';
 import { getRevenueSummary, type RevenueSummary } from '@/services/admin';
 import {
   searchBallotContests, linkCandidateToContest, getCandidateContests, unlinkCandidateFromContest,
@@ -1136,7 +1136,12 @@ function BillingOverviewTab() {
               <p className="text-xs text-muted-foreground">Last 30 Days</p>
               <p className="mt-1 text-3xl font-bold">{formatCents(revenue.last30DaysCents)}</p>
             </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Refunded</p>
+              <p className="mt-1 text-3xl font-bold text-muted-foreground">{formatCents(revenue.refundedCents)}</p>
+            </div>
           </div>
+          <p className="mt-2 text-xs text-muted-foreground">Revenue figures are net of refunds.</p>
           {Object.keys(revenue.byType).length > 0 && (
             <div className="mt-4 pt-4 border-t border-border/50 space-y-1.5">
               {Object.entries(revenue.byType).map(([type, cents]) => (
@@ -1827,6 +1832,8 @@ function ClaimsLibraryAdminTab() {
   const [draftSource, setDraftSource] = useState<Record<string, string>>({});
   const [draftNote, setDraftNote] = useState<Record<string, string>>({});
   const [evidenceCount, setEvidenceCount] = useState<Record<string, number>>({});
+  // 'queue' = awaiting research; 'published' = already assessed and revisable.
+  const [view, setView] = useState<'queue' | 'published'>('queue');
 
   async function handleAttachEvidence(claimId: string) {
     const sourceId = draftSource[claimId];
@@ -1848,7 +1855,15 @@ function ClaimsLibraryAdminTab() {
   async function load() {
     setLoading(true);
     try {
-      setClaims(await getUnresearchedClaims());
+      const list = view === 'queue' ? await getUnresearchedClaims() : await getAssessedClaims();
+      setClaims(list);
+      if (view === 'published') {
+        // Count evidence already attached, so the "no evidence" warning is right.
+        setEvidenceCount(await getClaimEvidenceCounts(list.map((c) => c.id)).catch(() => ({})));
+        // Start each form from the published verdict.
+        setDraftAssessment(Object.fromEntries(list.map((c) => [c.id, c.assessment ?? 'supported'])));
+        setDraftExplanation(Object.fromEntries(list.map((c) => [c.id, c.explanation ?? ''])));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load claims.');
     } finally {
@@ -1856,21 +1871,29 @@ function ClaimsLibraryAdminTab() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleAssess(claim: UnresearchedClaim) {
     const assessment = (draftAssessment[claim.id] ?? 'supported') as 'supported' | 'unsupported' | 'requires_context' | 'insufficient_information';
     const explanation = draftExplanation[claim.id]?.trim();
-    if (!explanation) {
+    if (!explanation && assessment !== 'insufficient_information') {
       toast.error('Add an explanation before publishing an assessment.');
       return;
     }
-    if ((evidenceCount[claim.id] ?? 0) === 0 && !window.confirm('No evidence sources are attached to this claim. Publish the assessment anyway?')) return;
+    if (assessment !== 'insufficient_information' && (evidenceCount[claim.id] ?? 0) === 0 && !window.confirm('No evidence sources are attached to this claim. Publish the assessment anyway?')) return;
     setBusyId(claim.id);
     try {
-      await assessClaimInLibrary(claim.id, assessment, explanation);
-      toast.success('Claim assessed and published to the Claims Library.');
-      setClaims((prev) => prev.filter((c) => c.id !== claim.id));
+      await assessClaimInLibrary(claim.id, assessment, explanation ?? '');
+      if (view === 'queue') {
+        toast.success('Claim assessed and published to the Claims Library.');
+        setClaims((prev) => prev.filter((c) => c.id !== claim.id));
+      } else if (assessment === 'insufficient_information') {
+        toast.success('Moved back to research; it no longer shows a verdict publicly.');
+        setClaims((prev) => prev.filter((c) => c.id !== claim.id));
+      } else {
+        toast.success('Assessment updated.');
+        setClaims((prev) => prev.map((c) => (c.id === claim.id ? { ...c, assessment, explanation } : c)));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save assessment.');
     } finally {
@@ -1882,16 +1905,24 @@ function ClaimsLibraryAdminTab() {
 
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant={view === 'queue' ? 'default' : 'outline'} onClick={() => setView('queue')}>Needs research</Button>
+        <Button size="sm" variant={view === 'published' ? 'default' : 'outline'} onClick={() => setView('published')}>Published</Button>
+      </div>
       <p className="text-sm text-muted-foreground mb-2">
-        Claims submitted by users, awaiting research. Publishing an assessment here makes it public
-        on the Claims Library page immediately.
+        {view === 'queue'
+          ? 'Claims submitted by users, awaiting research. Publishing an assessment here makes it public on the Claims Library page immediately.'
+          : 'Assessments already public on the Claims Library. Revise a verdict if new evidence comes in or it was wrong, or move it back to research to take it down.'}
       </p>
       {claims.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">No unresearched claims right now.</p>
+        <p className="text-sm text-muted-foreground py-8 text-center">{view === 'queue' ? 'No unresearched claims right now.' : 'No published assessments yet.'}</p>
       ) : (
         claims.map((claim) => (
           <Card key={claim.id} className="p-4">
             <p className="text-sm font-medium">{claim.claim_text}</p>
+            {view === 'published' && claim.assessment && (
+              <p className="text-xs text-muted-foreground mt-0.5">Currently published as: <span className="font-semibold text-foreground">{{ supported: 'Supported by Evidence', unsupported: 'Not Supported', requires_context: 'Requires Context', insufficient_information: 'Needs research' }[claim.assessment]}</span></p>
+            )}
             {claim.candidate && (
               <p className="text-xs text-muted-foreground mt-0.5">Re: {claim.candidate.first_name} {claim.candidate.last_name}</p>
             )}
@@ -1904,6 +1935,7 @@ function ClaimsLibraryAdminTab() {
                 <option value="supported">Supported by Evidence</option>
                 <option value="unsupported">Not Supported</option>
                 <option value="requires_context">Requires Context</option>
+                {view === 'published' && <option value="insufficient_information">Move back to research (unpublish)</option>}
               </select>
               <textarea
                 value={draftExplanation[claim.id] ?? ''}
@@ -1928,7 +1960,7 @@ function ClaimsLibraryAdminTab() {
                 </Button>
               </div>
               <Button size="sm" disabled={busyId === claim.id} onClick={() => handleAssess(claim)}>
-                Publish Assessment
+                {view === 'queue' ? 'Publish Assessment' : 'Update Assessment'}
               </Button>
             </div>
           </Card>

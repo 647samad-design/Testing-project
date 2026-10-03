@@ -631,6 +631,29 @@ export async function rejectAd(id: string, notes?: string): Promise<void> {
 export interface UnresearchedClaim {
   id: string; claim_text: string; created_at: string;
   candidate?: { first_name: string; last_name: string } | null;
+  assessment?: 'supported' | 'unsupported' | 'requires_context' | 'insufficient_information';
+  explanation?: string | null;
+}
+
+/** Number of evidence sources attached to each claim. */
+export async function getClaimEvidenceCounts(claimIds: string[]): Promise<Record<string, number>> {
+  const rows = await fetchInChunks<{ claim_id: string }>(claimIds, (ids) => supabase.from('claim_evidence').select('claim_id').in('claim_id', ids));
+  const counts: Record<string, number> = {};
+  for (const r of rows) counts[r.claim_id] = (counts[r.claim_id] ?? 0) + 1;
+  return counts;
+}
+
+/** Admin-only: claims that already have a published assessment, so a verdict
+ * can be revised (new evidence, or a mistake). Previously an assessed claim
+ * dropped out of the admin panel for good -- there was no way to correct it. */
+export async function getAssessedClaims(): Promise<UnresearchedClaim[]> {
+  return fetchAllRows<UnresearchedClaim>((from, to) => supabase
+    .from('claims')
+    .select('id, claim_text, created_at, assessment, explanation, candidate:candidates(first_name, last_name)')
+    .neq('assessment', 'insufficient_information')
+    .order('created_at', { ascending: false })
+    .order('id')
+    .range(from, to));
 }
 
 /** Admin-only: claims still awaiting research (the default state a
@@ -659,10 +682,12 @@ export async function assessClaimInLibrary(
 }
 
 export interface RevenueSummary {
+  /** Net of refunds. */
   totalCents: number;
+  refundedCents: number;
   last30DaysCents: number;
   byType: Record<string, number>;
-  recentPayments: Array<{ id: string; amount: number; payment_type: string; description: string | null; created_at: string }>;
+  recentPayments: Array<{ id: string; amount: number; amount_refunded: number; status: string; payment_type: string; description: string | null; created_at: string }>;
 }
 
 /** Admin-only: actual revenue totals from Stripe payments. payments.amount
@@ -676,24 +701,28 @@ export async function getRevenueSummary(): Promise<RevenueSummary> {
 
   // Paged: a single request stops at 1,000 rows, which would silently
   // under-report revenue once there are more payments than that.
-  const rows = await fetchAllRows<{ id: string; amount: number; payment_type: string; description: string | null; created_at: string }>((from, to) =>
+  // Net of refunds: refunded payments used to stay 'succeeded' and count in full.
+  const rows = await fetchAllRows<{ id: string; amount: number; amount_refunded: number; status: string; payment_type: string; description: string | null; created_at: string }>((from, to) =>
     supabase.from('payments')
-      .select('id, amount, payment_type, description, created_at')
-      .eq('status', 'succeeded')
+      .select('id, amount, amount_refunded, status, payment_type, description, created_at')
+      .in('status', ['succeeded', 'refunded'])
       .order('created_at', { ascending: false }).order('id')
       .range(from, to));
-  const totalCents = rows.reduce((sum, p) => sum + p.amount, 0);
+  const net = (p: { amount: number; amount_refunded: number }) => Math.max(0, p.amount - (p.amount_refunded ?? 0));
+  const totalCents = rows.reduce((sum, p) => sum + net(p), 0);
+  const refundedCents = rows.reduce((sum, p) => sum + (p.amount_refunded ?? 0), 0);
   const last30DaysCents = rows
     .filter((p) => p.created_at >= thirtyDaysAgo)
-    .reduce((sum, p) => sum + p.amount, 0);
+    .reduce((sum, p) => sum + net(p), 0);
 
   const byType: Record<string, number> = {};
   for (const p of rows) {
-    byType[p.payment_type] = (byType[p.payment_type] ?? 0) + p.amount;
+    byType[p.payment_type] = (byType[p.payment_type] ?? 0) + net(p);
   }
 
   return {
     totalCents,
+    refundedCents,
     last30DaysCents,
     byType,
     recentPayments: rows.slice(0, 15),
