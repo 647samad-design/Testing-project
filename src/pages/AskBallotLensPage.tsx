@@ -23,14 +23,16 @@ import { usePageMeta } from '@/hooks/use-page-meta';
 function buildExampleQuestions(candidates: Candidate[]): string[] {
   const real = candidates.filter((c) => !c.is_demo).slice(0, 3);
   const name = (c: Candidate) => `${c.first_name} ${c.last_name}`;
-  const generic = ['Compare candidates on healthcare', 'Show me the evidence sources', 'What sources support this information?'];
+  // Only questions the assistant can actually answer (a generic "Compare
+  // candidates on healthcare" just got "please specify a candidate").
+  const generic = ['Who is running for State Representative?'];
   if (real.length === 0) return generic;
   const templates = [
     (c: Candidate) => `What has ${name(c)} said about healthcare?`,
     (c: Candidate) => `What is ${name(c)}'s position on the economy?`,
     (c: Candidate) => `What bills has ${name(c)} voted for?`,
   ];
-  return [...real.map((c, i) => templates[i](c)), ...generic.slice(0, 2)];
+  return [...real.map((c, i) => templates[i](c)), ...generic];
 }
 
 export function AskBallotLensPage() {

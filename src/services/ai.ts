@@ -68,6 +68,8 @@ export async function askBallotLensAI(
     if (candidate) {
       return askBallotLensAI(question, candidate.id, issueId);
     }
+    const running = await answerWhoIsRunning(question);
+    if (running) return running;
 
     return {
       answer:
@@ -83,6 +85,8 @@ export async function askBallotLensAI(
   }
 
   // Retrieve evidence
+  const { data: named } = await supabase.from('candidates').select('first_name, last_name').eq('id', candidateId).maybeSingle();
+  const who = named ? `${named.first_name} ${named.last_name}` : 'this candidate';
   const positions = await getCandidatePositions(candidateId);
   const votingRecords = await getVotingRecord(candidateId);
   const statements = await getCandidateStatements(candidateId);
@@ -119,7 +123,7 @@ export async function askBallotLensAI(
     const pos = relevantPositions[0];
     if (pos.verification_status === 'insufficient_information' || !pos.summary) {
       return {
-        answer: `I couldn't find enough reliable evidence to verify this candidate's position on ${pos.issue?.name ?? 'this issue'}.`,
+        answer: `I couldn't find enough reliable evidence to verify ${who}'s position on ${pos.issue?.name ?? 'this issue'}.`,
         evidence: [],
         sources: [],
         confidence: 'low',
@@ -132,7 +136,7 @@ export async function askBallotLensAI(
     if (pos.verification_status === 'not_verified') {
       evidence.push(`Candidate position on ${pos.issue?.name}: ${pos.summary}`);
       return {
-        answer: `The campaign states that this candidate's position on ${pos.issue?.name} is: "${pos.summary}" However, this position has not yet been independently verified.`,
+        answer: `The campaign states that ${who}'s position on ${pos.issue?.name} is: "${pos.summary}" However, this position has not yet been independently verified.`,
         evidence,
         sources,
         confidence: 'medium',
@@ -148,7 +152,7 @@ export async function askBallotLensAI(
     }
 
     return {
-      answer: `Based on the available evidence, this candidate's position on ${pos.issue?.name} is: "${pos.summary}"`,
+      answer: `Based on the available evidence, ${who}'s position on ${pos.issue?.name} is: "${pos.summary}"`,
       evidence,
       sources,
       confidence: sources.length > 0 ? 'high' : 'medium',
@@ -168,7 +172,7 @@ export async function askBallotLensAI(
       .filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i);
 
     return {
-      answer: `This candidate has ${votingRecords.length} voting record${votingRecords.length === 1 ? '' : 's'} on file. ${votingRecords.slice(0, 3).map((vr) => `Voted ${vr.vote ?? '—'} on ${vr.bill_name} (${vr.vote_date ?? 'date unknown'}).`).join(' ')}`,
+      answer: `${who} has ${votingRecords.length} voting record${votingRecords.length === 1 ? '' : 's'} on file. ${votingRecords.slice(0, 3).map((vr) => `Voted ${vr.vote ?? '—'} on ${vr.bill_name} (${vr.vote_date ?? 'date unknown'}).`).join(' ')}`,
       evidence,
       sources: voteSources,
       confidence: 'high',
@@ -181,7 +185,7 @@ export async function askBallotLensAI(
 
   if (asksAboutSources && sources.length > 0) {
     return {
-      answer: `There are ${sources.length} source${sources.length === 1 ? '' : 's'} supporting the information about this candidate. ${sources.slice(0, 3).map((s) => `"${s.title}" from ${s.publisher ?? 'unknown publisher'} (${s.source_type}).`).join(' ')}`,
+      answer: `There are ${sources.length} source${sources.length === 1 ? '' : 's'} supporting the information about ${who}. ${sources.slice(0, 3).map((s) => `"${s.title}" from ${s.publisher ?? 'unknown publisher'} (${s.source_type}).`).join(' ')}`,
       evidence: sources.map((s) => `Source: ${s.title} — ${s.publisher ?? 'Unknown'} — ${s.source_type}`),
       sources,
       confidence: 'high',
@@ -189,10 +193,29 @@ export async function askBallotLensAI(
     };
   }
 
+  // Asked about votes but there are none: say so (this used to fall through to
+  // "ask about their voting record", which is what the voter had just done).
+  if (asksAboutVotes && votingRecords.length === 0) {
+    return {
+      answer: `BallotLens doesn't have any voting records on file for ${who}.`,
+      evidence: [], sources: [], confidence: 'high',
+      limitations: ['Candidates who have not held legislative office usually have no voting record.'],
+    };
+  }
+
+  // Asked about a specific issue the candidate has no position on: say so.
+  if (issue && relevantPositions.length === 0) {
+    return {
+      answer: `BallotLens doesn't have a position on file for ${who} on ${issue.name}.`,
+      evidence: [], sources: [], confidence: 'high',
+      limitations: ['No position has been recorded or verified for this issue yet.'],
+    };
+  }
+
   // Fallback: summarize what we know
   if (positions.length > 0 || votingRecords.length > 0) {
     return {
-      answer: `I found ${positions.length} position${positions.length === 1 ? '' : 's'} and ${votingRecords.length} voting record${votingRecords.length === 1 ? '' : 's'} for this candidate. Please ask about a specific issue (e.g., "What is their position on healthcare?") or ask about their voting record for a more detailed answer.`,
+      answer: `I found ${positions.length} position${positions.length === 1 ? '' : 's'} and ${votingRecords.length} voting record${votingRecords.length === 1 ? '' : 's'} for ${who}. Please ask about a specific issue (e.g., "What is their position on healthcare?") or ask about their voting record for a more detailed answer.`,
       evidence: [
         ...positions.slice(0, 3).map((p) => `Position on ${p.issue?.name ?? 'an issue'}: ${p.summary ?? 'Not verified'}`),
         ...votingRecords.slice(0, 3).map((vr) => `Voted ${vr.vote ?? '—'} on ${vr.bill_name}`),
@@ -204,12 +227,12 @@ export async function askBallotLensAI(
   }
 
   return {
-    answer: "I don't have enough reliable evidence to answer that confidently.",
+    answer: `BallotLens doesn't have any positions or voting records on file for ${who} yet, so I can't answer that.`,
     evidence: [],
     sources: [],
     confidence: 'low',
     limitations: [
-      'Insufficient reliable information available for this candidate.',
+      `No positions, statements or votes have been recorded for ${who}.`,
     ],
   };
 }
@@ -282,29 +305,74 @@ export async function assessClaim(claimText: string): Promise<ClaimAssessment> {
 
 // --- helpers ---
 
-async function findCandidateByName(question: string): Promise<{ id: string } | null> {
-  const data = await fetchAllRows<{ id: string; first_name: string; last_name: string }>((from, to) =>
-    supabase.from('candidates').select('id, first_name, last_name').order('id').range(from, to)).catch(() => null);
+const escapeRe = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const hasWord = (text: string, word: string) =>
+  word.trim().length > 1 && new RegExp(`(^|[^a-z0-9])${escapeRe(word.toLowerCase())}('s)?($|[^a-z0-9])`).test(text);
+
+/**
+ * Finds the candidate a question is about. Whole words only, preferring the
+ * full name, then a unique last name, then a unique first name. It used to take
+ * the first candidate whose first OR last name appeared anywhere as a
+ * substring, so with real data "What WILL..." or "...HOPE..." would pick a
+ * candidate named Will or Hope.
+ */
+async function findCandidateByName(question: string): Promise<{ id: string; name: string } | null> {
+  const data = await fetchAllRows<{ id: string; first_name: string; last_name: string; is_demo?: boolean }>((from, to) =>
+    supabase.from('candidates').select('id, first_name, last_name, is_demo').order('id').range(from, to)).catch(() => null);
   if (!data) return null;
   const q = question.toLowerCase();
-  for (const c of data) {
-    if (q.includes(c.first_name.toLowerCase()) || q.includes(c.last_name.toLowerCase())) {
-      return { id: c.id };
-    }
-  }
-  return null;
+  const pool = data.filter((c) => !c.is_demo && c.first_name && c.last_name);
+  const full = pool.filter((c) => hasWord(q, `${c.first_name} ${c.last_name}`));
+  const pick = (list: typeof pool) => (list.length === 1 ? { id: list[0].id, name: `${list[0].first_name} ${list[0].last_name}` } : null);
+  if (full.length >= 1) return pick(full.slice(0, 1));
+  const byLast = pool.filter((c) => c.last_name.length > 2 && hasWord(q, c.last_name));
+  if (byLast.length === 1) return pick(byLast);
+  const byFirst = pool.filter((c) => c.first_name.length > 2 && hasWord(q, c.first_name));
+  return pick(byFirst);
 }
 
+/** Matches an issue by its name, slug, or any significant word in its name
+ * (singular or plural): "guns" -> Gun Violence, "taxes" -> Taxes. */
 async function findIssueInQuestion(question: string): Promise<{ id: string; name: string } | null> {
   const { data } = await supabase.from('issues').select('id, name, slug').eq('is_custom', false);
   if (!data) return null;
   const q = question.toLowerCase();
+  const STOP = new Set(['and', 'the', 'of', 'for', 'policy', 'reform', 'issues', 'rights', 'public']);
+  for (const issue of data) if (q.includes(issue.name.toLowerCase()) || q.includes(issue.slug.replace(/-/g, ' '))) return { id: issue.id, name: issue.name };
   for (const issue of data) {
-    if (q.includes(issue.name.toLowerCase()) || q.includes(issue.slug.replace(/-/g, ' '))) {
-      return { id: issue.id, name: issue.name };
-    }
+    const words = issue.name.toLowerCase().split(/[^a-z]+/).filter((w: string) => w.length > 2 && !STOP.has(w));
+    if (words.some((w: string) => hasWord(q, w) || hasWord(q, w.endsWith('s') ? w.slice(0, -1) : `${w}s`))) return { id: issue.id, name: issue.name };
   }
   return null;
+}
+
+/** "Who is running for State Representative?" -- answers from real races. */
+async function answerWhoIsRunning(question: string): Promise<AIResponse | null> {
+  const q = question.toLowerCase();
+  if (!/(who('s| is| are)? (running|on the ballot)|candidates? (for|in)|running for)/.test(q)) return null;
+  const { getAllContestsWithCandidates } = await import('./candidates');
+  const contests = await getAllContestsWithCandidates().catch(() => []);
+  const matches = contests.filter((c) => {
+    const office = c.office_name.toLowerCase();
+    return q.includes(office) || office.split(/\s+/).filter((w) => w.length > 3).every((w) => q.includes(w));
+  });
+  if (matches.length === 0) return null;
+  const shown = matches.slice(0, 8);
+  const lines = shown.map((c) => {
+    const where = (c as typeof c & { district?: { name: string } | null }).district?.name ?? c.seat_description ?? '';
+    const names = (c.candidates ?? []).map((x) => `${x.first_name} ${x.last_name}${x.party ? ` (${x.party})` : ''}`).join(', ');
+    return `${c.office_name}${where ? ` — ${where}` : ''}: ${names}`;
+  });
+  return {
+    answer: `Here's who is running, from the races BallotLens has on file:\n${lines.join('\n')}`,
+    evidence: lines,
+    sources: [],
+    confidence: 'high',
+    limitations: [
+      ...(matches.length > shown.length ? [`Showing ${shown.length} of ${matches.length} races. Enter your ZIP on My Ballot to see only your district.`] : ['Enter your ZIP on My Ballot to see only the races in your district.']),
+      'Candidate lists can change; always confirm with your official election office.',
+    ],
+  };
 }
 
 function delay(ms: number): Promise<void> {

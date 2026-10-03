@@ -273,4 +273,18 @@ describe.skipIf(!PGRST_URL)('platform features save, update and notify (real Pos
     await approveAd(ad!.id);
     expect((await readBack('advertisements', `id=eq.${ad!.id}&select=status`))[0].status).not.toBe('pending');
   });
+
+  // ─── Ask AI answers from real data ───────────────────────────────────────
+  it('Ask AI answers "who is running" from real races, and matches candidates by whole name', async () => {
+    as(null);
+    const { askBallotLensAI } = await import('@/services/ai');
+    const running = await askBallotLensAI('Who is running for Testland House 1?');
+    expect(running.answer).toMatch(/Tess Landry/);
+    expect(running.answer).not.toMatch(/Taylor Brooks/); // leftover sample candidate never listed
+
+    const byName = await askBallotLensAI('What has Tess Landry said?');
+    expect(byName.answer).toMatch(/Tess Landry/);
+    const nobody = await askBallotLensAI('What will happen to taxes?');
+    expect(nobody.answer).toMatch(/specify a candidate/);
+  });
 });
