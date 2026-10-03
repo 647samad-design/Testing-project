@@ -900,8 +900,12 @@ function NotificationSettingsTab() {
           </label>
           <label className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium">Updates on what you follow</p>
-              <p className="text-xs text-muted-foreground">A major update to a candidate, election, or ballot measure you follow.</p>
+              {/* Only election results are emailed instantly (ap-elections). It
+                  used to promise emails for any "major update to a candidate",
+                  which no function sends: candidate updates go to the bell and
+                  the digest. */}
+              <p className="text-sm font-medium">Results for races you follow</p>
+              <p className="text-xs text-muted-foreground">An email when a race you follow is called or its results are certified. Candidate updates appear in your notifications and digest.</p>
             </div>
             <input
               type="checkbox"
