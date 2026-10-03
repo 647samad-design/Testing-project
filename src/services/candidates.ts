@@ -2,7 +2,6 @@ import { supabase } from '@/lib/supabase';
 import { fetchAllRows } from '@/lib/fetch-all';
 import { isDemoMode } from '@/lib/demo-mode';
 import { getStoredRegion } from '@/services/elections';
-import { getAllRegionCandidates, getAllStatesCandidates } from '@/services/regions';
 import type {
   BallotContest,
   Candidate, CandidatePosition, CandidateStatement,
@@ -26,6 +25,7 @@ export async function getCandidates(): Promise<Candidate[]> {
   } catch {
     if (!isDemoMode()) return [];
   }
+  const { getAllRegionCandidates, getAllStatesCandidates } = await import('@/services/regions');
   const region = getStoredRegion();
   if (region) {
     const regionCands = getAllRegionCandidates(region);
@@ -49,6 +49,7 @@ export async function getCandidate(candidateId: string): Promise<Candidate | nul
     // as "Candidate not found" for every profile during an outage.
     if (!isDemoMode()) throw e;
   }
+  const { getAllRegionCandidates, getAllStatesCandidates } = await import('@/services/regions');
   const region = getStoredRegion();
   if (region) {
     const regionCand = getAllRegionCandidates(region).find((c) => c.id === candidateId);

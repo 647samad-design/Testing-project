@@ -227,12 +227,15 @@ export function MyBallotPage() {
             })()}
           </p>
         )}
-        <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          <span className="text-sm">
-            {districts?.county ?? 'Your county'}, {districts?.state ?? 'Your state'}
-          </span>
-        </div>
+        {/* Only the parts we know; an unknown ZIP printed a lone ", ". */}
+        {[districts?.county, districts?.state].some((x) => x && x.trim()) && (
+          <div className="mt-2 flex items-center gap-2 text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span className="text-sm">
+              {[districts?.county, districts?.state].filter((x) => x && x.trim()).join(', ')}
+            </span>
+          </div>
+        )}
 
         {/* District breakdown */}
         {districts && (

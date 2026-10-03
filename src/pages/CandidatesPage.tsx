@@ -155,7 +155,7 @@ export function CandidatesPage() {
                 <MapPin className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-foreground">{region.county}, {region.state}</p>
+                <p className="font-bold text-foreground">{[region.county, region.state].filter((x) => x && String(x).trim()).join(', ') || 'Your area'}</p>
                 {/* Only districts we actually know for this ZIP. The region
                     config fills unknown ones with placeholders like
                     "Congressional District 1", which were shown here as fact. */}

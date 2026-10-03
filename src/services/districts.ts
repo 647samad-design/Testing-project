@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import { demoIssues } from '@/services/demo-data';
 import type { Issue, UserLocation, Profile } from '@/types';
 
 export async function getIssues(): Promise<Issue[]> {
@@ -13,6 +12,7 @@ export async function getIssues(): Promise<Issue[]> {
   } catch {
     // Database unreachable — fall through to demo data
   }
+  const { demoIssues } = await import('@/services/demo-data');
   return demoIssues;
 }
 

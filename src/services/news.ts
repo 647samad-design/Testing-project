@@ -1,9 +1,8 @@
 import { supabase } from '@/lib/supabase';
-import {
-  demoNewsArticles, demoVideos, demoSocialPosts,
-  getDemoNewsByCandidate, getDemoVideosByCandidate, getDemoSocialByCandidate,
-} from '@/services/demo-data';
 import { isDemoMode } from '@/lib/demo-mode';
+
+// Sample content is only used in demo mode; load it on demand.
+const demo = () => import('@/services/demo-data');
 import type { NewsArticle, Video, SocialPost, MediaCategory } from '@/types';
 
 export async function getNews(candidateId?: string): Promise<NewsArticle[]> {
@@ -27,8 +26,8 @@ export async function getNews(candidateId?: string): Promise<NewsArticle[]> {
   } catch {
     if (!isDemoMode()) return [];
   }
-  if (candidateId) return getDemoNewsByCandidate(candidateId);
-  return demoNewsArticles;
+  if (candidateId) return (await demo()).getDemoNewsByCandidate(candidateId);
+  return (await demo()).demoNewsArticles;
 }
 
 export async function getNewsByCategory(category: MediaCategory): Promise<NewsArticle[]> {
@@ -48,7 +47,7 @@ export async function getNewsByCategory(category: MediaCategory): Promise<NewsAr
     // Database unreachable — fall through to demo data
   }
   if (!isDemoMode()) return [];
-  return demoNewsArticles.filter((a) => a.media_category === category);
+  return (await demo()).demoNewsArticles.filter((a) => a.media_category === category);
 }
 
 export async function getVideos(candidateId?: string): Promise<Video[]> {
@@ -71,8 +70,8 @@ export async function getVideos(candidateId?: string): Promise<Video[]> {
     // Database unreachable — fall through to demo data
   }
   if (!isDemoMode()) return [];
-  if (candidateId) return getDemoVideosByCandidate(candidateId);
-  return demoVideos;
+  if (candidateId) return (await demo()).getDemoVideosByCandidate(candidateId);
+  return (await demo()).demoVideos;
 }
 
 export async function getSocialPosts(candidateId?: string): Promise<SocialPost[]> {
@@ -94,8 +93,8 @@ export async function getSocialPosts(candidateId?: string): Promise<SocialPost[]
     // Database unreachable — fall through to demo data
   }
   if (!isDemoMode()) return [];
-  if (candidateId) return getDemoSocialByCandidate(candidateId);
-  return demoSocialPosts;
+  if (candidateId) return (await demo()).getDemoSocialByCandidate(candidateId);
+  return (await demo()).demoSocialPosts;
 }
 
 export async function getMediaByTab(

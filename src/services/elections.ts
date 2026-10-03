@@ -1,8 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import {
-  demoElection, demoContests, demoMeasures,
-} from '@/services/demo-data';
-import { buildRegionBallot, type RegionConfig } from '@/services/regions';
+import type { RegionConfig } from '@/services/regions';
 import { fetchAllRows, fetchInChunks } from '@/lib/fetch-all';
 import { isDemoMode } from '@/lib/demo-mode';
 import type {
@@ -189,6 +186,8 @@ export async function getVoterBallot(address: string): Promise<{
       return { election: null, contests: [], measures: [], error: "We couldn’t load your ballot right now. Please check your connection and try again in a moment." };
     }
   }
+  // Sample-ballot data is only needed here, so it's loaded on demand.
+  const { buildRegionBallot } = await import('@/services/regions');
   const regionBallot = buildRegionBallot(cfg);
   return {
     election: regionBallot.election,
