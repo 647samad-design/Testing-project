@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the whole BallotLens schema on a NEW, EMPTY Supabase project by applying
+# Builds the whole Gov Search App schema on a NEW, EMPTY Supabase project by applying
 # every file in migrations/ in order. Each file runs in its own transaction; the
 # script stops at the first error. Applied files are recorded in
 # public.ballotlens_schema_migrations, so re-running continues where it stopped.
@@ -10,7 +10,7 @@
 #
 # NOT for the current (Bolt) database -- that already has everything up to
 # 20260913002800; use ./scripts/apply-pending-migrations.sh there. This script
-# refuses to run on a database that already has BallotLens tables but no
+# refuses to run on a database that already has Gov Search App tables but no
 # tracking table, to avoid re-applying 90+ migrations on top of live data.
 set -u
 cd "$(dirname "$0")/.."
@@ -21,7 +21,7 @@ q() { psql "$DATABASE_URL" -Atc "$1"; }
 has_tracking=$(q "select to_regclass('public.ballotlens_schema_migrations') is not null")
 has_app=$(q "select to_regclass('public.candidates') is not null")
 if [ "$has_tracking" != "t" ] && [ "$has_app" = "t" ]; then
-  echo "This database already has BallotLens tables but was not set up by this script."
+  echo "This database already has Gov Search App tables but was not set up by this script."
   echo "It looks like an existing database. Use ./scripts/apply-pending-migrations.sh instead."
   exit 1
 fi

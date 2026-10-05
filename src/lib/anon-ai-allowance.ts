@@ -1,5 +1,5 @@
 /**
- * Signed-out allowance for Ask BallotLens. The daily limit (5 free / 100 paid)
+ * Signed-out allowance for Ask Gov Search App. The daily limit (5 free / 100 paid)
  * is enforced in the database per user, but the Ask page only checked it when
  * signed in -- so signing out gave unlimited questions, and a free user could
  * bypass the 5/day cap just by logging out. Signed-out visitors now get a small

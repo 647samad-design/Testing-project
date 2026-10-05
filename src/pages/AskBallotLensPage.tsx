@@ -36,7 +36,7 @@ function buildExampleQuestions(candidates: Candidate[]): string[] {
 }
 
 export function AskBallotLensPage() {
-  usePageMeta({ title: 'Ask BallotLens AI', description: 'Get sourced answers about candidates, positions, and voting records.' });
+  usePageMeta({ title: 'Ask Gov Search AI', description: 'Get sourced answers about candidates, positions, and voting records.' });
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -102,7 +102,7 @@ export function AskBallotLensPage() {
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <div className="mb-6">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">Ask BallotLens AI</h1>
+        <h1 className="font-display text-4xl font-semibold tracking-tight">Ask Gov Search AI</h1>
         <p className="mt-2 text-lg text-muted-foreground">
           Ask questions about candidates, issues, voting records and sources.
           The AI answers only from retrieved evidence — it never invents information.
@@ -229,7 +229,7 @@ export function AskBallotLensPage() {
           <Card className="p-6 rounded-2xl">
             <label className="text-sm font-semibold text-foreground">Enter a claim to explore</label>
             <p className="mt-1 text-xs text-muted-foreground">
-              BallotLens does not label claims as simply TRUE or FALSE. It shows you the evidence and explains the context.
+              Gov Search App does not label claims as simply TRUE or FALSE. It shows you the evidence and explains the context.
             </p>
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
               <Input
@@ -420,7 +420,7 @@ function ClaimResultCard({ result }: { result: ClaimAssessment }) {
 
       <div className="mt-6 rounded-lg bg-secondary/50 p-4">
         <p className="text-xs text-muted-foreground">
-          BallotLens does not simply label political claims TRUE or FALSE without explaining the evidence.
+          Gov Search App does not simply label political claims TRUE or FALSE without explaining the evidence.
           Always review the original documentation.
         </p>
       </div>

@@ -21,7 +21,7 @@ export function SourcesPage() {
       <header className="mb-10 border-b border-border pb-8">
         <h1 className="font-display text-4xl font-semibold tracking-tight">Sources</h1>
         <p className="mt-3 text-muted-foreground">
-          Every claim on BallotLens is tied to a source. Here's a sample of what we cite — see our{' '}
+          Every claim on Gov Search App is tied to a source. Here's a sample of what we cite — see our{' '}
           <a href="/methodology" className="text-primary hover:underline">Methodology</a> page for how we choose and verify them.
         </p>
       </header>

@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
     // At minimum, get this into the browser console / any error-monitoring
     // tool the deployment adds later (Sentry, etc.) — previously an error
     // here would just silently blank the screen with no trace anywhere.
-    console.error('BallotLens: uncaught render error', error, errorInfo);
+    console.error('Gov Search App: uncaught render error', error, errorInfo);
   }
 
   handleReload = () => {

@@ -394,7 +394,7 @@ async function createNotificationsForState(
         body: JSON.stringify({
           userId: (pref as { user_id: string }).user_id,
           subject: title,
-          html: `<p>${body}</p><p style="color:#888;font-size:12px;">Manage alert preferences at ballotlens.com/account (Notifications tab).</p>`,
+          html: `<p>${body}</p><p style="color:#888;font-size:12px;">Manage alert preferences in your account settings (Notifications tab)${Deno.env.get("SITE_URL") ? `: ${Deno.env.get("SITE_URL")!.replace(/\/+$/, "")}/account` : "."}</p>`,
         }),
       });
     } catch {

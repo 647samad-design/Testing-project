@@ -192,7 +192,7 @@ export function LensThisPage() {
       await new Promise((r) => setTimeout(r, 1200));
       result = { ...DEMO_SCAN, ...base, originalText: text || DEMO_SCAN.originalText, sourceUrl: base.sourceUrl || DEMO_SCAN.sourceUrl, reviewed: true };
     } else {
-      // Real check against claims BallotLens has actually reviewed. This used to
+      // Real check against claims Gov Search App has actually reviewed. This used to
       // wait 2.2s and return the same hard-coded analysis ("Crime has increased
       // 40%... False", example.com sources) for ANY text or link a voter
       // submitted -- an invented fact-check presented as real.
@@ -218,10 +218,10 @@ export function LensThisPage() {
         confidence: 0,
         reviewed,
         notice: reviewed
-          ? `This matches a claim BallotLens has reviewed: \u201c${assessment!.claim}\u201d.`
+          ? `This matches a claim Gov Search App has reviewed: \u201c${assessment!.claim}\u201d.`
           : user
-            ? 'BallotLens hasn\u2019t reviewed this claim yet, so we won\u2019t label it true or false. We\u2019ve added it to the community fact-check queue; you\u2019ll see the result under Community Checks once a reviewer has examined the evidence.'
-            : 'BallotLens hasn\u2019t reviewed this claim yet, so we won\u2019t label it true or false. Sign in to submit it to our fact-check queue.',
+            ? 'Gov Search App hasn\u2019t reviewed this claim yet, so we won\u2019t label it true or false. We\u2019ve added it to the community fact-check queue; you\u2019ll see the result under Community Checks once a reviewer has examined the evidence.'
+            : 'Gov Search App hasn\u2019t reviewed this claim yet, so we won\u2019t label it true or false. Sign in to submit it to our fact-check queue.',
       };
     }
 

@@ -26,7 +26,7 @@ export function Logo({ size = 'md', showText = true, className }: LogoProps) {
       </div>
       {showText && (
         <span className={cn('font-extrabold tracking-tight text-foreground', c.text)}>
-          Ballot<span className="text-primary">Lens</span>
+          Gov Search <span className="text-primary">App</span>
         </span>
       )}
     </div>

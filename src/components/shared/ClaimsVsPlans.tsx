@@ -59,7 +59,7 @@ export function ClaimsVsPlans({ candidateId, canEdit }: { candidateId: string; c
       setAuthority('');
       setShowAdd(false);
       await load();
-      toast.success('Saved. It will appear publicly after a BallotLens reviewer approves it.');
+      toast.success('Saved. It will appear publicly after a Gov Search App reviewer approves it.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not save this analysis.');
     }
@@ -187,7 +187,7 @@ function ClaimAnalysisCard({ claim }: { claim: CandidateClaimAnalysis }) {
       <div className="mb-3">
         <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">What They Say</p>
         {claim.review_status === 'pending' && (
-          <p className="mb-1 inline-block rounded-md bg-warning/10 px-2 py-0.5 text-[10px] font-bold text-warning">Awaiting BallotLens review — only your campaign can see this</p>
+          <p className="mb-1 inline-block rounded-md bg-warning/10 px-2 py-0.5 text-[10px] font-bold text-warning">Awaiting Gov Search App review — only your campaign can see this</p>
         )}
         <p className="text-sm font-semibold text-foreground">"{claim.claim_text}"</p>
         {claim.issue && (
@@ -232,7 +232,7 @@ function ClaimAnalysisCard({ claim }: { claim: CandidateClaimAnalysis }) {
       {/* Analysis notes */}
       {claim.analysis_notes && (
         <div className="mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-accent mb-1">BallotLens Analysis</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-accent mb-1">Gov Search App Analysis</p>
           <p className="text-sm text-foreground/80 leading-relaxed">{claim.analysis_notes}</p>
         </div>
       )}

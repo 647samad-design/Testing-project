@@ -1352,7 +1352,7 @@ function DataFeedsTab() {
       </Card>
 
       <Card className="p-5">
-        <h3 className="font-semibold mb-2">BallotLens Digest Emails</h3>
+        <h3 className="font-semibold mb-2">Gov Search App Digest Emails</h3>
         <p className="text-sm text-muted-foreground mb-3">
           Sends the digest email to every user who's due today (weekly subscribers get it on
           Mondays, daily subscribers every day) and has something new to report. Requires{' '}
@@ -1971,7 +1971,7 @@ function ClaimsLibraryAdminTab() {
 }
 
 const EMPTY_STORY: StoryDraft = {
-  title: '', slug: '', excerpt: '', body: '', category_id: null, author_name: 'BallotLens Editorial',
+  title: '', slug: '', excerpt: '', body: '', category_id: null, author_name: 'Gov Search App Editorial',
   hero_image_url: '', is_featured: false, is_published: false,
 };
 

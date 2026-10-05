@@ -1,4 +1,4 @@
-// Generates and sends the BallotLens Digest email. Groups new candidate
+// Generates and sends the Gov Search App Digest email. Groups new candidate
 // positions, articles/sources, ballot measure updates, and new elections
 // since the user's last digest, respecting their per-category preferences.
 // Manually triggered for now (via the admin Data Feeds tab, same pattern as
@@ -8,6 +8,9 @@
 // today, so it's safe to call it every day and let it sort out who's due).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+
+// Links in emails point at the configured site (SITE_URL secret), never a hard-coded domain.
+const SITE = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
 
 // supabase-js can't infer table types without generated types; treat the
 // client as untyped instead of fighting mismatched generics.
@@ -153,11 +156,11 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!dryRun) {
-        const html = `<h1>Your BallotLens Digest</h1>${sections.join("")}<p style="color:#888;font-size:12px;margin-top:24px;">Manage what you receive at ballotlens.com/account (Notifications tab).</p>`;
+        const html = `<h1>Your Gov Search App Digest</h1>${sections.join("")}<p style="color:#888;font-size:12px;margin-top:24px;">Manage what you receive in your account settings (Notifications tab)${SITE ? `: ${SITE}/account` : "."}</p>`;
         const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
           method: "POST",
           headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: pref.user_id, subject: "Your BallotLens Digest", html, unsubscribeList: "digest" }),
+          body: JSON.stringify({ userId: pref.user_id, subject: "Your Gov Search App Digest", html, unsubscribeList: "digest" }),
         });
         if (!sendResponse.ok) {
           errors.push(`user ${pref.user_id}: ${await sendResponse.text()}`);

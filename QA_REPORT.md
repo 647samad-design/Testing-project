@@ -1,4 +1,4 @@
-# BallotLens — QA Pass & Full Project Review
+# Gov Search App — QA Pass & Full Project Review
 _Sept 13, 2026_
 
 ## Automated tests added
@@ -226,7 +226,7 @@ that a free user doesn't? Auditing every promise on the Pricing page found:
   no edge function for it). This is a fully unbuilt feature, not a gating
   bug. **Not built in this pass** — needs a real scoping conversation
   (which email provider, what triggers an alert, digest vs. instant).
-- **"Priority AI research requests" / "Ask BallotLens AI (limited)"** —
+- **"Priority AI research requests" / "Ask Gov Search AI (limited)"** —
   no rate limiting or tiering exists anywhere for AI usage; free and paid
   users get identical, unlimited access today. **Not fixed in this pass** —
   needs a decision on what the free-tier limit actually is (N requests/day?

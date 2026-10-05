@@ -113,7 +113,7 @@ export function IssuesPage() {
       <div className="mb-6">
         <h1 className="font-display text-4xl font-semibold tracking-tight">What matters to you?</h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          Select the issues you care about. BallotLens will never infer your political ideology from your selections.
+          Select the issues you care about. Gov Search App will never infer your political ideology from your selections.
         </p>
         {!authLoading && !user && (
           <div className="mt-3 rounded-lg border border-border bg-secondary/50 p-3">

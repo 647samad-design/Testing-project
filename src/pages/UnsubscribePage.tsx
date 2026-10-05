@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { usePageMeta } from '@/hooks/use-page-meta';
 
 const LIST_NAMES: Record<string, string> = {
-  digest: 'the BallotLens Digest',
+  digest: 'the Gov Search App Digest',
   reminders: 'election reminder emails',
 };
 
@@ -25,7 +25,7 @@ export function UnsubscribePage() {
     ? `You won't receive ${what} anymore. You can turn it back on any time from Account → Notifications.`
     : status === 'error'
     ? "We couldn't update your email preferences just now. Please try the link again in a minute, or turn emails off from your account settings."
-    : 'This unsubscribe link is invalid or has expired. You can manage all BallotLens emails from your account settings.';
+    : 'This unsubscribe link is invalid or has expired. You can manage all Gov Search App emails from your account settings.';
 
   return (
     <div className="mx-auto max-w-lg px-4 py-20">
@@ -37,7 +37,7 @@ export function UnsubscribePage() {
         <p className="mt-3 text-muted-foreground">{message}</p>
         <div className="mt-6 flex justify-center gap-3">
           <Button asChild variant="outline"><Link to="/account">Email settings</Link></Button>
-          <Button asChild><Link to="/">Go to BallotLens</Link></Button>
+          <Button asChild><Link to="/">Go to Gov Search App</Link></Button>
         </div>
       </Card>
     </div>

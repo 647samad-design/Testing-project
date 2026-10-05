@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       if (localStorage.getItem('ballotlens_demo') === 'true') {
         setIsDemo(true);
-        setUser({ id: 'demo-user', email: 'demo@ballotlens.app' } as unknown as User);
+        setUser({ id: 'demo-user', email: 'demo@example.com' } as unknown as User);
         setProfile({ id: 'demo-user', full_name: 'Demo Voter', zip_code: '33101', is_admin: false, language_preference: 'en' });
         setLoading(false);
         return;
@@ -177,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInAsDemo = () => {
     localStorage.setItem('ballotlens_demo', 'true');
     setIsDemo(true);
-    setUser({ id: 'demo-user', email: 'demo@ballotlens.app' } as unknown as User);
+    setUser({ id: 'demo-user', email: 'demo@example.com' } as unknown as User);
     setProfile({ id: 'demo-user', full_name: 'Demo Voter', zip_code: '33101', is_admin: false, language_preference: 'en' });
   };
 

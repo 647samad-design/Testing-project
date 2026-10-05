@@ -145,7 +145,7 @@ export function ContestDetailPage() {
 
       <div className="mt-8 rounded-lg border border-border bg-secondary/30 p-4">
         <p className="text-sm text-muted-foreground">
-          BallotLens does not endorse or recommend candidates. Research each candidate's
+          Gov Search App does not endorse or recommend candidates. Research each candidate's
           positions, voting records and public statements, then make your own decision.
         </p>
       </div>
@@ -254,7 +254,7 @@ export function MeasureDetailPage() {
 
       <div className="mt-8 rounded-lg border border-border bg-secondary/30 p-4">
         <p className="text-sm text-muted-foreground">
-          BallotLens presents arguments for and against ballot measures as reported in
+          Gov Search App presents arguments for and against ballot measures as reported in
           public records. Always consult your official voter guide for the full text and
           official analysis.
         </p>

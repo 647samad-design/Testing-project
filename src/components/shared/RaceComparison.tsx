@@ -138,7 +138,7 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
           <Info className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
           <p className="text-sm font-semibold text-foreground">No verified positions yet</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            BallotLens hasn't verified any issue positions for these candidates yet. Check back as we add more data,
+            Gov Search App hasn't verified any issue positions for these candidates yet. Check back as we add more data,
             or visit each candidate's profile for statements and voting records.
           </p>
         </Card>

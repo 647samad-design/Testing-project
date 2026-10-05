@@ -27,7 +27,10 @@ Deno.serve(async (req: Request) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const siteUrl = Deno.env.get("SITE_URL") ?? "https://ballotlens.com";
+    // Must be configured: falling back to a hard-coded domain sent paying users
+    // to a site that isn't ours.
+    const siteUrl = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
+    if (!siteUrl) return new Response(JSON.stringify({ error: "SITE_URL is not configured on the server." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     if (!stripeSecretKey) {
       return json({ error: "STRIPE_SECRET_KEY is not configured." }, 503);

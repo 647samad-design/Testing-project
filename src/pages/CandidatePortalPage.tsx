@@ -445,9 +445,9 @@ function TeamTab({ candidateId }: { candidateId: string }) {
     try {
       const result = await inviteTeamMember(candidateId, email.trim(), role);
       if (result.linkedImmediately) {
-        toast.success(`${email} already has a BallotLens account — they've been added and notified by email.`);
+        toast.success(`${email} already has a Gov Search App account — they've been added and notified by email.`);
       } else {
-        toast.success(`Invited ${email}. They don't have a BallotLens account yet — let them know to sign up with this exact email address, and they'll automatically get access.`);
+        toast.success(`Invited ${email}. They don't have a Gov Search App account yet — let them know to sign up with this exact email address, and they'll automatically get access.`);
       }
       setEmail('');
       setMembers(await getTeamMembers(candidateId));

@@ -37,7 +37,7 @@ type Plan = {
 };
 
 const plans: Plan[] = [
-  { id: 'free', name: 'Free', price: 0, period: 'forever', description: 'Everything you need to research your ballot', features: ['See your full ballot', 'Research candidates', 'Compare positions', 'Follow evidence sources', 'Ask BallotLens AI — 5 questions/day', 'Follow up to 5 candidates'], cta: 'Current Plan', highlight: false },
+  { id: 'free', name: 'Free', price: 0, period: 'forever', description: 'Everything you need to research your ballot', features: ['See your full ballot', 'Research candidates', 'Compare positions', 'Follow evidence sources', 'Ask Gov Search AI — 5 questions/day', 'Follow up to 5 candidates'], cta: 'Current Plan', highlight: false },
   { id: 'candidate_monthly', name: 'Candidate', price: 9, period: '/month', description: 'Advanced tools for engaged voters', features: candidateFeatures, cta: 'Go Candidate', highlight: false },
   { id: 'pro_monthly', name: 'Pro', price: 29, period: '/month', description: 'Everything, for power users', features: proFeatures, cta: 'Go Pro', highlight: true },
 ];
@@ -95,7 +95,7 @@ export function PricingPage() {
             Free for everyone. More power for the rest.
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            BallotLens is free forever — no paywalls on ballot information. Candidate and Pro
+            Gov Search App is free forever — no paywalls on ballot information. Candidate and Pro
             add advanced tools for voters who want to go deeper.
           </p>
 
@@ -175,7 +175,7 @@ export function PricingPage() {
         <div className="mx-auto max-w-content px-4 sm:px-6 py-12 text-center">
           <h2 className="text-2xl font-bold tracking-tight">Why we charge for premium tiers</h2>
           <p className="mt-3 text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            BallotLens will never charge for access to your ballot or candidate information.
+            Gov Search App will never charge for access to your ballot or candidate information.
             Candidate and Pro subscriptions fund our nonpartisan research, source verification,
             and keep the platform independent. Candidates themselves can claim their profile for
             free — Candidate Management (team access, campaign tools, analytics) is a separate

@@ -4,7 +4,7 @@ const steps = [
   {
     icon: Search,
     title: 'Find your ballot',
-    body: "Enter your ZIP code and BallotLens looks up every race and measure that will actually appear on your ballot, based on your specific district lines — not just your city or county.",
+    body: "Enter your ZIP code and Gov Search App looks up every race and measure that will actually appear on your ballot, based on your specific district lines — not just your city or county.",
   },
   {
     icon: ShieldCheck,
@@ -19,7 +19,7 @@ const steps = [
   {
     icon: MessageSquare,
     title: 'Ask questions, follow along',
-    body: "Ask BallotLens AI for a sourced summary of a candidate's position, follow candidates and issues for updates, and message a candidate's team directly if they've claimed their profile.",
+    body: "Ask Gov Search AI for a sourced summary of a candidate's position, follow candidates and issues for updates, and message a candidate's team directly if they've claimed their profile.",
   },
 ];
 

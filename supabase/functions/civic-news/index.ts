@@ -158,7 +158,7 @@ Deno.serve(async (req: Request) => {
         try {
           const response = await fetch(source.rssUrl, {
             headers: {
-              "User-Agent": "BallotLens/1.0 (civic engagement platform)",
+              "User-Agent": "Gov Search App/1.0 (civic engagement platform)",
               "Accept": "application/rss+xml, application/xml, text/xml",
             },
             signal: AbortSignal.timeout(10000),

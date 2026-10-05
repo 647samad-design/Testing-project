@@ -168,7 +168,7 @@ export function SignInPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-12 animate-fade-in">
       <div className="text-center mb-8">
-        <Link to="/" className="inline-flex items-center gap-2" aria-label="BallotLens home">
+        <Link to="/" className="inline-flex items-center gap-2" aria-label="Gov Search App home">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
             <Scale className="h-6 w-6 text-primary-foreground" />
           </div>
@@ -323,7 +323,7 @@ export function SignInPage() {
       </Card>
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
-        BallotLens does not publicly disclose your political preferences.
+        Gov Search App does not publicly disclose your political preferences.
       </p>
     </div>
   );

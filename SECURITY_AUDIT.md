@@ -1,4 +1,4 @@
-# BallotLens — Security / RLS Audit Notes
+# Gov Search App — Security / RLS Audit Notes
 _Pass performed Sept 13, 2026. This is a code-level review of the migrations in this repo, not a
 full penetration test — a professional security review is still recommended before handling real
 election data at scale (see "Recommended before launch" below)._

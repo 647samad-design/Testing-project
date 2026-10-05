@@ -12,7 +12,7 @@ export function DisclaimerPage() {
 
         <h2>Nonpartisan, Informational Purpose Only</h2>
         <p>
-          BallotLens is a nonpartisan civic information platform. We do not endorse, support, or
+          Gov Search App is a nonpartisan civic information platform. We do not endorse, support, or
           oppose any candidate, party, or ballot measure. Information on this site — including
           candidate positions, voting records, and AI-generated summaries — is provided for
           informational purposes only and should not be treated as an endorsement, legal advice, or
@@ -30,7 +30,7 @@ export function DisclaimerPage() {
 
         <h2>AI-Generated Content</h2>
         <p>
-          Some content on BallotLens, including "Ask BallotLens" answers and plain-English summaries,
+          Some content on Gov Search App, including "Ask Gov Search App" answers and plain-English summaries,
           is generated with the help of artificial intelligence based on cited sources. AI-generated
           content may contain mistakes or reflect gaps in the underlying source material. It is not a
           substitute for reading primary sources or consulting your local election authority, and it
@@ -39,9 +39,9 @@ export function DisclaimerPage() {
 
         <h2>Election Results Data</h2>
         <p>
-          Live and certified election results displayed on BallotLens are sourced from the
+          Live and certified election results displayed on Gov Search App are sourced from the
           Associated Press (AP) Elections API. Results may be delayed, provisional, or subject to
-          later correction as counting and certification proceed. BallotLens is not responsible for
+          later correction as counting and certification proceed. Gov Search App is not responsible for
           errors originating in AP's underlying data feed. Official results are only final once
           certified by the relevant state or county election authority.
         </p>
@@ -56,21 +56,21 @@ export function DisclaimerPage() {
 
         <h2>Third-Party Links and Sources</h2>
         <p>
-          BallotLens links to and cites third-party sources (news outlets, government websites,
+          Gov Search App links to and cites third-party sources (news outlets, government websites,
           campaign materials). We are not responsible for the content, accuracy, or availability of
           external sites, and linking to a source does not imply our endorsement of its content.
         </p>
 
         <h2>No Legal, Financial, or Voting Advice</h2>
         <p>
-          Nothing on BallotLens constitutes legal, financial, or professional advice. If you have
+          Nothing on Gov Search App constitutes legal, financial, or professional advice. If you have
           questions about your eligibility to vote, ballot access, or election law, contact your
           local election office or a qualified attorney.
         </p>
 
         <h2>Accessibility</h2>
         <p>
-          We aim to make BallotLens usable by people of all abilities and are working toward
+          We aim to make Gov Search App usable by people of all abilities and are working toward
           conformance with WCAG 2.1 AA accessibility standards. If you encounter an accessibility
           barrier, please contact us so we can address it.
         </p>

@@ -35,12 +35,12 @@ export function Header() {
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-content items-center justify-between px-4 sm:px-6">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 shrink-0 touch-target" aria-label="BallotLens home">
+          <Link to="/" className="flex items-center gap-2.5 shrink-0 touch-target" aria-label="Gov Search App home">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shadow-primary/20">
               <Scale className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-extrabold tracking-tight text-foreground hidden sm:inline">
-              Ballot<span className="text-primary">Lens</span>
+              Gov Search <span className="text-primary">App</span>
             </span>
           </Link>
 
@@ -143,11 +143,11 @@ export function Header() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
                 <Scale className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="text-lg font-extrabold">BallotLens</span>
+              <span className="text-lg font-extrabold">Gov Search App</span>
             </SheetTitle>
           </SheetHeader>
           <nav className="mt-8 space-y-1 px-3">
-            {[...navItems, { to: '/ask', label: 'Ask BallotLens AI', icon: Sparkles }, { to: '/candidate-portal', label: 'Candidate Portal', icon: ShieldCheck }, { to: '/advertise', label: 'Advertise', icon: Megaphone }].slice(0, 8).map((item) => (
+            {[...navItems, { to: '/ask', label: 'Ask Gov Search AI', icon: Sparkles }, { to: '/candidate-portal', label: 'Candidate Portal', icon: ShieldCheck }, { to: '/advertise', label: 'Advertise', icon: Megaphone }].slice(0, 8).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -294,7 +294,7 @@ export function Footer() {
                 <Scale className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-extrabold tracking-tight">
-                Ballot<span className="text-primary">Lens</span>
+                Gov Search <span className="text-primary">App</span>
               </span>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground max-w-xs leading-relaxed">
@@ -303,7 +303,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-bold text-foreground">BallotLens</h4>
+            <h4 className="text-sm font-bold text-foreground">Gov Search App</h4>
             <ul className="mt-3 space-y-2.5 text-sm">
               <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link></li>
               <li><Link to="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How It Works</Link></li>
@@ -317,7 +317,7 @@ export function Footer() {
               <li><Link to="/sources" className="text-muted-foreground hover:text-primary transition-colors">Sources</Link></li>
               <li><Link to="/stories" className="text-muted-foreground hover:text-primary transition-colors">Civic Stories</Link></li>
               <li><Link to="/news" className="text-muted-foreground hover:text-primary transition-colors">News</Link></li>
-              <li><Link to="/ask" className="text-muted-foreground hover:text-primary transition-colors">Ask BallotLens AI</Link></li>
+              <li><Link to="/ask" className="text-muted-foreground hover:text-primary transition-colors">Ask Gov Search AI</Link></li>
               <li><Link to="/issues" className="text-muted-foreground hover:text-primary transition-colors">Issues</Link></li>
               <li><Link to="/lens" className="text-muted-foreground hover:text-primary transition-colors">Lens This</Link></li>
               <li><Link to="/claims" className="text-muted-foreground hover:text-primary transition-colors">Claims Library</Link></li>
@@ -347,7 +347,7 @@ export function Footer() {
 
         <div className="mt-8 rounded-2xl border border-border bg-card p-5">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            BallotLens provides informational and educational content. It does not
+            Gov Search App provides informational and educational content. It does not
             endorse or recommend candidates or political positions. Always verify
             important information using original sources and your official election
             authority.
@@ -356,7 +356,7 @@ export function Footer() {
 
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} BallotLens. A neutral voter-information platform.
+            © {new Date().getFullYear()} Gov Search App. A neutral voter-information platform.
           </p>
           <LanguageSelector />
         </div>

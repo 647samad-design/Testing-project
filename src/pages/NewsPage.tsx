@@ -62,7 +62,7 @@ export function NewsPage() {
       <div className="mb-6">
         <h1 className="font-display text-4xl font-semibold tracking-tight">News & Media</h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          Coverage from multiple source types. BallotLens clearly distinguishes reporting from opinion.
+          Coverage from multiple source types. Gov Search App clearly distinguishes reporting from opinion.
         </p>
         <div className="mt-4">
           <DemoBanner compact />

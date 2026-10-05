@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const SITE_URL = 'https://ballotlens.com';
-const DEFAULT_TITLE = 'BallotLens — See your ballot. Know your candidates. Follow the evidence.';
-const DEFAULT_DESCRIPTION = 'BallotLens helps you research the candidates, issues and decisions that will appear on your ballot — using information and evidence from reliable sources.';
+// The live site's address: set VITE_SITE_URL in the hosting settings once the
+// domain is final; otherwise the address the page was opened from.
+const SITE_URL = ((import.meta.env.VITE_SITE_URL as string | undefined) || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/+$/, '');
+const DEFAULT_TITLE = 'Gov Search App — See your ballot. Know your candidates. Follow the evidence.';
+const DEFAULT_DESCRIPTION = 'Gov Search App helps you research the candidates, issues and decisions that will appear on your ballot — using information and evidence from reliable sources.';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
 
 interface PageMetaOptions {
@@ -82,7 +84,7 @@ export function usePageMeta({ title, description, image, noindex, structuredData
   const location = useLocation();
 
   useEffect(() => {
-    const fullTitle = title ? `${title} | BallotLens` : DEFAULT_TITLE;
+    const fullTitle = title ? `${title} | Gov Search App` : DEFAULT_TITLE;
     const desc = description ?? DEFAULT_DESCRIPTION;
     const canonicalUrl = `${SITE_URL}${location.pathname}`;
     const ogImage = image ?? DEFAULT_OG_IMAGE;
@@ -91,10 +93,10 @@ export function usePageMeta({ title, description, image, noindex, structuredData
     setMetaTag('name', 'description', desc);
     setCanonical(canonicalUrl);
     setMetaTag('property', 'og:url', canonicalUrl);
-    setMetaTag('property', 'og:title', title ?? 'BallotLens');
+    setMetaTag('property', 'og:title', title ?? 'Gov Search App');
     setMetaTag('property', 'og:description', desc);
     setMetaTag('property', 'og:image', ogImage);
-    setMetaTag('name', 'twitter:title', title ?? 'BallotLens');
+    setMetaTag('name', 'twitter:title', title ?? 'Gov Search App');
     setMetaTag('name', 'twitter:description', desc);
     setMetaTag('name', 'twitter:image', ogImage);
 
@@ -111,10 +113,10 @@ export function usePageMeta({ title, description, image, noindex, structuredData
       setMetaTag('name', 'description', DEFAULT_DESCRIPTION);
       setCanonical(`${SITE_URL}/`);
       setMetaTag('property', 'og:url', `${SITE_URL}/`);
-      setMetaTag('property', 'og:title', 'BallotLens — See your ballot. Know your candidates.');
+      setMetaTag('property', 'og:title', 'Gov Search App — See your ballot. Know your candidates.');
       setMetaTag('property', 'og:description', DEFAULT_DESCRIPTION);
       setMetaTag('property', 'og:image', DEFAULT_OG_IMAGE);
-      setMetaTag('name', 'twitter:title', 'BallotLens — See your ballot. Know your candidates.');
+      setMetaTag('name', 'twitter:title', 'Gov Search App — See your ballot. Know your candidates.');
       setMetaTag('name', 'twitter:description', DEFAULT_DESCRIPTION);
       setMetaTag('name', 'twitter:image', DEFAULT_OG_IMAGE);
       removeMetaTag('name', 'robots');

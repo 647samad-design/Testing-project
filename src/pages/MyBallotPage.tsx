@@ -158,7 +158,7 @@ export function MyBallotPage() {
         <MapPin className="mx-auto h-10 w-10 text-primary" />
         <h1 className="mt-4 font-display text-2xl font-semibold">We don’t cover your area yet</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          BallotLens doesn’t have verified ballot information for {districts?.state ? `${districts.state}` : 'this ZIP code'} yet.
+          Gov Search App doesn’t have verified ballot information for {districts?.state ? `${districts.state}` : 'this ZIP code'} yet.
           Check your state or county election office for your official sample ballot.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">

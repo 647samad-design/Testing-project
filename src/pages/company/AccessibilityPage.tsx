@@ -9,7 +9,7 @@ export function AccessibilityPage() {
       </header>
       <div className="prose prose-base max-w-none dark:prose-invert prose-headings:font-display prose-headings:font-semibold prose-p:leading-relaxed">
         <p>
-          BallotLens is committed to making civic information accessible to everyone, including
+          Gov Search App is committed to making civic information accessible to everyone, including
           people who use assistive technology such as screen readers, voice control, or keyboard-only
           navigation.
         </p>
@@ -28,7 +28,7 @@ export function AccessibilityPage() {
         </p>
         <h2>Feedback</h2>
         <p>
-          If you encounter an accessibility barrier anywhere on BallotLens, please{' '}
+          If you encounter an accessibility barrier anywhere on Gov Search App, please{' '}
           <a href="/contact">let us know</a>. Include the page you were on and, if possible, the
           assistive technology you were using — it helps us reproduce and fix the issue faster.
         </p>

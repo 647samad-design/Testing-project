@@ -52,8 +52,8 @@ Deno.serve(async (req: Request) => {
       headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         userId,
-        subject: "You've been added to a BallotLens campaign team",
-        html: `<p>You've been added as a ${ROLE_LABELS[role ?? ""] ?? "team member"} on a BallotLens candidate's campaign team. Sign in and check your Candidate Portal to get started.</p>`,
+        subject: "You've been added to a Gov Search App campaign team",
+        html: `<p>You've been added as a ${ROLE_LABELS[role ?? ""] ?? "team member"} on a Gov Search App candidate's campaign team. Sign in and check your Candidate Portal to get started.</p>`,
       }),
     });
 

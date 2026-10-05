@@ -17,7 +17,9 @@ const corsHeaders = {
 // Must be an address on a domain verified in Resend. Configurable so a
 // different domain doesn't require a code change (every send fails if the
 // domain here isn't verified).
-const FROM_ADDRESS = Deno.env.get("EMAIL_FROM") ?? "BallotLens <notifications@ballotlens.com>";
+// Set EMAIL_FROM to an address on your verified Resend domain. The default is
+// Resend's shared test sender, which only delivers to your own Resend account email.
+const FROM_ADDRESS = Deno.env.get("EMAIL_FROM") ?? "Gov Search App <onboarding@resend.dev>";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {

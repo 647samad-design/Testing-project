@@ -1,4 +1,4 @@
-# BallotLens — Launch Readiness Checklist
+# Gov Search App — Launch Readiness Checklist
 _Maps every item from `BallotLens_Recommendations.pdf` to the exact files that implement it, so you can verify each one yourself._
 
 Legend: ✅ Code complete &nbsp; 🟡 Code complete, needs external input to go live &nbsp; ⏭️ Skipped per your instruction

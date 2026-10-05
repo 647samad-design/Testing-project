@@ -586,7 +586,7 @@ describe('story editor', () => {
   });
 
   const base = { title: 'Why local races matter', slug: '', excerpt: '', body: 'word '.repeat(440), category_id: null,
-    author_name: 'BallotLens Editorial', hero_image_url: '', is_featured: false, is_published: true };
+    author_name: 'Gov Search App Editorial', hero_image_url: '', is_featured: false, is_published: true };
 
   it('stamps published_at and read time on first publish', async () => {
     insertMock.mockReturnValueOnce(Promise.resolve({ error: null }) as unknown as ReturnType<typeof insertMock>);

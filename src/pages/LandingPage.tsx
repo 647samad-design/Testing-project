@@ -151,7 +151,7 @@ export function LandingPage() {
           <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
             People living close to one another can have different ballots because
             of congressional, state, county, municipal, judicial, school and
-            special districts. BallotLens looks up the races and measures that
+            special districts. Gov Search App looks up the races and measures that
             apply to your specific location.
           </p>
         </div>
@@ -165,7 +165,7 @@ export function LandingPage() {
               Research. Don't guess.
             </h2>
             <p className="mt-3 text-muted-foreground text-lg">
-              Three things BallotLens gives you for every race.
+              Three things Gov Search App gives you for every race.
             </p>
           </div>
 
@@ -303,7 +303,7 @@ export function LandingPage() {
           </div>
           <h2 className="text-3xl font-bold sm:text-4xl tracking-tight">Built for voters, not campaigns.</h2>
           <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-            BallotLens doesn't tell you who to vote for. It gives you the
+            Gov Search App doesn't tell you who to vote for. It gives you the
             information to decide for yourself.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -316,7 +316,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* HOW BALLOTLENS WORKS */}
+      {/* HOW GOV SEARCH APP WORKS */}
       <section className="bg-secondary/30 border-y border-border/60">
         <div className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16">
           <h2 className="text-center font-display text-3xl font-semibold sm:text-4xl tracking-tight">
@@ -341,7 +341,7 @@ export function LandingPage() {
             ))}
           </div>
           <p className="mt-8 text-center text-sm font-semibold text-muted-foreground">
-            BallotLens does not tell you who to vote for.
+            Gov Search App does not tell you who to vote for.
           </p>
         </div>
       </section>

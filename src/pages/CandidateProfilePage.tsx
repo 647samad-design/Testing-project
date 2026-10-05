@@ -160,7 +160,7 @@ export function CandidateProfilePage() {
     description: candidate?.bio
       ? candidate.bio.slice(0, 155)
       : candidate
-        ? `See ${candidate.first_name} ${candidate.last_name}'s positions, voting record, and cited sources on BallotLens.`
+        ? `See ${candidate.first_name} ${candidate.last_name}'s positions, voting record, and cited sources on Gov Search App.`
         : undefined,
     image: candidate?.photo_url ?? undefined,
     structuredData: candidate ? {
@@ -170,7 +170,7 @@ export function CandidateProfilePage() {
       description: candidate.bio ?? undefined,
       image: candidate.photo_url ?? undefined,
       affiliation: candidate.party ?? undefined,
-      url: `https://ballotlens.com/candidates/${candidate.id}`,
+      url: `${window.location.origin}/candidates/${candidate.id}`,
     } : undefined,
   });
 

@@ -66,7 +66,7 @@ export function SourceDrawer({ open, onOpenChange, position }: SourceDrawerProps
           {/* DISCLAIMER */}
           <div className="rounded-lg bg-secondary p-4">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              BallotLens presents evidence from available sources. Always verify important
+              Gov Search App presents evidence from available sources. Always verify important
               information using original sources and your official election authority.
               {' '}
               {/* Was href="#" with the click cancelled, so it did nothing. */}

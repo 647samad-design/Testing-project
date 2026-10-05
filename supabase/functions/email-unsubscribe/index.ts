@@ -1,6 +1,6 @@
 // One-click email unsubscribe, no sign-in required.
 //
-// Bulk BallotLens emails (the digest and election reminders) previously only
+// Bulk Gov Search App emails (the digest and election reminders) previously only
 // said "manage at ballotlens.com/account" -- plain text, and it required
 // signing in. US CAN-SPAM requires a working opt-out that doesn't make people
 // log in, and Gmail/Yahoo's 2024 bulk-sender rules require one-click
@@ -54,7 +54,7 @@ function result(status: "ok" | "invalid" | "error", list: string): Response {
   const text = status === "ok"
     ? "You've been unsubscribed. You can turn these emails back on any time from Account > Notifications."
     : status === "invalid"
-    ? "This unsubscribe link is invalid or has expired. You can manage emails from your BallotLens account settings."
+    ? "This unsubscribe link is invalid or has expired. You can manage emails from your Gov Search App account settings."
     : "Something went wrong and you were not unsubscribed. Please try again, or turn emails off from your account settings.";
   return new Response(text, { status: status === "ok" ? 200 : status === "invalid" ? 400 : 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 }

@@ -42,14 +42,14 @@ export function PrivacyPolicyPage() {
       <div className="prose prose-base max-w-none dark:prose-invert prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:scroll-mt-24 prose-p:leading-relaxed prose-li:leading-relaxed prose-a:text-primary">
 
         <p>
-          BallotLens LLC ("BallotLens," "we," "us," or "our") operates the BallotLens website,
+          Gov Search App ("Gov Search App," "we," "us," or "our") operates the Gov Search App website,
           mobile-responsive web application, and related services (collectively, the "Service").
           This Privacy Policy explains what personal information we collect, why we collect it,
           how we use and share it, and the choices and rights you have. By using the Service, you
           agree to the collection and use of information as described here.
         </p>
         <p>
-          We built BallotLens to help voters make informed decisions without being tracked,
+          We built Gov Search App to help voters make informed decisions without being tracked,
           profiled, or sold to advertisers based on their political interests. This policy reflects
           that principle wherever legally and practically possible.
         </p>
@@ -112,7 +112,7 @@ export function PrivacyPolicyPage() {
         <ul>
           <li><strong>Service providers</strong> who help us operate the Service under contract and only for that purpose — for example, Supabase (hosting and database), Stripe (payments), and the Associated Press (election results data).</li>
           <li><strong>Other users</strong>, to the extent you choose to make information public — for example, a claimed and verified candidate profile, or a public post in the community feed.</li>
-          <li><strong>Law enforcement or regulators</strong>, when required by a valid legal process such as a subpoena or court order, or to protect the rights, property, or safety of BallotLens, our users, or the public.</li>
+          <li><strong>Law enforcement or regulators</strong>, when required by a valid legal process such as a subpoena or court order, or to protect the rights, property, or safety of Gov Search App, our users, or the public.</li>
           <li><strong>A successor entity</strong>, in the event of a merger, acquisition, or sale of assets — you will be notified before your information becomes subject to a different privacy policy.</li>
         </ul>
 
@@ -172,7 +172,7 @@ export function PrivacyPolicyPage() {
 
         <h2 id="children">10. Children's Privacy</h2>
         <p>
-          BallotLens is not directed to children under 13, and we do not knowingly collect personal
+          Gov Search App is not directed to children under 13, and we do not knowingly collect personal
           information from children under 13. If we learn that we have collected personal
           information from a child under 13 without parental consent, we will delete it promptly. If
           you believe a child has provided us with personal information, contact us at the email
@@ -181,7 +181,7 @@ export function PrivacyPolicyPage() {
 
         <h2 id="international">11. International Users</h2>
         <p>
-          BallotLens is designed for U.S. voters and is operated from the United States. If you
+          Gov Search App is designed for U.S. voters and is operated from the United States. If you
           access the Service from outside the United States, your information will be transferred
           to, stored, and processed in the United States, where data protection laws may differ from
           those in your jurisdiction.
@@ -189,7 +189,7 @@ export function PrivacyPolicyPage() {
 
         <h2 id="political-content">12. Political Content &amp; Nonpartisanship</h2>
         <p>
-          BallotLens is a nonpartisan platform. We do not use your data to target you with content
+          Gov Search App is a nonpartisan platform. We do not use your data to target you with content
           designed to influence your vote for or against any candidate or party, and we do not share
           inferred political affiliation data with third parties for advertising purposes.
         </p>
@@ -203,7 +203,7 @@ export function PrivacyPolicyPage() {
 
         <h2 id="contact">14. Contact Us</h2>
         <p>
-          BallotLens LLC<br />
+          Gov Search App<br />
           1741 NE 147 St, Miami, FL 33181<br />
           Email: <a href="mailto:getnerfabe@gmail.com">getnerfabe@gmail.com</a>
         </p>

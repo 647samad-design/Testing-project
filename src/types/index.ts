@@ -1,4 +1,4 @@
-// BallotLens shared types
+// Gov Search App shared types
 
 export type ContestLevel = 'federal' | 'state' | 'local' | 'judicial';
 export type DistrictType =

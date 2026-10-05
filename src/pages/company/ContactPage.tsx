@@ -27,7 +27,7 @@ export function ContactPage() {
           <MapPin className="h-5 w-5 text-primary" />
           <h2 className="mt-3 font-semibold">Mailing Address</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            BallotLens LLC<br />
+            Gov Search App<br />
             1741 NE 147 St<br />
             Miami, FL 33181
           </p>

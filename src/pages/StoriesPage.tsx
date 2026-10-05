@@ -225,7 +225,7 @@ export function StoryDetailPage() {
       image: story.hero_image_url ?? undefined,
       author: story.author_name ? { '@type': 'Person', name: story.author_name } : undefined,
       datePublished: story.published_at ?? undefined,
-      publisher: { '@type': 'Organization', name: 'BallotLens' },
+      publisher: { '@type': 'Organization', name: 'Gov Search App' },
     } : undefined,
   });
 
@@ -280,7 +280,7 @@ export function StoryDetailPage() {
 
       <div className="mt-10 border-t border-border pt-6">
         <p className="text-xs text-muted-foreground">
-          This is editorial content from BallotLens. It does not endorse any
+          This is editorial content from Gov Search App. It does not endorse any
           candidate or political position. For candidate information, visit our{' '}
           <Link to="/candidates" className="text-primary hover:underline">Candidates page</Link>.
         </p>

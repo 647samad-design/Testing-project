@@ -817,7 +817,7 @@ const FREE_FEATURES = [
   'Research candidates',
   'Compare positions',
   'Follow evidence sources',
-  'Ask BallotLens AI — 5 questions/day',
+  'Ask Gov Search AI — 5 questions/day',
   'Follow up to 5 candidates',
 ];
 
@@ -918,7 +918,7 @@ function NotificationSettingsTab() {
       </Card>
 
       <Card className="p-6 rounded-2xl">
-        <h3 className="font-bold text-lg">BallotLens Digest</h3>
+        <h3 className="font-bold text-lg">Gov Search App Digest</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Everything else — new positions, articles, and profile updates — grouped into one email instead of many.
         </p>

@@ -3,7 +3,7 @@ export function MethodologyPage() {
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">
         <h1 className="font-display text-4xl font-semibold tracking-tight">Methodology</h1>
-        <p className="mt-3 text-muted-foreground">How we source, verify, and label information on BallotLens.</p>
+        <p className="mt-3 text-muted-foreground">How we source, verify, and label information on Gov Search App.</p>
       </header>
       <div className="prose prose-base max-w-none dark:prose-invert prose-headings:font-display prose-headings:font-semibold prose-h2:mt-8 prose-p:leading-relaxed prose-li:leading-relaxed">
 
@@ -34,7 +34,7 @@ export function MethodologyPage() {
 
         <h2>AI-assisted content</h2>
         <p>
-          Some content, like plain-English summaries of voting records or "Ask BallotLens" answers,
+          Some content, like plain-English summaries of voting records or "Ask Gov Search App" answers,
           is generated with AI, working only from the cited sources already in our database — never
           from open-ended internet search or the AI's own unsourced knowledge. It is reviewed for
           quality but can still contain errors, which is why every answer links back to the sources
@@ -43,7 +43,7 @@ export function MethodologyPage() {
 
         <h2>Nonpartisanship</h2>
         <p>
-          BallotLens does not accept payment from candidates or campaigns in exchange for favorable
+          Gov Search App does not accept payment from candidates or campaigns in exchange for favorable
           coverage, positioning, or omission of unfavorable information. Candidate and Pro
           subscriptions and Candidate Management fees fund the platform's operating costs; they do
           not affect what appears on any candidate's profile.
@@ -51,7 +51,7 @@ export function MethodologyPage() {
 
         <h2>Corrections</h2>
         <p>
-          If you believe something on BallotLens is inaccurate or out of date, <a href="/contact">contact us</a> with
+          If you believe something on Gov Search App is inaccurate or out of date, <a href="/contact">contact us</a> with
           the specific page and claim — we review corrections promptly and update sourced content
           when warranted.
         </p>

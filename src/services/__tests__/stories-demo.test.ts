@@ -13,7 +13,7 @@ import { getRecentStories, getFeaturedStories, getStoryBySlug } from '@/services
 describe('sample stories are not shown as real editorial', () => {
   beforeEach(() => { localStorage.clear(); result.data = []; result.error = null; });
 
-  it('an empty stories table shows nothing (not invented "BallotLens Editorial" stories)', async () => {
+  it('an empty stories table shows nothing (not invented "Gov Search App Editorial" stories)', async () => {
     expect(await getRecentStories()).toEqual([]);
     expect(await getFeaturedStories()).toEqual([]);
     expect(await getStoryBySlug('voter-never-missed-election')).toBeNull();

@@ -238,7 +238,7 @@ export function ComparePage() {
           Review the evidence and decide for yourself.
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          BallotLens does not score candidates or declare a "winner." Compare the evidence and make your own decision.
+          Gov Search App does not score candidates or declare a "winner." Compare the evidence and make your own decision.
         </p>
       </div>
     </div>

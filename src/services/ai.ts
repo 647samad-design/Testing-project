@@ -197,7 +197,7 @@ export async function askBallotLensAI(
   // "ask about their voting record", which is what the voter had just done).
   if (asksAboutVotes && votingRecords.length === 0) {
     return {
-      answer: `BallotLens doesn't have any voting records on file for ${who}.`,
+      answer: `Gov Search App doesn't have any voting records on file for ${who}.`,
       evidence: [], sources: [], confidence: 'high',
       limitations: ['Candidates who have not held legislative office usually have no voting record.'],
     };
@@ -206,7 +206,7 @@ export async function askBallotLensAI(
   // Asked about a specific issue the candidate has no position on: say so.
   if (issue && relevantPositions.length === 0) {
     return {
-      answer: `BallotLens doesn't have a position on file for ${who} on ${issue.name}.`,
+      answer: `Gov Search App doesn't have a position on file for ${who} on ${issue.name}.`,
       evidence: [], sources: [], confidence: 'high',
       limitations: ['No position has been recorded or verified for this issue yet.'],
     };
@@ -227,7 +227,7 @@ export async function askBallotLensAI(
   }
 
   return {
-    answer: `BallotLens doesn't have any positions or voting records on file for ${who} yet, so I can't answer that.`,
+    answer: `Gov Search App doesn't have any positions or voting records on file for ${who} yet, so I can't answer that.`,
     evidence: [],
     sources: [],
     confidence: 'low',
@@ -297,7 +297,7 @@ export async function assessClaim(claimText: string): Promise<ClaimAssessment> {
     claim: claimText,
     assessment: 'insufficient_information',
     explanation:
-      "This claim has not been assessed yet. BallotLens does not label claims as true or false without examining the available evidence. Please check back later or review the candidate's voting records and public statements directly.",
+      "This claim has not been assessed yet. Gov Search App does not label claims as true or false without examining the available evidence. Please check back later or review the candidate's voting records and public statements directly.",
     evidence: [],
     sources: [],
   };
@@ -364,7 +364,7 @@ async function answerWhoIsRunning(question: string): Promise<AIResponse | null> 
     return `${c.office_name}${where ? ` — ${where}` : ''}: ${names}`;
   });
   return {
-    answer: `Here's who is running, from the races BallotLens has on file:\n${lines.join('\n')}`,
+    answer: `Here's who is running, from the races Gov Search App has on file:\n${lines.join('\n')}`,
     evidence: lines,
     sources: [],
     confidence: 'high',

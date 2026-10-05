@@ -10,6 +10,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
+// Links in emails point at the configured site (SITE_URL secret), never a hard-coded domain.
+const SITE = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -61,9 +64,9 @@ Deno.serve(async (req: Request) => {
 
     // Build the email from the database, not from the request. `title` and
     // `preview` used to be taken from the caller's request body and placed
-    // raw into the subject and HTML of an email sent from BallotLens's own
+    // raw into the subject and HTML of an email sent from Gov Search App's own
     // domain -- any participant could send the other one arbitrary HTML
-    // (fake buttons, links) that looked like an official BallotLens email.
+    // (fake buttons, links) that looked like an official Gov Search App email.
     // Now: fixed subject, and the preview is the caller's own latest message
     // in this conversation, HTML-escaped and truncated. `title`/`preview`
     // from the request are ignored.
@@ -85,8 +88,8 @@ Deno.serve(async (req: Request) => {
       headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         userId,
-        subject: "You have a new message on BallotLens",
-        html: `<p>You have a new message on BallotLens:</p><blockquote style="border-left:3px solid #ddd;margin:0;padding-left:12px;color:#444;">${escapeHtml(snippet)}</blockquote><p style="color:#888;font-size:12px;">Reply at ballotlens.com/messages</p>`,
+        subject: "You have a new message on Gov Search App",
+        html: `<p>You have a new message on Gov Search App:</p><blockquote style="border-left:3px solid #ddd;margin:0;padding-left:12px;color:#444;">${escapeHtml(snippet)}</blockquote><p style="color:#888;font-size:12px;">${SITE ? `Reply at ${SITE}/messages` : "Reply from the Messages page."}</p>`,
       }),
     });
 

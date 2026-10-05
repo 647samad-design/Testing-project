@@ -102,7 +102,7 @@ Deno.serve(async (req: Request) => {
 
       const daysUntil = Math.ceil((new Date(election.election_date).getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
       const title = `${election.name} is in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`;
-      const bodyText = `A candidate or race you follow is on the ballot for ${election.name} on ${election.election_date}. Check your ballot on BallotLens to get ready.`;
+      const bodyText = `A candidate or race you follow is on the ballot for ${election.name} on ${election.election_date}. Check your ballot on Gov Search App to get ready.`;
 
       if (!dryRun) {
         for (let i = 0; i < toRemind.length; i += 500) {

@@ -352,13 +352,13 @@ export function FeedPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
                 <Flame className="h-4 w-4 text-primary" />
               </div>
-              <h3 className="font-bold text-sm">Explore BallotLens</h3>
+              <h3 className="font-bold text-sm">Explore Gov Search App</h3>
             </div>
             <div className="space-y-2">
               <ExploreLink to="/candidates" icon={Users} label="Browse all candidates" />
               <ExploreLink to="/issues" icon={Scale} label="Follow more issues" />
               <ExploreLink to="/compare" icon={TrendingUp} label="Compare candidates" />
-              <ExploreLink to="/ask" icon={Mic} label="Ask BallotLens AI" />
+              <ExploreLink to="/ask" icon={Mic} label="Ask Gov Search AI" />
               <ExploreLink to="/stories" icon={Newspaper} label="Read civic stories" />
             </div>
           </Card>
@@ -389,7 +389,7 @@ export function FeedPage() {
     const candidate = post.candidate;
     const url = candidate ? `${window.location.origin}/candidates/${candidate.id}` : window.location.origin;
     if (navigator.share) {
-      navigator.share({ title: candidate ? `${candidate.first_name} ${candidate.last_name}` : 'BallotLens', text: post.body, url });
+      navigator.share({ title: candidate ? `${candidate.first_name} ${candidate.last_name}` : 'Gov Search App', text: post.body, url });
     } else {
       navigator.clipboard.writeText(url);
     }

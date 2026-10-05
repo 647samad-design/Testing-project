@@ -24,7 +24,7 @@ error, skips anything already applied, then prints the verification
    export DATABASE_URL='<new project connection string>'
    ./scripts/setup-fresh-supabase.sh
    ```
-   Refuses to run on a database that already has BallotLens tables.
+   Refuses to run on a database that already has Gov Search App tables.
 2. Copy the data (users, candidates, payments…) from the old project — data
    only, since the schema is already built:
    ```bash

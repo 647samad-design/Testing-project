@@ -59,7 +59,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
     if (!proposing) return;
     try {
       await proposePromiseStatus(proposing.id, proposing.status, proposalEvidence, proposalUrl);
-      toast.success('Sent for review. The status changes once a BallotLens reviewer checks your evidence.');
+      toast.success('Sent for review. The status changes once a Gov Search App reviewer checks your evidence.');
       setProposing(null); setProposalEvidence(''); setProposalUrl('');
       await load();
     } catch (err) {
@@ -197,7 +197,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
 
                     {promise.proposed_status && canEdit && (
                       <p className="mt-2 text-xs rounded-lg bg-warning/10 text-warning px-2 py-1">
-                        Proposed: {STATUS_STYLES[promise.proposed_status].label} — awaiting BallotLens review
+                        Proposed: {STATUS_STYLES[promise.proposed_status].label} — awaiting Gov Search App review
                       </p>
                     )}
 

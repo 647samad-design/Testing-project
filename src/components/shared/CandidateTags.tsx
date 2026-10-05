@@ -114,7 +114,7 @@ export function CandidateTags({ candidateId }: CandidateTagsProps) {
                 <p className="flex items-start gap-2 text-xs text-muted-foreground">
                   <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                   Tags are community-contributed and informational only. They do not represent
-                  BallotLens's endorsement or editorial judgment.
+                  Gov Search App's endorsement or editorial judgment.
                 </p>
               </div>
             </DialogContent>
@@ -172,7 +172,7 @@ export function CandidateTags({ candidateId }: CandidateTagsProps) {
       {uniqueTagValues.length > 0 && (
         <p className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground/70">
           <Info className="h-3 w-3 shrink-0 mt-0.5" />
-          Community-contributed tags are informational only and do not represent BallotLens's endorsement.
+          Community-contributed tags are informational only and do not represent Gov Search App's endorsement.
         </p>
       )}
     </Card>

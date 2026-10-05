@@ -34,7 +34,7 @@ const placementOptions = [
 ];
 
 export function AdvertisingPage() {
-  usePageMeta({ title: 'Advertise with BallotLens', description: 'Reach engaged local voters through BallotLens.' });
+  usePageMeta({ title: 'Advertise with Gov Search App', description: 'Reach engaged local voters through Gov Search App.' });
   const [plans, setPlans] = useState<AdPlan[]>([]);
   const [servicePlans, setServicePlans] = useState<CandidateServicePlan[]>([]);
 
@@ -60,7 +60,7 @@ export function AdvertisingPage() {
             <span className="text-primary">Keep it honest.</span>
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Advertise on BallotLens and connect with an audience that cares about
+            Advertise on Gov Search App and connect with an audience that cares about
             their community. Every ad is clearly labeled and never affects
             candidate rankings or editorial content.
           </p>
@@ -76,7 +76,7 @@ export function AdvertisingPage() {
       </section>
 
       <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
-        <h2 className="text-center text-3xl font-bold tracking-tight">Who advertises on BallotLens?</h2>
+        <h2 className="text-center text-3xl font-bold tracking-tight">Who advertises on Gov Search App?</h2>
         <p className="mt-3 text-center text-muted-foreground">Organizations that want to reach informed, civically engaged audiences.</p>
         <div className="mt-8 md:mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {audienceTypes.map((a) => (

@@ -46,17 +46,17 @@ export function TermsOfServicePage() {
 
         <h2 id="acceptance">1. Acceptance of Terms</h2>
         <p>
-          These Terms of Service ("Terms") form a binding agreement between you and BallotLens LLC,
+          These Terms of Service ("Terms") form a binding agreement between you and Gov Search App,
           a Florida limited liability company with its principal place of business at 1741 NE 147
-          St, Miami, FL 33181 ("BallotLens," "we," "us," or "our"), governing your access to and use
-          of the BallotLens website and related services (the "Service"). By creating an account or
+          St, Miami, FL 33181 ("Gov Search App," "we," "us," or "our"), governing your access to and use
+          of the Gov Search App website and related services (the "Service"). By creating an account or
           otherwise using the Service, you agree to be bound by these Terms. If you do not agree,
           do not use the Service.
         </p>
 
         <h2 id="the-service">2. The Service</h2>
         <p>
-          BallotLens provides nonpartisan information about candidates, ballot measures, and
+          Gov Search App provides nonpartisan information about candidates, ballot measures, and
           elections to help voters make informed decisions. Core ballot information — your
           personalized ballot, candidate profiles, source citations, and basic AI research — is free
           and will remain free. Paid tiers (Candidate, Pro) unlock additional voter tools. Candidate
@@ -100,7 +100,7 @@ export function TermsOfServicePage() {
         <p>
           "User Content" means anything you submit to the Service — profile information, photos,
           messages, questions, quiz responses, and community posts. You retain ownership of your
-          User Content. By submitting it, you grant BallotLens a non-exclusive, worldwide,
+          User Content. By submitting it, you grant Gov Search App a non-exclusive, worldwide,
           royalty-free license to host, store, reproduce, display, and distribute it solely for the
           purpose of operating and promoting the Service. You represent that you have the right to
           submit any content you upload (including candidate photos) and that it does not infringe
@@ -110,7 +110,7 @@ export function TermsOfServicePage() {
 
         <h2 id="content-accuracy">7. Content Accuracy &amp; No Advice</h2>
         <p>
-          We work to verify information through cited, primary sources, but BallotLens does not
+          We work to verify information through cited, primary sources, but Gov Search App does not
           guarantee the completeness, accuracy, or timeliness of any candidate, election, or ballot
           information, including AI-generated summaries. Content on the Service is for informational
           purposes only and does not constitute legal, financial, tax, or voting advice. Always
@@ -120,9 +120,9 @@ export function TermsOfServicePage() {
 
         <h2 id="nonpartisanship">8. Nonpartisanship</h2>
         <p>
-          BallotLens does not endorse or oppose any candidate, party, or ballot measure.
+          Gov Search App does not endorse or oppose any candidate, party, or ballot measure.
           User-submitted content, candidate self-descriptions, and third-party sources reflect their
-          authors' own views and statements, not those of BallotLens.
+          authors' own views and statements, not those of Gov Search App.
         </p>
 
         <h2 id="prohibited-conduct">9. Prohibited Conduct</h2>
@@ -141,7 +141,7 @@ export function TermsOfServicePage() {
         <p>
           The Service, including its design, text, graphics, logos, and underlying software
           (excluding User Content and third-party data such as AP election results), is owned by
-          BallotLens LLC or its licensors and is protected by copyright, trademark, and other
+          Gov Search App or its licensors and is protected by copyright, trademark, and other
           intellectual property laws. You may not copy, modify, distribute, or create derivative
           works from the Service except as expressly permitted by these Terms.
         </p>
@@ -150,7 +150,7 @@ export function TermsOfServicePage() {
         <p>
           We may suspend or terminate your access to the Service, with or without notice, for
           conduct that violates these Terms or that we believe is harmful to other users, third
-          parties, or BallotLens. You may stop using the Service and delete your account at any
+          parties, or Gov Search App. You may stop using the Service and delete your account at any
           time. Sections that by their nature should survive termination (including Sections 7, 9,
           10, 12, 13, 14, and 15) will survive.
         </p>
@@ -166,7 +166,7 @@ export function TermsOfServicePage() {
 
         <h2 id="liability">13. Limitation of Liability</h2>
         <p>
-          TO THE FULLEST EXTENT PERMITTED BY LAW, BALLOTLENS LLC AND ITS OFFICERS, EMPLOYEES, AND
+          TO THE FULLEST EXTENT PERMITTED BY LAW, GOV SEARCH APP LLC AND ITS OFFICERS, EMPLOYEES, AND
           AGENTS WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE
           DAMAGES, OR ANY LOSS OF PROFITS, DATA, OR GOODWILL, ARISING FROM OR RELATED TO YOUR USE OF
           THE SERVICE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. OUR TOTAL LIABILITY FOR
@@ -178,7 +178,7 @@ export function TermsOfServicePage() {
 
         <h2 id="indemnification">14. Indemnification</h2>
         <p>
-          You agree to indemnify and hold harmless BallotLens LLC and its officers, employees, and
+          You agree to indemnify and hold harmless Gov Search App and its officers, employees, and
           agents from any claims, damages, liabilities, and expenses (including reasonable
           attorneys' fees) arising from your use of the Service, your User Content, or your
           violation of these Terms or applicable law.
@@ -196,7 +196,7 @@ export function TermsOfServicePage() {
 
         <h2 id="general">16. General Provisions</h2>
         <ul>
-          <li><strong>Entire agreement.</strong> These Terms, together with our Privacy Policy, constitute the entire agreement between you and BallotLens regarding the Service.</li>
+          <li><strong>Entire agreement.</strong> These Terms, together with our Privacy Policy, constitute the entire agreement between you and Gov Search App regarding the Service.</li>
           <li><strong>Severability.</strong> If any provision of these Terms is found unenforceable, the remaining provisions will remain in full effect.</li>
           <li><strong>No waiver.</strong> Our failure to enforce any provision is not a waiver of our right to do so later.</li>
           <li><strong>Assignment.</strong> You may not assign these Terms without our written consent; we may assign them in connection with a merger, acquisition, or sale of assets.</li>
@@ -205,7 +205,7 @@ export function TermsOfServicePage() {
 
         <h2 id="contact">17. Contact</h2>
         <p>
-          BallotLens LLC, 1741 NE 147 St, Miami, FL 33181 —{' '}
+          Gov Search App, 1741 NE 147 St, Miami, FL 33181 —{' '}
           <a href="mailto:getnerfabe@gmail.com">getnerfabe@gmail.com</a>
         </p>
 

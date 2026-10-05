@@ -24,37 +24,37 @@ describe('usePageMeta', () => {
   it('sets a per-page title and description instead of leaving the generic default', () => {
     renderAt('/candidates/1', { title: 'Jane Doe (Democratic)', description: "See Jane Doe's positions." });
 
-    expect(document.title).toBe('Jane Doe (Democratic) | BallotLens');
+    expect(document.title).toBe('Jane Doe (Democratic) | Gov Search App');
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe("See Jane Doe's positions.");
   });
 
   it('falls back to the site default when no title is given', () => {
     renderAt('/');
-    expect(document.title).toContain('BallotLens');
+    expect(document.title).toContain('Gov Search App');
     expect(document.title).not.toContain('undefined');
   });
 
   it('restores the site default title on unmount, so navigating away leaves nothing stale', () => {
     const { unmount } = renderAt('/candidates/1', { title: 'Some Candidate' });
-    expect(document.title).toBe('Some Candidate | BallotLens');
+    expect(document.title).toBe('Some Candidate | Gov Search App');
 
     unmount();
 
     expect(document.title).not.toContain('Some Candidate');
-    expect(document.title).toContain('BallotLens');
+    expect(document.title).toContain('Gov Search App');
   });
 
   it('sets the canonical link to the CURRENT path, not a hardcoded homepage URL', () => {
     renderAt('/candidates/42');
     const canonical = document.querySelector('link[rel="canonical"]');
-    expect(canonical?.getAttribute('href')).toBe('https://ballotlens.com/candidates/42');
+    expect(canonical?.getAttribute('href')).toBe(`${window.location.origin}/candidates/42`);
   });
 
   it('resets the canonical link back to the homepage on unmount', () => {
     const { unmount } = renderAt('/candidates/42');
     unmount();
     const canonical = document.querySelector('link[rel="canonical"]');
-    expect(canonical?.getAttribute('href')).toBe('https://ballotlens.com/');
+    expect(canonical?.getAttribute('href')).toBe(`${window.location.origin}/`);
   });
 
   it('adds a noindex robots meta tag for private pages, previously every page was indexable by default', () => {

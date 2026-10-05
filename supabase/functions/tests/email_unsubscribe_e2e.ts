@@ -10,7 +10,7 @@ const fakeDb = Deno.serve({ port: 54399, onListen() {} }, async (req) => {
 Deno.env.set("SUPABASE_URL", "http://127.0.0.1:54399");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "svc");
 Deno.env.set("EMAIL_UNSUBSCRIBE_SECRET", "s3cret");
-Deno.env.set("SITE_URL", "https://ballotlens.test/");
+Deno.env.set("SITE_URL", "https://govsearch.test/");
 await import("../email-unsubscribe/index.ts"); // starts the real function on :8000
 await new Promise((r) => setTimeout(r, 300));
 
@@ -29,7 +29,7 @@ async function check(label: string, url: string, expectStatus: number, method = 
   if (!ok) fails++;
   console.log(`${ok ? "PASS" : "FAIL"}  ${label}  -> ${r.status} ${where}`);
 }
-await check("valid digest link -> site page, ok", `${B}/?u=${U}&l=digest&t=${T}`, 303, "GET", "https://ballotlens.test/unsubscribe?status=ok&list=digest");
+await check("valid digest link -> site page, ok", `${B}/?u=${U}&l=digest&t=${T}`, 303, "GET", "https://govsearch.test/unsubscribe?status=ok&list=digest");
 await check("tampered token -> site page, invalid", `${B}/?u=${U}&l=digest&t=${T.slice(0, -1)}0`, 303, "GET", "status=invalid");
 await check("token reused for another user -> invalid", `${B}/?u=${V}&l=digest&t=${T}`, 303, "GET", "status=invalid");
 await check("digest token reused for reminders -> invalid", `${B}/?u=${U}&l=reminders&t=${T}`, 303, "GET", "status=invalid");

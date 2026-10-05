@@ -29,9 +29,9 @@ const VERIFICATION_LEVELS: VerificationBadgeDef[] = [
   },
   {
     level: 'ballotlens_researched',
-    label: 'BallotLens Researched',
+    label: 'Gov Search App Researched',
     icon: FileText,
-    description: 'Information independently compiled by BallotLens',
+    description: 'Information independently compiled by Gov Search App',
     color: 'text-accent',
   },
   {

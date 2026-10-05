@@ -7,4 +7,4 @@ Disallow: /candidate-portal
 Disallow: /advertiser-dashboard
 Disallow: /feed
 
-Sitemap: https://ballotlens.com/sitemap.xml
+Sitemap: __SITE_URL__/sitemap.xml
