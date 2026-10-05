@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import type { Candidate, CandidatePosition, Issue, CandidateTag } from '@/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface RaceComparisonProps {
   candidates: Candidate[];
@@ -74,7 +75,7 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
   if (loading) {
     return (
       <Card className="p-8 rounded-2xl text-center">
-        <p className="text-sm text-muted-foreground">Loading candidate comparisons…</p>
+        <p className="text-sm text-muted-foreground">{t("Loading candidate comparisons…")}</p>
       </Card>
     );
   }
@@ -83,10 +84,8 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
     return (
       <Card className="p-8 rounded-2xl text-center">
         <GitCompare className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
-        <p className="text-sm font-semibold text-foreground">Need at least 2 candidates to compare</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Once more candidates join this race, you'll see a side-by-side comparison here.
-        </p>
+        <p className="text-sm font-semibold text-foreground">{t("Need at least 2 candidates to compare")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("Once more candidates join this race, you'll see a side-by-side comparison here.")}</p>
       </Card>
     );
   }
@@ -100,13 +99,11 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
         <div className="flex items-start gap-3">
           <GitCompare className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <div>
-            <p className="font-semibold text-sm text-foreground">
-              Side-by-side comparison on the issues
-            </p>
+            <p className="font-semibold text-sm text-foreground">{t("Side-by-side comparison on the issues")}</p>
             <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
               {userIssueIds.size > 0
-                ? "Sorted by the issues you care about most. Each cell shows the candidate's verified position and evidence count."
-                : "Select your issues on the Issues page to prioritize what matters most to you here."}
+                ? t("Sorted by the issues you care about most. Each cell shows the candidate's verified position and evidence count.")
+                : t("Select your issues on the Issues page to prioritize what matters most to you here.")}
             </p>
           </div>
         </div>
@@ -119,8 +116,7 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
             <Star className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <div>
               <p className="font-semibold text-sm text-foreground">
-                {userIssueIds.size} issue{userIssueIds.size === 1 ? '' : 's'} you care about are highlighted below
-              </p>
+                {userIssueIds.size} {t("issue")}{userIssueIds.size === 1 ? '' : 's'} {t("you care about are highlighted below")}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {allIssues.filter((i) => userIssueIds.has(i.id)).map((i) => (
                   <span key={i.id} className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1 text-xs font-semibold text-primary">
@@ -136,11 +132,8 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
       {!hasPositions && (
         <Card className="p-6 rounded-2xl text-center">
           <Info className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
-          <p className="text-sm font-semibold text-foreground">No verified positions yet</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Gov Search App hasn't verified any issue positions for these candidates yet. Check back as we add more data,
-            or visit each candidate's profile for statements and voting records.
-          </p>
+          <p className="text-sm font-semibold text-foreground">{t("No verified positions yet")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("Gov Search App hasn't verified any issue positions for these candidates yet. Check back as we add more data, or visit each candidate's profile for statements and voting records.")}</p>
         </Card>
       )}
 
@@ -151,7 +144,7 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-secondary/30">
-                  <th className="sticky left-0 z-10 bg-secondary/30 p-4 text-left text-sm font-semibold text-foreground min-w-[160px]">Issue</th>
+                  <th className="sticky left-0 z-10 bg-secondary/30 p-4 text-left text-sm font-semibold text-foreground min-w-[160px]">{t("Issue")}</th>
                   {candidates.map((c) => (
                     <th key={c.id} className="p-4 text-left min-w-[220px] align-top">
                       <Link to={`/candidates/${c.id}`} className="block hover:text-primary transition-colors">
@@ -165,7 +158,7 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
                           </Avatar>
                           <div>
                             <p className="font-semibold text-sm">{c.first_name} {c.last_name}</p>
-                            <p className="text-xs text-muted-foreground">{c.party}</p>
+                            <p className="text-xs text-muted-foreground">{c.party && t(c.party)}</p>
                           </div>
                         </div>
                       </Link>
@@ -218,7 +211,7 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
                     {isUserIssue && <Star className="h-4 w-4 text-primary fill-primary shrink-0" />}
                     <h3 className={cn('font-semibold', isUserIssue ? 'text-primary' : 'text-foreground')}>{issue.name}</h3>
                     {isUserIssue && (
-                      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">Your Issue</span>
+                      <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">{t("Your Issue")}</span>
                     )}
                   </div>
                   <div className="space-y-3">
@@ -235,7 +228,7 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
                               )}
                             </Avatar>
                             <span className="text-sm font-medium">{c.first_name} {c.last_name}</span>
-                            <span className="text-xs text-muted-foreground">{c.party}</span>
+                            <span className="text-xs text-muted-foreground">{c.party && t(c.party)}</span>
                           </Link>
                           {(tagsByCandidate[c.id] ?? []).length > 0 && (
                             <div className="mb-2 flex flex-wrap gap-1">
@@ -265,7 +258,7 @@ export function RaceComparison({ candidates }: RaceComparisonProps) {
                 className="rounded-xl gap-2 touch-target"
                 onClick={() => setShowAllIssues(!showAllIssues)}
               >
-                {showAllIssues ? 'Show only my issues' : 'Show all issues'}
+                {showAllIssues ? t("Show only my issues") : t("Show all issues")}
               </Button>
             </div>
           )}
@@ -279,7 +272,7 @@ function ComparisonCell({ position, candidateId }: { position?: CandidatePositio
   if (!position || position.verification_status === 'insufficient_information' || !position.summary) {
     return (
       <div>
-        <p className="text-sm text-muted-foreground italic">No verified position on record.</p>
+        <p className="text-sm text-muted-foreground italic">{t("No verified position on record.")}</p>
         <div className="mt-2">
           <VerificationBadge status="insufficient_information" />
         </div>
@@ -296,15 +289,14 @@ function ComparisonCell({ position, candidateId }: { position?: CandidatePositio
         <VerificationBadge status={position.verification_status} />
         {sourceCount > 0 && (
           <span className="text-xs text-muted-foreground">
-            {sourceCount} Source{sourceCount === 1 ? '' : 's'}
+            {sourceCount} {t("Source")}{sourceCount === 1 ? '' : 's'}
           </span>
         )}
       </div>
       <Link
         to={`/candidates/${candidateId}`}
         className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-      >
-        View evidence <ArrowRight className="h-3 w-3" />
+      >{t("View evidence")} <ArrowRight className="h-3 w-3" />
       </Link>
     </div>
   );

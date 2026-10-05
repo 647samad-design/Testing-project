@@ -6,6 +6,7 @@ import { ExplainSimply } from './ExplainSimply';
 import type { CandidatePosition, VotingRecord, CandidateStatement } from '@/types';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/date-utils';
+import { t } from '@/i18n';
 
 type Evidence = CandidatePosition | VotingRecord | CandidateStatement;
 
@@ -27,11 +28,10 @@ export function EvidenceCard({ type, data, className }: EvidenceCardProps) {
             {icon}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Position on {pos.issue?.name ?? 'an issue'}
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Position on")} {pos.issue?.name ?? t("an issue")}
             </p>
             <p className="mt-1 text-sm text-foreground leading-relaxed">
-              {pos.summary ?? 'Position not verified.'}
+              {pos.summary ?? t("Position not verified.")}
             </p>
           </div>
         </div>
@@ -51,7 +51,7 @@ export function EvidenceCard({ type, data, className }: EvidenceCardProps) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Voting Record</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Voting Record")}</p>
               {vr.vote && (
                 <span className={cn('rounded-md px-2 py-0.5 text-xs font-bold uppercase', voteBg, voteColor)}>
                   {vr.vote}
@@ -63,7 +63,7 @@ export function EvidenceCard({ type, data, className }: EvidenceCardProps) {
               <p className="text-xs text-muted-foreground font-medium">{vr.bill_number}</p>
             )}
             {vr.description && (
-              <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{vr.description}</p>
+              <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{t(vr.description)}</p>
             )}
             <div className="mt-2 flex items-center gap-2">
               {vr.vote_date && (
@@ -76,8 +76,7 @@ export function EvidenceCard({ type, data, className }: EvidenceCardProps) {
                     to="#"
                     onClick={(e) => { e.preventDefault(); window.open(vr.source!.url!, '_blank'); }}
                     className="text-xs text-primary hover:underline font-semibold"
-                  >
-                    View Source <ChevronRight className="inline h-3 w-3" />
+                  >{t("View Source")} <ChevronRight className="inline h-3 w-3" />
                   </Link>
                 </>
               )}
@@ -105,8 +104,7 @@ export function EvidenceCard({ type, data, className }: EvidenceCardProps) {
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Statement{stmt.statement_date ? ` · ${formatDate(stmt.statement_date)}` : ''}
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Statement")}{stmt.statement_date ? ` · ${formatDate(stmt.statement_date)}` : ''}
           </p>
           <blockquote className="mt-1 text-sm text-foreground leading-relaxed border-l-2 border-primary/30 pl-3 italic">
             {stmt.statement_text}

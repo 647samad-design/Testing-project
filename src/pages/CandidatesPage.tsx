@@ -13,6 +13,7 @@ import { getAllContestsWithCandidates } from '@/services/candidates';
 import { getAllStatesBallots, type RegionConfig } from '@/services/regions';
 import type { Candidate, BallotContest } from '@/types';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t } from '@/i18n';
 
 type ViewMode = 'district' | 'all';
 
@@ -25,7 +26,7 @@ const levelLabels: Record<string, { label: string; icon: React.ComponentType<{ c
 };
 
 export function CandidatesPage() {
-  usePageMeta({ title: 'Candidates', description: 'Browse and research candidates running in your area.' });
+  usePageMeta({ title: t("Candidates"), description: t("Browse and research candidates running in your area.") });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -108,7 +109,7 @@ export function CandidatesPage() {
     return name.includes(q) || party.includes(q);
   };
 
-  if (loading) return <LoadingState message="Loading candidates…" />;
+  if (loading) return <LoadingState message={t("Loading candidates…")} />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
   const q = search.trim().toLowerCase();
@@ -116,10 +117,8 @@ export function CandidatesPage() {
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <div className="mb-6">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">Candidates</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Explore biographies, positions, voting records and public statements.
-        </p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight">{t("Candidates")}</h1>
+        <p className="mt-2 text-lg text-muted-foreground">{t("Explore biographies, positions, voting records and public statements.")}</p>
         <div className="mt-4">
           <DemoBanner compact show={viewMode === 'district' ? districtIsDemo : allIsDemo} />
         </div>
@@ -134,18 +133,14 @@ export function CandidatesPage() {
               viewMode === 'district' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <MapPin className="h-4 w-4" />
-            In My District
-          </button>
+            <MapPin className="h-4 w-4" />{t("In My District")}</button>
           <button
             onClick={() => setViewMode('all')}
             className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
               viewMode === 'all' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Users className="h-4 w-4" />
-            All Candidates
-          </button>
+            <Users className="h-4 w-4" />{t("All Candidates")}</button>
         </div>
 
         {viewMode === 'district' && region && (
@@ -155,16 +150,14 @@ export function CandidatesPage() {
                 <MapPin className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-foreground">{[region.county, region.state].filter((x) => x && String(x).trim()).join(', ') || 'Your area'}</p>
+                <p className="font-bold text-foreground">{[region.county, region.state].filter((x) => x && String(x).trim()).join(', ') || t("Your area")}</p>
                 {/* Only districts we actually know for this ZIP. The region
                     config fills unknown ones with placeholders like
                     "Congressional District 1", which were shown here as fact. */}
                 {knownDistricts.length > 0 && (
                   <p className="mt-0.5 text-sm text-muted-foreground">{knownDistricts.join(' · ')}</p>
                 )}
-                <Link to="/" className="mt-1 inline-block text-xs font-medium text-primary hover:underline">
-                  Change address
-                </Link>
+                <Link to="/" className="mt-1 inline-block text-xs font-medium text-primary hover:underline">{t("Change address")}</Link>
               </div>
             </div>
           </Card>
@@ -176,11 +169,11 @@ export function CandidatesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search by name or party…"
+            placeholder={t("Search by name or party…")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 h-12 rounded-xl"
-            aria-label="Search candidates"
+            aria-label={t("Search candidates")}
           />
         </div>
       </div>
@@ -192,7 +185,7 @@ export function CandidatesPage() {
             <section key={group.level} className="mb-10">
               <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
                 <group.icon className="h-4 w-4" />
-                {group.label}
+                {t(group.label)}
               </h2>
               <div className="space-y-6">
                 {group.contests.map((contest) => {
@@ -229,7 +222,7 @@ export function CandidatesPage() {
           <section key={group.level} className="mb-10">
             <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
               <group.icon className="h-4 w-4" />
-              {group.label}
+              {t(group.label)}
             </h2>
             <div className="space-y-6">
               {group.contests.map((contest) => {
@@ -262,12 +255,12 @@ export function CandidatesPage() {
       {/* No results */}
       {viewMode === 'district' && !region && districtCandidates.length === 0 && (
         <EmptyState
-          title="Enter your address to see your district candidates"
-          description="Set your location on the home page to view only the candidates running in your district and on your ballot."
+          title={t("Enter your address to see your district candidates")}
+          description={t("Set your location on the home page to view only the candidates running in your district and on your ballot.")}
           icon={<MapPin className="h-10 w-10" />}
           action={
             <Link to="/">
-              <Button variant="outline">Find My District</Button>
+              <Button variant="outline">{t("Find My District")}</Button>
             </Link>
           }
         />
@@ -275,23 +268,23 @@ export function CandidatesPage() {
 
       {viewMode === 'district' && region && districtCandidates.length === 0 && (
         <EmptyState
-          title="No candidates found"
-          description={search ? `No candidates match "${search}".` : 'No candidates are available for your district yet.'}
+          title={t("No candidates found")}
+          description={search ? `No candidates match "${search}".` : t("No candidates are available for your district yet.")}
           icon={<Users className="h-10 w-10" />}
         />
       )}
 
       {viewMode === 'all' && allCandidates.length === 0 && (
         <EmptyState
-          title="No candidates found"
-          description={search ? `No candidates match "${search}".` : 'No candidates are available yet.'}
+          title={t("No candidates found")}
+          description={search ? `No candidates match "${search}".` : t("No candidates are available yet.")}
           icon={<Users className="h-10 w-10" />}
         />
       )}
 
       {search.trim() && viewMode === 'district' && districtCandidates.some((c) => matchesSearch(c, q)) === false && (
         <EmptyState
-          title="No candidates found"
+          title={t("No candidates found")}
           description={`No candidates match "${search}".`}
           icon={<Users className="h-10 w-10" />}
         />

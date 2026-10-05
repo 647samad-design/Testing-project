@@ -19,6 +19,7 @@ import type {
   CandidateProfileExtras, CandidateGetToKnow, CandidateFundingSource,
   CandidateEndorsement,
 } from '@/types';
+import { t } from '@/i18n';
 
 // ─── Candidate Snapshot ────────────────────────────────────────────────────
 
@@ -48,17 +49,15 @@ export function CandidateSnapshot({
 
   return (
     <Card className="p-5 rounded-2xl">
-      <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground mb-4">
-        Candidate Snapshot
-      </h3>
+      <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground mb-4">{t("Candidate Snapshot")}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         {fields.map((f) => (
-          <div key={f.label} className="flex items-start gap-2.5">
+          <div key={t(f.label)} className="flex items-start gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
               <f.icon className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{f.label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t(f.label)}</p>
               <p className="text-sm font-semibold text-foreground truncate">{f.value}</p>
             </div>
           </div>
@@ -100,15 +99,13 @@ export function ElectionInfo({ candidateId }: { candidateId: string }) {
     <Card className="p-5 rounded-2xl">
       <div className="flex items-center gap-2 mb-4">
         <CalendarDays className="h-4 w-4 text-primary" />
-        <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">
-          Election Info
-        </h3>
+        <h3 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">{t("Election Info")}</h3>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {extras?.election_date && (
           <div className="rounded-xl bg-secondary/40 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Election Date</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t("Election Date")}</p>
             <p className="text-sm font-bold text-foreground mt-0.5">
               {electionDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
@@ -116,19 +113,19 @@ export function ElectionInfo({ candidateId }: { candidateId: string }) {
         )}
         {extras?.election_type && (
           <div className="rounded-xl bg-secondary/40 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Election Type</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t("Election Type")}</p>
             <p className="text-sm font-bold text-foreground mt-0.5 capitalize">{extras.election_type}</p>
           </div>
         )}
         {extras?.district && (
           <div className="rounded-xl bg-secondary/40 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">District</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t("District")}</p>
             <p className="text-sm font-bold text-foreground mt-0.5">{extras.district}</p>
           </div>
         )}
         {extras?.term_length && (
           <div className="rounded-xl bg-secondary/40 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Term Length</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t("Term Length")}</p>
             <p className="text-sm font-bold text-foreground mt-0.5">{extras.term_length}</p>
           </div>
         )}
@@ -141,7 +138,7 @@ export function ElectionInfo({ candidateId }: { candidateId: string }) {
               <Clock className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-foreground">Next Election</p>
+              <p className="text-sm font-bold text-foreground">{t("Next Election")}</p>
               <p className="text-xs text-muted-foreground">
                 {nextElection.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                 {daysToNext !== null && ` — ${daysToNext} days away`}
@@ -156,7 +153,7 @@ export function ElectionInfo({ candidateId }: { candidateId: string }) {
                 className="rounded-xl gap-1.5 shrink-0"
               >
                 <Bell className="h-3.5 w-3.5" />
-                {reminderOn ? 'Notifying' : 'Notify Me'}
+                {reminderOn ? t("Notifying") : t("Notify Me")}
               </Button>
             )}
           </div>
@@ -181,7 +178,7 @@ export function WhyImRunningVideo({ candidateId }: { candidateId: string }) {
     <Card className="overflow-hidden rounded-2xl">
       <div className="flex items-center gap-2 px-5 py-3 bg-secondary/40 border-b border-border/50">
         <Play className="h-4 w-4 text-primary" />
-        <h3 className="font-bold text-sm uppercase tracking-wide">Why I'm Running</h3>
+        <h3 className="font-bold text-sm uppercase tracking-wide">{t("Why I'm Running")}</h3>
       </div>
       <div className="relative bg-black aspect-[9/16] max-h-[420px] mx-auto" style={{ maxWidth: '280px' }}>
         <video
@@ -221,7 +218,7 @@ export function GetToKnowMe({ candidateId }: { candidateId: string }) {
     <Card className="p-5 rounded-2xl">
       <div className="flex items-center gap-2 mb-4">
         <Heart className="h-4 w-4 text-accent" />
-        <h3 className="font-bold text-sm uppercase tracking-wide">Get to Know Me</h3>
+        <h3 className="font-bold text-sm uppercase tracking-wide">{t("Get to Know Me")}</h3>
       </div>
       <div className="space-y-3">
         {items.map((item) => {
@@ -275,7 +272,7 @@ export function WhoFundsMe({ candidateId }: { candidateId: string }) {
     <Card className="p-5 rounded-2xl">
       <div className="flex items-center gap-2 mb-4">
         <CircleDollarSign className="h-4 w-4 text-success" />
-        <h3 className="font-bold text-sm uppercase tracking-wide">Who Funds Me</h3>
+        <h3 className="font-bold text-sm uppercase tracking-wide">{t("Who Funds Me")}</h3>
       </div>
 
       {/* Stacked bar */}
@@ -309,8 +306,7 @@ export function WhoFundsMe({ candidateId }: { candidateId: string }) {
       </div>
 
       {sources[0]?.report_date && (
-        <p className="mt-3 text-[10px] text-muted-foreground">
-          Data as of {parseDateOnly(sources[0].report_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+        <p className="mt-3 text-[10px] text-muted-foreground">{t("Data as of")} {parseDateOnly(sources[0].report_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
         </p>
       )}
     </Card>
@@ -348,7 +344,7 @@ export function Endorsements({ candidateId }: { candidateId: string }) {
     <Card className="p-5 rounded-2xl">
       <div className="flex items-center gap-2 mb-4">
         <Handshake className="h-4 w-4 text-primary" />
-        <h3 className="font-bold text-sm uppercase tracking-wide">Endorsements</h3>
+        <h3 className="font-bold text-sm uppercase tracking-wide">{t("Endorsements")}</h3>
         <Badge variant="secondary" className="rounded-lg text-[10px] font-bold ml-auto">
           {items.length}
         </Badge>

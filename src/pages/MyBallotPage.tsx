@@ -18,6 +18,7 @@ import { isDemoMode } from '@/lib/demo-mode';
 import { parseDateOnly } from '@/lib/date-utils';
 import { ElectionResultsCard } from '@/components/shared/ElectionResultsCard';
 import { toStatePostal } from '@/lib/us-states';
+import { t } from '@/i18n';
 
 const levelOrder = ['federal', 'state', 'local', 'judicial'] as const;
 const levelLabels: Record<string, string> = {
@@ -28,7 +29,7 @@ const levelLabels: Record<string, string> = {
 };
 
 export function MyBallotPage() {
-  usePageMeta({ title: 'My Ballot', description: 'See your personalized ballot with every race and measure for your address.' });
+  usePageMeta({ title: t("My Ballot"), description: t("See your personalized ballot with every race and measure for your address.") });
   const navigate = useNavigate();
   const { user } = useAuth();
   const [, setAddress] = useState('');
@@ -126,23 +127,19 @@ export function MyBallotPage() {
     return (
       <div className="mx-auto max-w-lg px-4 sm:px-6 py-16 text-center animate-fade-in">
         <MapPin className="mx-auto h-10 w-10 text-primary" />
-        <h1 className="mt-4 font-display text-2xl font-semibold">Find your ballot</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Enter your address or ZIP code to see every race and measure on your ballot.
-        </p>
+        <h1 className="mt-4 font-display text-2xl font-semibold">{t("Find your ballot")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("Enter your address or ZIP code to see every race and measure on your ballot.")}</p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <input
             type="text"
             value={addressInput}
             onChange={(e) => setAddressInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddressSubmit()}
-            placeholder="Enter your ZIP code"
+            placeholder={t("Enter your ZIP code")}
             className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-base"
-            aria-label="Enter your address or ZIP code"
+            aria-label={t("Enter your address or ZIP code")}
           />
-          <Button size="lg" onClick={handleAddressSubmit} disabled={!addressInput.trim()} className="rounded-xl font-semibold">
-            See My Ballot
-          </Button>
+          <Button size="lg" onClick={handleAddressSubmit} disabled={!addressInput.trim()} className="rounded-xl font-semibold">{t("See My Ballot")}</Button>
         </div>
         {addressError && <p role="alert" className="mt-3 text-sm text-destructive">{addressError}</p>}
       </div>
@@ -156,27 +153,24 @@ export function MyBallotPage() {
     return (
       <div className="mx-auto max-w-lg px-4 sm:px-6 py-16 text-center animate-fade-in">
         <MapPin className="mx-auto h-10 w-10 text-primary" />
-        <h1 className="mt-4 font-display text-2xl font-semibold">We don’t cover your area yet</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Gov Search App doesn’t have verified ballot information for {districts?.state ? `${districts.state}` : 'this ZIP code'} yet.
-          Check your state or county election office for your official sample ballot.
-        </p>
+        <h1 className="mt-4 font-display text-2xl font-semibold">{t("We don’t cover your area yet")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("Gov Search App doesn’t have verified ballot information for")} {districts?.state ? `${districts.state}` : t("this ZIP code")} {t("yet. Check your state or county election office for your official sample ballot.")}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Button onClick={() => { sessionStorage.removeItem('ballotlens_address'); setAddressInput(''); setNeedsAddress(true); }}>Try another ZIP</Button>
-          <Button variant="outline" onClick={() => setShowSample(true)}>See an example ballot</Button>
+          <Button onClick={() => { sessionStorage.removeItem('ballotlens_address'); setAddressInput(''); setNeedsAddress(true); }}>{t("Try another ZIP")}</Button>
+          <Button variant="outline" onClick={() => setShowSample(true)}>{t("See an example ballot")}</Button>
         </div>
       </div>
     );
   }
 
   if (loading) {
-    return <LoadingState message="Finding your ballot…" />;
+    return <LoadingState message={t("Finding your ballot…")} />;
   }
 
   if (error) {
     return (
       <ErrorState
-        title="Ballot unavailable"
+        title={t("Ballot unavailable")}
         message={error}
         onRetry={() => window.location.reload()}
       />
@@ -186,11 +180,11 @@ export function MyBallotPage() {
   if (contests.length === 0 && measures.length === 0) {
     return (
       <EmptyState
-        title="No ballot information yet"
-        description="We don't have verified ballot information for this location yet. Check back closer to election day."
+        title={t("No ballot information yet")}
+        description={t("We don't have verified ballot information for this location yet. Check back closer to election day.")}
         action={
           <Link to="/">
-            <Button variant="outline">Enter a different address</Button>
+            <Button variant="outline">{t("Enter a different address")}</Button>
           </Link>
         }
       />
@@ -202,12 +196,8 @@ export function MyBallotPage() {
       {/* Header */}
       <div className="mb-6">
         <Link to="/" className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          Change address
-        </Link>
-        <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight">
-          My Ballot
-        </h1>
+          <ArrowLeft className="h-4 w-4" />{t("Change address")}</Link>
+        <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight">{t("My Ballot")}</h1>
         {/* The election was loaded but never shown; its date is the most
             important fact on this page. */}
         {election && (
@@ -221,7 +211,7 @@ export function MyBallotPage() {
                 <span className="text-muted-foreground">
                   <span className="hidden sm:inline">· </span>
                   {d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                  {days > 1 ? ` · in ${days} days` : days === 1 ? ' · tomorrow' : days === 0 ? ' · today' : ''}
+                  {days > 1 ? ` · in ${days} days` : days === 1 ? t(" · tomorrow") : days === 0 ? t(" · today") : ''}
                 </span>
               );
             })()}
@@ -253,15 +243,10 @@ export function MyBallotPage() {
         </div>
 
         {ballotScope === 'state' && (
-          <p className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-sm">
-            We couldn't match your ZIP code to specific districts yet, so this shows every race in your state.
-            Races for other cities or districts may appear here — check the district on each race.
-          </p>
+          <p className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-sm">{t("We couldn't match your ZIP code to specific districts yet, so this shows every race in your state. Races for other cities or districts may appear here — check the district on each race.")}</p>
         )}
 
-        <p className="mt-3 text-sm text-muted-foreground">
-          Your ballot may change depending on your address. Enter a different ZIP code to see races for another location.
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">{t("Your ballot may change depending on your address. Enter a different ZIP code to see races for another location.")}</p>
       </div>
 
       {/* AP race calls / certified results for the voter's state. Renders
@@ -269,7 +254,7 @@ export function MyBallotPage() {
           on any page, so "race called" notifications had nowhere to lead. */}
       {toStatePostal(districts?.state) && (
         <div className="mb-6">
-          <ElectionResultsCard state={toStatePostal(districts?.state)} title="Results in your state" />
+          <ElectionResultsCard state={toStatePostal(districts?.state)} title={t("Results in your state")} />
         </div>
       )}
 
@@ -280,7 +265,7 @@ export function MyBallotPage() {
       {contestsByLevel.map((group) => (
         <section key={group.level} className="mb-10">
           <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-            {group.label}
+            {t(group.label)}
           </h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {group.contests.map((contest) => (
@@ -293,9 +278,7 @@ export function MyBallotPage() {
       {/* Ballot Measures */}
       {measures.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-            Ballot Measures
-          </h2>
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">{t("Ballot Measures")}</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {measures.map((measure) => (
               <BallotMeasureCard key={measure.id} measure={measure} />

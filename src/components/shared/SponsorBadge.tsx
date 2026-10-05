@@ -4,6 +4,7 @@ import { Handshake, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { getActiveSponsorships, trackSponsorEvent } from '@/services/advertising';
 import type { SponsorPlacement, Sponsorship, Sponsor } from '@/types';
+import { t } from '@/i18n';
 
 interface SponsorBadgeProps {
   placement: SponsorPlacement;
@@ -46,14 +47,14 @@ export const SponsorBadge = memo(function SponsorBadge({ placement, className = 
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Presented by</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{t("Presented by")}</p>
             <div className="mt-1 flex items-center gap-3">
               {sponsor.logo_url ? (
                 <img src={sponsor.logo_url} alt={sponsor.sponsor_name} className="h-8 w-auto max-w-[120px] object-contain" />
               ) : (
                 <p className="font-bold text-foreground">{sponsor.sponsor_name}</p>
               )}
-              {sponsor.description && <p className="hidden sm:block text-xs text-muted-foreground line-clamp-1">{sponsor.description}</p>}
+              {sponsor.description && <p className="hidden sm:block text-xs text-muted-foreground line-clamp-1">{t(sponsor.description)}</p>}
               {sponsor.website_url && (
                 <a
                   href={safeUrl(sponsor.website_url)}
@@ -61,8 +62,7 @@ export const SponsorBadge = memo(function SponsorBadge({ placement, className = 
                   rel="noopener noreferrer sponsored"
                   className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                   onClick={() => trackSponsorEvent(sp.id, 'click')}
-                >
-                  Visit <ExternalLink className="h-3 w-3" />
+                >{t("Visit")} <ExternalLink className="h-3 w-3" />
                 </a>
               )}
             </div>

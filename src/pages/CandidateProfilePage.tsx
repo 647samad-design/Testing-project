@@ -45,6 +45,7 @@ import type { FeedPost, CampaignTeamMember } from '@/types';
 import { getCampaign, type Campaign as CampaignType } from '@/services/campaign';
 import { CampaignTab } from '@/components/shared/CampaignTab';
 import { Megaphone } from 'lucide-react';
+import { t } from '@/i18n';
 
 function getPartyClass(party: string | null): string {
   if (!party) return '';
@@ -156,7 +157,7 @@ export function CandidateProfilePage() {
   );
 
   usePageMeta({
-    title: candidate ? `${candidate.first_name} ${candidate.last_name}${candidate.party ? ` (${candidate.party})` : ''}` : undefined,
+    title: candidate ? `${candidate.first_name} ${candidate.last_name}${candidate.party ? ` (${candidate.party && t(candidate.party)})` : ''}` : undefined,
     description: candidate?.bio
       ? candidate.bio.slice(0, 155)
       : candidate
@@ -174,25 +175,25 @@ export function CandidateProfilePage() {
     } : undefined,
   });
 
-  if (loading) return <LoadingState message="Loading candidate profile…" />;
+  if (loading) return <LoadingState message={t("Loading candidate profile…")} />;
   if (notFound) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16">
         <EmptyState
           icon={<UserX className="h-10 w-10" />}
-          title="Candidate not found"
-          description="This profile may have been removed, or the link may be incorrect."
+          title={t("Candidate not found")}
+          description={t("This profile may have been removed, or the link may be incorrect.")}
           action={
             <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild><Link to="/candidates">Browse candidates</Link></Button>
-              <Button asChild variant="outline"><Link to="/ballot">See my ballot</Link></Button>
+              <Button asChild><Link to="/candidates">{t("Browse candidates")}</Link></Button>
+              <Button asChild variant="outline"><Link to="/ballot">{t("See my ballot")}</Link></Button>
             </div>
           }
         />
       </div>
     );
   }
-  if (error || !candidate) return <ErrorState message={error ?? 'Failed to load candidate.'} onRetry={() => window.location.reload()} />;
+  if (error || !candidate) return <ErrorState message={error ?? t("Failed to load candidate.")} onRetry={() => window.location.reload()} />;
 
   const fullName = `${candidate.first_name} ${candidate.last_name}`;
   const initials = `${candidate.first_name[0] ?? ''}${candidate.last_name[0] ?? ''}`;
@@ -201,9 +202,7 @@ export function CandidateProfilePage() {
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <Link to="/candidates" className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-        <ArrowLeft className="h-4 w-4" />
-        All candidates
-      </Link>
+        <ArrowLeft className="h-4 w-4" />{t("All candidates")}</Link>
 
       {/* Header */}
       <Card className="mt-4 p-6 rounded-2xl">
@@ -219,9 +218,7 @@ export function CandidateProfilePage() {
             <h1 className="font-display text-3xl font-semibold tracking-tight">{fullName}</h1>
             {verifiedClaim && (
               <span className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-success/10 px-2.5 py-1 text-sm font-semibold text-success">
-                <ShieldCheck className="h-4 w-4" />
-                Verified Candidate
-              </span>
+                <ShieldCheck className="h-4 w-4" />{t("Verified Candidate")}</span>
             )}
             {/* Verification levels */}
             <div className="mt-2">
@@ -235,10 +232,10 @@ export function CandidateProfilePage() {
                 const pc = getPartyClass(candidate.party);
                 return pc ? (
                   <span className={cn('mt-2 inline-flex items-center rounded-lg border px-2.5 py-1 text-sm font-semibold', pc)}>
-                    {candidate.party}
+                    {candidate.party && t(candidate.party)}
                   </span>
                 ) : (
-                  <p className="mt-1 text-muted-foreground">{candidate.party}</p>
+                  <p className="mt-1 text-muted-foreground">{candidate.party && t(candidate.party)}</p>
                 );
               })()
             )}
@@ -250,28 +247,22 @@ export function CandidateProfilePage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <Link to={`/compare?c=${candidate.id}`}>
                 <Button variant="outline" size="sm" className="gap-2 rounded-xl touch-target">
-                  <GitCompare className="h-4 w-4" />
-                  Compare
-                </Button>
+                  <GitCompare className="h-4 w-4" />{t("Compare")}</Button>
               </Link>
               <Link to={`/ask?c=${candidate.id}`}>
                 <Button variant="outline" size="sm" className="gap-2 rounded-xl touch-target">
-                  <MessageSquare className="h-4 w-4" />
-                  Ask AI
-                </Button>
+                  <MessageSquare className="h-4 w-4" />{t("Ask AI")}</Button>
               </Link>
               {candidate.website_url && (
                 <a href={safeUrl(candidate.website_url)} target="_blank" rel="noopener noreferrer">
                   <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target">
-                    <Globe className="h-4 w-4" />
-                    Website
-                  </Button>
+                    <Globe className="h-4 w-4" />{t("Website")}</Button>
                 </a>
               )}
               <ClaimProfileButton candidateId={candidate.id} candidateName={fullName} />
               <FollowButton followableType="candidate" followableId={candidate.id} size="sm" />
               <MessageCandidateButton candidateId={candidate.id} />
-              <ReportButton contentType="candidate" contentId={candidate.id} label="Report inaccuracy" />
+              <ReportButton contentType="candidate" contentId={candidate.id} label={t("Report inaccuracy")} />
             </div>
           </div>
         </div>
@@ -287,9 +278,7 @@ export function CandidateProfilePage() {
         <Card className="mt-4 p-4 rounded-2xl border-primary/20">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" />
-            <p className="text-xs font-bold uppercase tracking-wider text-primary">
-              Candidate-provided information
-            </p>
+            <p className="text-xs font-bold uppercase tracking-wider text-primary">{t("Candidate-provided information")}</p>
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {approvedSubs.map((sub) => (
@@ -309,7 +298,7 @@ export function CandidateProfilePage() {
         <Card className="mt-4 p-4 rounded-2xl">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-foreground">Upcoming Events</h3>
+            <h3 className="font-semibold text-foreground">{t("Upcoming Events")}</h3>
           </div>
           <div className="mt-3 space-y-3">
             {approvedEvents.map((ev) => (
@@ -324,11 +313,11 @@ export function CandidateProfilePage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-foreground">{ev.title}</p>
-                  {ev.description && <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">{ev.description}</p>}
+                  {ev.description && <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">{t(ev.description)}</p>}
                   <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                     {ev.start_time && <span>{ev.start_time}</span>}
                     {ev.location_name && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{ev.location_name}{ev.city ? `, ${ev.city}` : ''}</span>}
-                    {ev.virtual_url && <a href={safeUrl(ev.virtual_url)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Virtual link</a>}
+                    {ev.virtual_url && <a href={safeUrl(ev.virtual_url)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t("Virtual link")}</a>}
                   </div>
                 </div>
               </div>
@@ -348,7 +337,7 @@ export function CandidateProfilePage() {
           candidateId={candidate.id}
           photoUrl={candidate.photo_url}
           fullName={fullName}
-          party={candidate.party}
+          party={candidate.party && t(candidate.party)}
         />
       </div>
 
@@ -370,12 +359,12 @@ export function CandidateProfilePage() {
       {/* Candidate questionnaire */}
       {approvedQ.length > 0 && (
         <Card className="mt-4 p-4 rounded-2xl">
-          <h3 className="font-semibold text-foreground">Candidate Questionnaire</h3>
+          <h3 className="font-semibold text-foreground">{t("Candidate Questionnaire")}</h3>
           <div className="mt-3 space-y-3">
             {approvedQ.map((q) => (
               <div key={q.id} className="rounded-xl bg-secondary/30 p-3">
                 <p className="text-sm font-medium text-foreground">{q.question}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{q.answer ?? 'No response provided.'}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{q.answer ?? t("No response provided.")}</p>
               </div>
             ))}
           </div>
@@ -388,16 +377,16 @@ export function CandidateProfilePage() {
       {/* Tabs */}
       <Tabs defaultValue="about" className="mt-6">
         <TabsList className="w-full justify-start overflow-x-auto no-scrollbar">
-          <TabsTrigger value="about">About</TabsTrigger>
-          {campaign && <TabsTrigger value="campaign" className="gap-1"><Megaphone className="h-3.5 w-3.5" /> Campaign</TabsTrigger>}
-          <TabsTrigger value="feed">Feed</TabsTrigger>
-          <TabsTrigger value="questions">Questions</TabsTrigger>
-          <TabsTrigger value="positions">Where They Stand</TabsTrigger>
-          <TabsTrigger value="claims">Claims &amp; Plans</TabsTrigger>
-          <TabsTrigger value="promises">Promises</TabsTrigger>
-          <TabsTrigger value="evidence">Track Record</TabsTrigger>
-          <TabsTrigger value="news">News &amp; Media</TabsTrigger>
-          {isJudicial && <TabsTrigger value="judicial">Judicial Record</TabsTrigger>}
+          <TabsTrigger value="about">{t("About")}</TabsTrigger>
+          {campaign && <TabsTrigger value="campaign" className="gap-1"><Megaphone className="h-3.5 w-3.5" /> {t("Campaign")}</TabsTrigger>}
+          <TabsTrigger value="feed">{t("Feed")}</TabsTrigger>
+          <TabsTrigger value="questions">{t("Questions")}</TabsTrigger>
+          <TabsTrigger value="positions">{t("Where They Stand")}</TabsTrigger>
+          <TabsTrigger value="claims">{t("Claims & Plans")}</TabsTrigger>
+          <TabsTrigger value="promises">{t("Promises")}</TabsTrigger>
+          <TabsTrigger value="evidence">{t("Track Record")}</TabsTrigger>
+          <TabsTrigger value="news">{t("News & Media")}</TabsTrigger>
+          {isJudicial && <TabsTrigger value="judicial">{t("Judicial Record")}</TabsTrigger>}
         </TabsList>
 
         {/* ABOUT */}
@@ -405,24 +394,24 @@ export function CandidateProfilePage() {
           <div className="grid gap-4 md:grid-cols-2">
             {candidate.bio && (
               <Card className="p-5 md:col-span-2">
-                <h3 className="font-semibold text-foreground">Biography</h3>
+                <h3 className="font-semibold text-foreground">{t("Biography")}</h3>
                 <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{candidate.bio}</p>
               </Card>
             )}
             {candidate.education && (
-              <InfoCard icon={GraduationCap} title="Education" content={candidate.education} />
+              <InfoCard icon={GraduationCap} title={t("Education")} content={candidate.education} />
             )}
             {candidate.professional_background && (
-              <InfoCard icon={Briefcase} title="Professional Background" content={candidate.professional_background} />
+              <InfoCard icon={Briefcase} title={t("Professional Background")} content={candidate.professional_background} />
             )}
             {candidate.previous_offices && (
-              <InfoCard icon={Award} title="Previous Offices" content={candidate.previous_offices} />
+              <InfoCard icon={Award} title={t("Previous Offices")} content={candidate.previous_offices} />
             )}
             {candidate.military_service && candidate.military_service !== 'None' && (
-              <InfoCard icon={Shield} title="Military Service" content={candidate.military_service} />
+              <InfoCard icon={Shield} title={t("Military Service")} content={candidate.military_service} />
             )}
             {candidate.public_service && candidate.public_service !== 'None' && (
-              <InfoCard icon={Heart} title="Public Service" content={candidate.public_service} />
+              <InfoCard icon={Heart} title={t("Public Service")} content={candidate.public_service} />
             )}
           </div>
 
@@ -447,18 +436,18 @@ export function CandidateProfilePage() {
               {feedPosts.map((post) => (
                 <Card key={post.id} className="p-4 rounded-2xl">
                   <div className="flex items-center gap-2 mb-2">
-                    {post.is_pinned && <span className="text-xs font-bold text-primary">Pinned</span>}
+                    {post.is_pinned && <span className="text-xs font-bold text-primary">{t("Pinned")}</span>}
                     <span className="text-xs font-semibold text-muted-foreground">
-                      {post.post_type === 'event' ? 'Event' : post.post_type === 'position_change' ? 'Position Update' : 'Update'}
+                      {post.post_type === 'event' ? t("Event") : post.post_type === 'position_change' ? t("Position Update") : t("Update")}
                     </span>
                     <span className="text-xs text-muted-foreground">{new Date(post.created_at).toLocaleDateString()}</span>
                   </div>
                   <p className="text-sm text-foreground whitespace-pre-wrap">{post.body}</p>
-                  {post.image_url && <img src={post.image_url} alt="Post image" className="mt-2 rounded-xl max-h-60 object-cover" />}
+                  {post.image_url && <img src={post.image_url} alt={t("Post image")} className="mt-2 rounded-xl max-h-60 object-cover" />}
                   {post.event_date && (
                     <div className="mt-2 rounded-xl border border-border bg-secondary/30 p-2 text-sm">
                       <span className="font-semibold">{parseDateOnly(post.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
-                      {post.event_start_time && <span className="text-muted-foreground"> at {post.event_start_time}</span>}
+                      {post.event_start_time && <span className="text-muted-foreground"> {t("at")} {post.event_start_time}</span>}
                       {post.event_location && <span className="text-muted-foreground"> — {post.event_location}</span>}
                     </div>
                   )}
@@ -472,7 +461,7 @@ export function CandidateProfilePage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-sm text-muted-foreground">This candidate hasn't posted any updates yet.</p>
+              <p className="text-sm text-muted-foreground">{t("This candidate hasn't posted any updates yet.")}</p>
             </div>
           )}
         </TabsContent>
@@ -495,9 +484,7 @@ export function CandidateProfilePage() {
         {/* WHERE THEY STAND */}
         <TabsContent value="positions" className="mt-6">
           {positions.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">
-              Position not verified. Insufficient reliable information available.
-            </p>
+            <p className="text-sm text-muted-foreground italic">{t("Position not verified. Insufficient reliable information available.")}</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {positions.map((pos) => (
@@ -517,7 +504,7 @@ export function CandidateProfilePage() {
           {/* Statements */}
           {statements.length > 0 && (
             <section>
-              <h3 className="mb-3 font-bold text-foreground">Public Statements</h3>
+              <h3 className="mb-3 font-bold text-foreground">{t("Public Statements")}</h3>
               <div className="space-y-3">
                 {statements.map((stmt) => (
                   <EvidenceCard key={stmt.id} type="statement" data={stmt} />
@@ -538,18 +525,14 @@ export function CandidateProfilePage() {
           )}
 
           {statements.length === 0 && votingRecords.length === 0 && (
-            <p className="text-sm text-muted-foreground italic">
-              No public statements or voting records are available for this candidate yet.
-            </p>
+            <p className="text-sm text-muted-foreground italic">{t("No public statements or voting records are available for this candidate yet.")}</p>
           )}
         </TabsContent>
 
         {/* NEWS & MEDIA */}
         <TabsContent value="news" className="mt-6 space-y-6">
           {news.length === 0 && videos.length === 0 && social.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">
-              No news or media coverage is available for this candidate yet.
-            </p>
+            <p className="text-sm text-muted-foreground italic">{t("No news or media coverage is available for this candidate yet.")}</p>
           ) : (
             <CandidateNewsSection
               news={news}
@@ -565,38 +548,38 @@ export function CandidateProfilePage() {
           <TabsContent value="judicial" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2">
               {judicialRecord.current_position && (
-                <InfoCard icon={Scale} title="Current Position" content={judicialRecord.current_position} />
+                <InfoCard icon={Scale} title={t("Current Position")} content={judicialRecord.current_position} />
               )}
               {judicialRecord.bar_admission_date && (
-                <InfoCard icon={Award} title="Bar Admission" content={`Admitted: ${formatDate(judicialRecord.bar_admission_date)}${judicialRecord.bar_number ? ` — ${judicialRecord.bar_number}` : ''}`} />
+                <InfoCard icon={Award} title={t("Bar Admission")} content={`Admitted: ${formatDate(judicialRecord.bar_admission_date)}${judicialRecord.bar_number ? ` — ${judicialRecord.bar_number}` : ''}`} />
               )}
               {judicialRecord.previous_judicial_experience && (
                 <Card className="p-5 md:col-span-2">
-                  <h3 className="font-semibold text-foreground">Previous Judicial Experience</h3>
+                  <h3 className="font-semibold text-foreground">{t("Previous Judicial Experience")}</h3>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{judicialRecord.previous_judicial_experience}</p>
                 </Card>
               )}
               {judicialRecord.notable_decisions && (
                 <Card className="p-5 md:col-span-2">
-                  <h3 className="font-semibold text-foreground">Notable Decisions</h3>
+                  <h3 className="font-semibold text-foreground">{t("Notable Decisions")}</h3>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{judicialRecord.notable_decisions}</p>
                 </Card>
               )}
               {judicialRecord.endorsements && (
                 <Card className="p-5 md:col-span-2">
-                  <h3 className="font-semibold text-foreground">Endorsements</h3>
+                  <h3 className="font-semibold text-foreground">{t("Endorsements")}</h3>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{judicialRecord.endorsements}</p>
                 </Card>
               )}
               {judicialRecord.disciplinary_records && (
                 <Card className="p-5 md:col-span-2">
-                  <h3 className="font-semibold text-foreground">Public Disciplinary Records</h3>
+                  <h3 className="font-semibold text-foreground">{t("Public Disciplinary Records")}</h3>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{judicialRecord.disciplinary_records}</p>
                 </Card>
               )}
               {judicialRecord.campaign_contributions_summary && (
                 <Card className="p-5 md:col-span-2">
-                  <h3 className="font-semibold text-foreground">Campaign Contributions</h3>
+                  <h3 className="font-semibold text-foreground">{t("Campaign Contributions")}</h3>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{judicialRecord.campaign_contributions_summary}</p>
                 </Card>
               )}
@@ -656,8 +639,8 @@ function VotingRecordsSection({
     <section>
       <div className="mb-4 flex items-center gap-2">
         <VoteIcon className="h-5 w-5 text-primary" />
-        <h3 className="font-bold text-foreground">Voting Records</h3>
-        <span className="ml-auto text-sm text-muted-foreground">{filtered.length} of {records.length}</span>
+        <h3 className="font-bold text-foreground">{t("Voting Records")}</h3>
+        <span className="ml-auto text-sm text-muted-foreground">{filtered.length} {t("of")} {records.length}</span>
       </div>
 
       {/* Search bar */}
@@ -665,11 +648,11 @@ function VotingRecordsSection({
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Search by bill name, number, or topic…"
+          placeholder={t("Search by bill name, number, or topic…")}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10 h-12 rounded-xl"
-          aria-label="Search voting records"
+          aria-label={t("Search voting records")}
         />
       </div>
 
@@ -686,7 +669,7 @@ function VotingRecordsSection({
                 : 'bg-secondary text-muted-foreground hover:bg-secondary/70'
             )}
           >
-            {btn.label}
+            {t(btn.label)}
           </button>
         ))}
       </div>
@@ -695,9 +678,7 @@ function VotingRecordsSection({
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-border bg-secondary/30 p-8 text-center">
           <Search className="mx-auto h-8 w-8 text-muted-foreground/50" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            No voting records match your search. Try a different bill name or filter.
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">{t("No voting records match your search. Try a different bill name or filter.")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -741,12 +722,8 @@ function CandidateNewsSection({
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="flex items-center gap-2 font-bold text-foreground">
-              <Newspaper className="h-5 w-5 text-primary" />
-              Articles
-            </h3>
-            <Link to={`/news?c=${candidateId}`} className="text-sm font-medium text-primary hover:underline">
-              View all on News page
-            </Link>
+              <Newspaper className="h-5 w-5 text-primary" />{t("Articles")}</h3>
+            <Link to={`/news?c=${candidateId}`} className="text-sm font-medium text-primary hover:underline">{t("View all on News page")}</Link>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {news.slice(0, 6).map((article) => (
@@ -760,12 +737,8 @@ function CandidateNewsSection({
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="flex items-center gap-2 font-bold text-foreground">
-              <VideoIcon className="h-5 w-5 text-primary" />
-              Videos
-            </h3>
-            <Link to={`/news?c=${candidateId}`} className="text-sm font-medium text-primary hover:underline">
-              View all on News page
-            </Link>
+              <VideoIcon className="h-5 w-5 text-primary" />{t("Videos")}</h3>
+            <Link to={`/news?c=${candidateId}`} className="text-sm font-medium text-primary hover:underline">{t("View all on News page")}</Link>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {videos.filter((video) => video.url).map((video) => (
@@ -797,12 +770,8 @@ function CandidateNewsSection({
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="flex items-center gap-2 font-bold text-foreground">
-              <MessageCircle className="h-5 w-5 text-primary" />
-              Social Posts
-            </h3>
-            <Link to={`/news?c=${candidateId}`} className="text-sm font-medium text-primary hover:underline">
-              View all on News page
-            </Link>
+              <MessageCircle className="h-5 w-5 text-primary" />{t("Social Posts")}</h3>
+            <Link to={`/news?c=${candidateId}`} className="text-sm font-medium text-primary hover:underline">{t("View all on News page")}</Link>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {social.filter((post) => post.url).map((post) => (
@@ -815,7 +784,7 @@ function CandidateNewsSection({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         {post.platform && <span className="text-xs font-medium text-muted-foreground">{post.platform}</span>}
-                        <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">Social</span>
+                        <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">{t("Social")}</span>
                       </div>
                       {post.content && <p className="mt-1 text-sm text-muted-foreground line-clamp-3">{post.content}</p>}
                       {post.posted_date && <p className="mt-1 text-xs text-muted-foreground">{formatDate(post.posted_date)}</p>}

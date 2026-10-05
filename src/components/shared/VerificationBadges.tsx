@@ -1,6 +1,7 @@
 import { ShieldCheck, FileText, Link2, PenLine } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 export type VerificationLevel = 'official' | 'candidate_managed' | 'ballotlens_researched' | 'source_verified';
 
@@ -70,11 +71,11 @@ export function VerificationBadges({
                   )}
                 >
                   <Icon className={size === 'xs' ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
-                  {def.label}
+                  {t(def.label)}
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs">
-                <p className="text-xs">{def.description}</p>
+                <p className="text-xs">{t(def.description)}</p>
               </TooltipContent>
             </Tooltip>
           );

@@ -6,6 +6,7 @@ import { follow, unfollow, isFollowing, getFollowerCount } from '@/services/soci
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { FollowableType } from '@/types';
+import { t } from '@/i18n';
 
 export function FollowButton({
   followableType,
@@ -56,7 +57,7 @@ export function FollowButton({
 
   if (!user) {
     return showCount && count > 0 ? (
-      <span className="text-xs text-muted-foreground font-semibold">{count} followers</span>
+      <span className="text-xs text-muted-foreground font-semibold">{count} {t("followers")}</span>
     ) : null;
   }
 
@@ -71,14 +72,10 @@ export function FollowButton({
       >
         {following ? (
           <>
-            <UserCheck className="h-4 w-4" />
-            Following
-          </>
+            <UserCheck className="h-4 w-4" />{t("Following")}</>
         ) : (
           <>
-            <UserPlus className="h-4 w-4" />
-            Follow
-          </>
+            <UserPlus className="h-4 w-4" />{t("Follow")}</>
         )}
       </Button>
       {showCount && count > 0 && (
@@ -127,7 +124,7 @@ export function IssueFollowButton({ issueId, issueName }: { issueId: string; iss
       className={cn('rounded-xl touch-target gap-1.5', following && 'text-primary')}
     >
       <Heart className={cn('h-3.5 w-3.5', following && 'fill-current text-accent')} />
-      {following ? 'Following' : `Follow ${issueName}`}
+      {following ? t("Following") : `Follow ${issueName}`}
     </Button>
   );
 }

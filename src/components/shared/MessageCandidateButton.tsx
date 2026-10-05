@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
+import { t } from '@/i18n';
 
 interface MessageCandidateButtonProps {
   candidateId: string;
@@ -36,7 +37,7 @@ export function MessageCandidateButton({ candidateId }: MessageCandidateButtonPr
       disabled={loading}
     >
       <Mail className="h-4 w-4" />
-      {loading ? 'Opening…' : 'Message'}
+      {loading ? t("Opening…") : t("Message")}
     </Button>
   );
 }

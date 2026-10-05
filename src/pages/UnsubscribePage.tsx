@@ -3,6 +3,7 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t } from '@/i18n';
 
 const LIST_NAMES: Record<string, string> = {
   digest: 'the Gov Search App Digest',
@@ -17,7 +18,7 @@ export function UnsubscribePage() {
   const [params] = useSearchParams();
   const status = params.get('status');
   const what = LIST_NAMES[params.get('list') ?? ''] ?? 'these emails';
-  usePageMeta({ title: 'Email preferences', noindex: true });
+  usePageMeta({ title: t("Email preferences"), noindex: true });
 
   const ok = status === 'ok';
   const title = ok ? "You're unsubscribed" : status === 'error' ? 'Something went wrong' : 'This link didn’t work';
@@ -36,8 +37,8 @@ export function UnsubscribePage() {
         <h1 className="mt-4 font-display text-2xl font-semibold tracking-tight">{title}</h1>
         <p className="mt-3 text-muted-foreground">{message}</p>
         <div className="mt-6 flex justify-center gap-3">
-          <Button asChild variant="outline"><Link to="/account">Email settings</Link></Button>
-          <Button asChild><Link to="/">Go to Gov Search App</Link></Button>
+          <Button asChild variant="outline"><Link to="/account">{t("Email settings")}</Link></Button>
+          <Button asChild><Link to="/">{t("Go to Gov Search App")}</Link></Button>
         </div>
       </Card>
     </div>

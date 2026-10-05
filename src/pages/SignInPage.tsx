@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { LANGUAGE_OPTIONS, type LanguageName } from '@/types';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t } from '@/i18n';
 
 export function SignInPage() {
-  usePageMeta({ title: 'Sign In', noindex: true });
+  usePageMeta({ title: t("Sign In"), noindex: true });
   const navigate = useNavigate();
   const { signIn, signUp, signInAsDemo, resetPassword, updatePassword, isPasswordRecovery } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
@@ -94,14 +95,14 @@ export function SignInPage() {
     return (
       <div className="mx-auto max-w-md px-4 py-12 animate-fade-in">
         <div className="text-center mb-8">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Set a new password</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Choose a new password for your account.</p>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">{t("Set a new password")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("Choose a new password for your account.")}</p>
         </div>
         <Card className="p-8 rounded-2xl">
           <form onSubmit={handleSetNewPassword} className="space-y-4">
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">{t("New Password")}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -116,7 +117,7 @@ export function SignInPage() {
               </div>
             </div>
             <Button type="submit" className="w-full rounded-xl" disabled={loading}>
-              {loading ? 'Saving…' : 'Save New Password'}
+              {loading ? t("Saving…") : t("Save New Password")}
             </Button>
           </form>
         </Card>
@@ -128,15 +129,15 @@ export function SignInPage() {
     return (
       <div className="mx-auto max-w-md px-4 py-12 animate-fade-in">
         <div className="text-center mb-8">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Reset your password</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Enter your email and we'll send you a reset link.</p>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">{t("Reset your password")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("Enter your email and we'll send you a reset link.")}</p>
         </div>
         <Card className="p-8 rounded-2xl">
           <form onSubmit={handleForgotPassword} className="space-y-4">
             {error && <p className="text-sm text-destructive">{error}</p>}
             {info && <p className="text-sm text-success">{info}</p>}
             <div className="space-y-2">
-              <Label htmlFor="forgot-email">Email</Label>
+              <Label htmlFor="forgot-email">{t("Email")}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -150,15 +151,13 @@ export function SignInPage() {
               </div>
             </div>
             <Button type="submit" className="w-full rounded-xl" disabled={loading}>
-              {loading ? 'Sending…' : 'Send Reset Link'}
+              {loading ? t("Sending…") : t("Send Reset Link")}
             </Button>
             <button
               type="button"
               onClick={() => { setMode('signin'); setError(null); setInfo(null); }}
               className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
-            >
-              Back to sign in
-            </button>
+            >{t("Back to sign in")}</button>
           </form>
         </Card>
       </div>
@@ -168,18 +167,18 @@ export function SignInPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-12 animate-fade-in">
       <div className="text-center mb-8">
-        <Link to="/" className="inline-flex items-center gap-2" aria-label="Gov Search App home">
+        <Link to="/" className="inline-flex items-center gap-2" aria-label={t("Gov Search App home")}>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
             <Scale className="h-6 w-6 text-primary-foreground" />
           </div>
         </Link>
         <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight">
-          {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+          {mode === 'signin' ? t("Welcome back") : t("Create your account")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {mode === 'signin'
-            ? 'Sign in to save your issues, candidates and races.'
-            : 'Your political preferences are always private.'}
+            ? t("Sign in to save your issues, candidates and races.")
+            : t("Your political preferences are always private.")}
         </p>
       </div>
 
@@ -187,13 +186,13 @@ export function SignInPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'signup' && (
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">{t("Full Name")}</Label>
               <div className="relative">
                 <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Jane Doe"
+                  placeholder={t("Jane Doe")}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="pl-10"
@@ -205,7 +204,7 @@ export function SignInPage() {
 
           {mode === 'signup' && (
             <div className="space-y-2">
-              <Label htmlFor="language">App Language</Label>
+              <Label htmlFor="language">{t("App Language")}</Label>
               <div className="relative">
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <select
@@ -221,23 +220,23 @@ export function SignInPage() {
                 >
                   {LANGUAGE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.nativeLabel} ({opt.label})
+                      {opt.nativeLabel} ({t(opt.label)})
                     </option>
                   ))}
                 </select>
               </div>
-              <p className="text-xs text-muted-foreground">Choose the language for the app. You can change this later.</p>
+              <p className="text-xs text-muted-foreground">{t("Choose the language for the app. You can change this later.")}</p>
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("Email")}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t("you@example.com")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10"
@@ -248,15 +247,13 @@ export function SignInPage() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("Password")}</Label>
               {mode === 'signin' && (
                 <button
                   type="button"
                   onClick={() => { setMode('forgot'); setError(null); setInfo(null); }}
                   className="text-xs font-medium text-primary hover:underline"
-                >
-                  Forgot password?
-                </button>
+                >{t("Forgot password?")}</button>
               )}
             </div>
             <div className="relative">
@@ -286,7 +283,7 @@ export function SignInPage() {
           )}
 
           <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-bold touch-target">
-            {loading ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+            {loading ? t("Please wait…") : mode === 'signin' ? t("Sign In") : t("Create Account")}
           </Button>
         </form>
 
@@ -300,8 +297,8 @@ export function SignInPage() {
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {mode === 'signin'
-              ? "Don't have an account? Sign up"
-              : 'Already have an account? Sign in'}
+              ? t("Don't have an account? Sign up")
+              : t("Already have an account? Sign in")}
           </button>
         </div>
 
@@ -313,18 +310,12 @@ export function SignInPage() {
             }}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm font-semibold text-foreground hover:bg-secondary transition-all touch-target"
           >
-            <Eye className="h-4 w-4" />
-            Explore as Demo User
-          </button>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            Preview the logged-in experience without creating an account.
-          </p>
+            <Eye className="h-4 w-4" />{t("Explore as Demo User")}</button>
+          <p className="mt-2 text-center text-xs text-muted-foreground">{t("Preview the logged-in experience without creating an account.")}</p>
         </div>
       </Card>
 
-      <p className="mt-6 text-center text-xs text-muted-foreground">
-        Gov Search App does not publicly disclose your political preferences.
-      </p>
+      <p className="mt-6 text-center text-xs text-muted-foreground">{t("Gov Search App does not publicly disclose your political preferences.")}</p>
     </div>
   );
 }

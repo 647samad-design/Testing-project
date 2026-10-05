@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BookOpen, ChevronDown, GraduationCap, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface ExplainSimplyProps {
   plainEnglish?: string | null;
@@ -21,7 +22,7 @@ export function ExplainSimply({ plainEnglish, eli5, className }: ExplainSimplyPr
         aria-expanded={open}
       >
         <GraduationCap className="h-4 w-4 text-primary shrink-0" />
-        <span className="text-sm font-bold text-primary">Explain This Like I'm 5</span>
+        <span className="text-sm font-bold text-primary">{t("Explain This Like I'm 5")}</span>
         <ChevronDown className={cn(
           'ml-auto h-4 w-4 text-primary transition-transform',
           open && 'rotate-180'
@@ -34,7 +35,7 @@ export function ExplainSimply({ plainEnglish, eli5, className }: ExplainSimplyPr
             <div className="rounded-lg bg-card p-3.5 border border-border">
               <div className="flex items-center gap-1.5 mb-2">
                 <Info className="h-3.5 w-3.5 text-accent" />
-                <span className="text-xs font-bold uppercase tracking-wider text-accent">In Simple Terms</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-accent">{t("In Simple Terms")}</span>
               </div>
               <p className="text-sm text-foreground leading-relaxed">{eli5}</p>
             </div>
@@ -44,7 +45,7 @@ export function ExplainSimply({ plainEnglish, eli5, className }: ExplainSimplyPr
             <div className="rounded-lg bg-card p-3.5 border border-border">
               <div className="flex items-center gap-1.5 mb-2">
                 <BookOpen className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-wider text-primary">Plain English Summary</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">{t("Plain English Summary")}</span>
               </div>
               <p className="text-sm text-foreground leading-relaxed">{plainEnglish}</p>
             </div>

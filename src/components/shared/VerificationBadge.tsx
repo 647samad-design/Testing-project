@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { VerificationStatus } from '@/types';
+import { t } from '@/i18n';
 
 interface VerificationBadgeProps {
   status: VerificationStatus;
@@ -32,7 +33,7 @@ export function VerificationBadge({ status, className }: VerificationBadgeProps)
       )}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {c.label}
+      {t(c.label)}
     </span>
   );
 }

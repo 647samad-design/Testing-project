@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import type { BallotContest, Candidate, CandidatePosition, Issue } from '@/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface BallotContestCardProps {
   contest: BallotContest;
@@ -116,20 +117,18 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
                 {c.first_name} {c.last_name}
               </span>
               {c.party && (
-                <span className="text-xs text-muted-foreground">{c.party}</span>
+                <span className="text-xs text-muted-foreground">{c.party && t(c.party)}</span>
               )}
             </Link>
           ))}
           {candidates.length > 3 && (
             <p className="px-3 text-xs text-muted-foreground">
-              +{candidates.length - 3} more candidate{candidates.length - 3 === 1 ? '' : 's'}
+              +{candidates.length - 3} {t("more candidate")}{candidates.length - 3 === 1 ? '' : 's'}
             </p>
           )}
         </div>
       ) : (
-        <p className="mt-4 text-sm text-muted-foreground">
-          No candidate information available yet.
-        </p>
+        <p className="mt-4 text-sm text-muted-foreground">{t("No candidate information available yet.")}</p>
       )}
 
       {/* Inline quick comparison toggle */}
@@ -139,7 +138,7 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
           className="mt-4 flex w-full items-center gap-2 rounded-xl border border-border bg-secondary/30 px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary touch-target"
         >
           <GitCompare className="h-4 w-4 text-primary" />
-          {expanded ? 'Hide comparison' : 'Quick comparison on issues'}
+          {expanded ? t("Hide comparison") : t("Quick comparison on issues")}
           <ChevronDown className={cn('ml-auto h-4 w-4 transition-transform', expanded && 'rotate-180')} />
         </button>
       )}
@@ -148,9 +147,9 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
       {expanded && hasMultipleCandidates && (
         <div className="mt-3 animate-fade-in">
           {loadingComparison ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">Loading positions…</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">{t("Loading positions…")}</p>
           ) : issues.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">No issue data available yet.</p>
+            <p className="py-4 text-center text-sm text-muted-foreground">{t("No issue data available yet.")}</p>
           ) : (
             <div className="space-y-3">
               {issues.slice(0, 4).map((issue) => {
@@ -172,14 +171,14 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
                               <span className="font-medium text-foreground">
                                 {c.first_name} {c.last_name}
                               </span>
-                              <span className="text-muted-foreground">{c.party}</span>
+                              <span className="text-muted-foreground">{c.party && t(c.party)}</span>
                             </div>
                             {pos && pos.summary ? (
                               <p className="mt-0.5 text-muted-foreground leading-relaxed line-clamp-2">
                                 {pos.summary}
                               </p>
                             ) : (
-                              <p className="mt-0.5 italic text-muted-foreground/70">No verified position on record.</p>
+                              <p className="mt-0.5 italic text-muted-foreground/70">{t("No verified position on record.")}</p>
                             )}
                           </div>
                         );
@@ -191,8 +190,7 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
               <Link
                 to={`/ballot/${contest.id}`}
                 className="flex items-center justify-center gap-1 rounded-lg border border-primary/20 bg-primary/5 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 touch-target"
-              >
-                View full comparison <ChevronRight className="h-4 w-4" />
+              >{t("View full comparison")} <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
           )}
@@ -203,7 +201,7 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
         to={`/ballot/${contest.id}`}
         className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80 touch-target"
       >
-        {isJudicial ? 'Research this race' : 'Research this race'}
+        {isJudicial ? t("Research this race") : t("Research this race")}
         <ChevronRight className="h-4 w-4" />
       </Link>
     </Card>

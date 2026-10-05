@@ -18,9 +18,10 @@ import type { Candidate, CandidatePosition, Issue, CandidateTag } from '@/types'
 import { Tag as TagIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t } from '@/i18n';
 
 export function ComparePage() {
-  usePageMeta({ title: 'Compare Candidates', description: 'Compare candidates side by side on the issues that matter to you.' });
+  usePageMeta({ title: t("Compare Candidates"), description: t("Compare candidates side by side on the issues that matter to you.") });
   const [searchParams] = useSearchParams();
   const initialCandidate = searchParams.get('c');
   const { user } = useAuth();
@@ -106,16 +107,13 @@ export function ComparePage() {
       return name.includes(pickerSearch.toLowerCase());
     });
 
-  if (loading) return <LoadingState message="Loading comparison tool…" />;
+  if (loading) return <LoadingState message={t("Loading comparison tool…")} />;
 
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <div className="mb-6">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">Compare Candidates</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Select 2 or more candidates and compare their positions side by side.
-          Issues you care about are highlighted.
-        </p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight">{t("Compare Candidates")}</h1>
+        <p className="mt-2 text-lg text-muted-foreground">{t("Select 2 or more candidates and compare their positions side by side. Issues you care about are highlighted.")}</p>
         <div className="mt-4">
           <DemoBanner compact show={allCandidates.filter((c) => selectedIds.includes(c.id)).some((c) => c.is_demo)} />
         </div>
@@ -124,8 +122,7 @@ export function ComparePage() {
       {/* Candidate selector */}
       <Card className="mb-6 p-5 rounded-2xl">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium text-muted-foreground">
-            Selected ({selectedIds.length}):
+          <span className="text-sm font-medium text-muted-foreground">{t("Selected (")}{selectedIds.length}):
           </span>
           {selectedCandidates.map((c) => (
             <div key={c.id} className="flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-1.5">
@@ -143,12 +140,10 @@ export function ComparePage() {
             </div>
           ))}
           {selectedIds.length < 2 && (
-            <span className="text-xs text-muted-foreground italic">Add at least 2 to compare</span>
+            <span className="text-xs text-muted-foreground italic">{t("Add at least 2 to compare")}</span>
           )}
           <Button variant="outline" size="sm" onClick={() => setPickerOpen(!pickerOpen)} className="gap-2 rounded-xl touch-target ml-auto">
-            <Users className="h-4 w-4" />
-            Add Candidate
-          </Button>
+            <Users className="h-4 w-4" />{t("Add Candidate")}</Button>
         </div>
 
         {pickerOpen && (
@@ -157,7 +152,7 @@ export function ComparePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search candidates by name…"
+                placeholder={t("Search candidates by name…")}
                 value={pickerSearch}
                 onChange={(e) => setPickerSearch(e.target.value)}
                 className="pl-10 h-11 rounded-xl"
@@ -179,15 +174,15 @@ export function ComparePage() {
                   </Avatar>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{c.first_name} {c.last_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{c.party}</p>
+                    <p className="truncate text-xs text-muted-foreground">{c.party && t(c.party)}</p>
                   </div>
                 </button>
               ))}
               {filteredPickerCandidates.length === 0 && (
                 <p className="col-span-full text-center text-sm text-muted-foreground py-4">
                   {selectedContestIds.size > 0 && !pickerSearch.trim()
-                    ? "No other candidates found running in the same race."
-                    : 'No candidates found.'}
+                    ? t("No other candidates found running in the same race.")
+                    : t("No candidates found.")}
                 </p>
               )}
             </div>
@@ -202,8 +197,7 @@ export function ComparePage() {
             <Star className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
             <div>
               <p className="font-semibold text-sm text-foreground">
-                {userIssueIds.size} issue{userIssueIds.size === 1 ? '' : 's'} you care about are highlighted below
-              </p>
+                {userIssueIds.size} {t("issue")}{userIssueIds.size === 1 ? '' : 's'} {t("you care about are highlighted below")}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {allIssues.filter((i) => userIssueIds.has(i.id)).map((i) => (
                   <span key={i.id} className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1 text-xs font-semibold text-primary">
@@ -219,8 +213,8 @@ export function ComparePage() {
       {/* Comparison table */}
       {selectedIds.length < 2 ? (
         <EmptyState
-          title="Select at least 2 candidates"
-          description="Choose candidates from the selector above to start comparing their positions on key issues."
+          title={t("Select at least 2 candidates")}
+          description={t("Choose candidates from the selector above to start comparing their positions on key issues.")}
           icon={<GitCompare className="h-10 w-10" />}
         />
       ) : (
@@ -234,12 +228,8 @@ export function ComparePage() {
       )}
 
       <div className="mt-8 rounded-lg border border-border bg-secondary/30 p-4 text-center">
-        <p className="text-sm font-medium text-foreground">
-          Review the evidence and decide for yourself.
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Gov Search App does not score candidates or declare a "winner." Compare the evidence and make your own decision.
-        </p>
+        <p className="text-sm font-medium text-foreground">{t("Review the evidence and decide for yourself.")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("Gov Search App does not score candidates or declare a \"winner.\" Compare the evidence and make your own decision.")}</p>
       </div>
     </div>
   );
@@ -265,7 +255,7 @@ function ComparisonTable({
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-secondary/30">
-              <th className="sticky left-0 z-10 bg-secondary/30 p-4 text-left text-sm font-semibold text-foreground min-w-[160px]">Issue</th>
+              <th className="sticky left-0 z-10 bg-secondary/30 p-4 text-left text-sm font-semibold text-foreground min-w-[160px]">{t("Issue")}</th>
               {candidates.map((c) => (
                 <th key={c.id} className="p-4 text-left min-w-[220px] align-top">
                   <Link to={`/candidates/${c.id}`} className="block hover:text-primary transition-colors">
@@ -279,7 +269,7 @@ function ComparisonTable({
                       </Avatar>
                       <div>
                         <p className="font-semibold text-sm">{c.first_name} {c.last_name}</p>
-                        <p className="text-xs text-muted-foreground">{c.party}</p>
+                        <p className="text-xs text-muted-foreground">{c.party && t(c.party)}</p>
                       </div>
                     </div>
                   </Link>
@@ -332,7 +322,7 @@ function ComparisonTable({
                 {isUserIssue && <Star className="h-4 w-4 text-primary fill-primary shrink-0" />}
                 <h3 className={cn('font-semibold', isUserIssue ? 'text-primary' : 'text-foreground')}>{issue.name}</h3>
                 {isUserIssue && (
-                  <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">Your Issue</span>
+                  <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">{t("Your Issue")}</span>
                 )}
               </div>
               <div className="space-y-3">
@@ -349,7 +339,7 @@ function ComparisonTable({
                           )}
                         </Avatar>
                         <span className="text-sm font-medium">{c.first_name} {c.last_name}</span>
-                        <span className="text-xs text-muted-foreground">{c.party}</span>
+                        <span className="text-xs text-muted-foreground">{c.party && t(c.party)}</span>
                       </Link>
                       {(tagsByCandidate[c.id] ?? []).length > 0 && (
                         <div className="mb-2 flex flex-wrap gap-1">
@@ -377,7 +367,7 @@ function ComparisonCell({ position, candidateId }: { position?: CandidatePositio
   if (!position || position.verification_status === 'insufficient_information' || !position.summary) {
     return (
       <div>
-        <p className="text-sm text-muted-foreground italic">No verified position on record.</p>
+        <p className="text-sm text-muted-foreground italic">{t("No verified position on record.")}</p>
         <div className="mt-2">
           <VerificationBadge status="insufficient_information" />
         </div>
@@ -394,15 +384,14 @@ function ComparisonCell({ position, candidateId }: { position?: CandidatePositio
         <VerificationBadge status={position.verification_status} />
         {sourceCount > 0 && (
           <span className="text-xs text-muted-foreground">
-            {sourceCount} Source{sourceCount === 1 ? '' : 's'}
+            {sourceCount} {t("Source")}{sourceCount === 1 ? '' : 's'}
           </span>
         )}
       </div>
       <Link
         to={`/candidates/${candidateId}`}
         className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-      >
-        View evidence <ArrowRight className="h-3 w-3" />
+      >{t("View evidence")} <ArrowRight className="h-3 w-3" />
       </Link>
     </div>
   );

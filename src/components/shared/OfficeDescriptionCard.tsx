@@ -3,6 +3,7 @@ import { Building2, Check, X, Info } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { getOfficeDescription } from '@/services/civic';
 import type { OfficeDescription } from '@/types';
+import { t } from '@/i18n';
 
 export function OfficeDescriptionCard({ officeName }: { officeName: string }) {
   const [office, setOffice] = useState<OfficeDescription | null>(null);
@@ -25,7 +26,7 @@ export function OfficeDescriptionCard({ officeName }: { officeName: string }) {
           <Building2 className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-bold text-sm">What Does This Office Actually Do?</h3>
+          <h3 className="font-bold text-sm">{t("What Does This Office Actually Do?")}</h3>
           <p className="text-xs text-muted-foreground">{office.office_name}</p>
         </div>
       </div>
@@ -43,9 +44,7 @@ export function OfficeDescriptionCard({ officeName }: { officeName: string }) {
         {/* What they control */}
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-success mb-2 flex items-center gap-1.5">
-            <Check className="h-3.5 w-3.5" />
-            What They Control
-          </p>
+            <Check className="h-3.5 w-3.5" />{t("What They Control")}</p>
           <ul className="space-y-1.5">
             {office.what_they_control.map((item, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground">
@@ -59,9 +58,7 @@ export function OfficeDescriptionCard({ officeName }: { officeName: string }) {
         {/* What they don't control */}
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-destructive mb-2 flex items-center gap-1.5">
-            <X className="h-3.5 w-3.5" />
-            What They Don't Control
-          </p>
+            <X className="h-3.5 w-3.5" />{t("What They Don't Control")}</p>
           <ul className="space-y-1.5">
             {office.what_they_dont_control.map((item, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">

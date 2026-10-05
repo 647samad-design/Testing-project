@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Vote as VoteIcon, TrendingUp, ChevronDown, ChevronUp, ShieldCheck, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCalledRaces, getCertifiedResults, type ElectionRace } from '@/services/election-results';
+import { t } from '@/i18n';
 
 export function ElectionResultsCard({ state, title = 'Election Results', compact = false }: { state?: string; title?: string; compact?: boolean }) {
   const [calledRaces, setCalledRaces] = useState<ElectionRace[]>([]);
@@ -75,24 +76,17 @@ export function ElectionResultsCard({ state, title = 'Election Results', compact
                     <p className="font-bold text-sm text-foreground truncate">{race.office_name}</p>
                     {race.is_certified ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success">
-                        <ShieldCheck className="h-3 w-3" />
-                        Certified
-                      </span>
+                        <ShieldCheck className="h-3 w-3" />{t("Certified")}</span>
                     ) : race.winner_name ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Called
-                      </span>
+                        <CheckCircle2 className="h-3 w-3" />{t("Called")}</span>
                     ) : (
                       <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        Pending
-                      </span>
+                        <Clock className="h-3 w-3" />{t("Pending")}</span>
                     )}
                   </div>
                   {race.winner_name && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Winner: <span className="font-bold text-foreground">{race.winner_name}</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("Winner:")} <span className="font-bold text-foreground">{race.winner_name}</span>
                       {race.winner_party && ` (${race.winner_party})`}
                     </p>
                   )}
@@ -114,8 +108,8 @@ export function ElectionResultsCard({ state, title = 'Election Results', compact
                           <div className="flex items-center justify-between mb-1">
                             <span className={cn('text-xs font-semibold truncate', cand.is_winner ? 'text-foreground' : 'text-muted-foreground')}>
                               {cand.candidate_name}
-                              {cand.incumbent && <span className="ml-1 text-[9px] font-bold text-primary">(Inc.)</span>}
-                              {cand.party && <span className="ml-1 text-muted-foreground">({cand.party})</span>}
+                              {cand.incumbent && <span className="ml-1 text-[9px] font-bold text-primary">{t("(Inc.)")}</span>}
+                              {cand.party && <span className="ml-1 text-muted-foreground">({cand.party && t(cand.party)})</span>}
                             </span>
                             <span className="text-xs font-bold text-muted-foreground shrink-0">
                               {pct.toFixed(1)}%
@@ -141,8 +135,7 @@ export function ElectionResultsCard({ state, title = 'Election Results', compact
                   })}
                   {race.last_updated && (
                     <p className="text-[10px] text-muted-foreground pt-1">
-                      <TrendingUp className="h-3 w-3 inline mr-1" />
-                      Last updated: {new Date(race.last_updated).toLocaleString()}
+                      <TrendingUp className="h-3 w-3 inline mr-1" />{t("Last updated:")} {new Date(race.last_updated).toLocaleString()}
                     </p>
                   )}
                 </div>

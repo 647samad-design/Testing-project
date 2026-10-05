@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { submitContentReport, type ReportableContentType } from '@/services/content-reports';
+import { t } from '@/i18n';
 
 const REASONS = [
   'False or misleading information',
@@ -38,7 +39,7 @@ export function ReportButton({ contentType, contentId, className, label = 'Repor
     setSubmitting(true);
     try {
       await submitContentReport(contentType, contentId, reason, description.trim() || undefined);
-      toast.success("Thanks — our team will review this.");
+      toast.success(t("Thanks — our team will review this."));
       setOpen(false);
       setReason('');
       setDescription('');
@@ -61,10 +62,8 @@ export function ReportButton({ contentType, contentId, className, label = 'Repor
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Report content</DialogTitle>
-            <DialogDescription>
-              Let us know what's wrong — our team reviews every report.
-            </DialogDescription>
+            <DialogTitle>{t("Report content")}</DialogTitle>
+            <DialogDescription>{t("Let us know what's wrong — our team reviews every report.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -76,15 +75,15 @@ export function ReportButton({ contentType, contentId, className, label = 'Repor
               ))}
             </div>
             <Input
-              placeholder="Additional details (optional)"
+              placeholder={t("Additional details (optional)")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("Cancel")}</Button>
             <Button onClick={handleSubmit} disabled={!reason || submitting}>
-              {submitting ? 'Submitting…' : 'Submit Report'}
+              {submitting ? t("Submitting…") : t("Submit Report")}
             </Button>
           </DialogFooter>
         </DialogContent>

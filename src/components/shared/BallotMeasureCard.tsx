@@ -5,6 +5,7 @@ import { DistrictBadge } from './DistrictBadge';
 import { ExplainSimply } from './ExplainSimply';
 import type { BallotMeasure } from '@/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface BallotMeasureCardProps {
   measure: BallotMeasure;
@@ -45,9 +46,7 @@ export function BallotMeasureCard({ measure, className }: BallotMeasureCardProps
       <Link
         to={`/ballot/measure/${measure.id}`}
         className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80 touch-target"
-      >
-        Understand this measure
-        <ChevronRight className="h-4 w-4" />
+      >{t("Understand this measure")}<ChevronRight className="h-4 w-4" />
       </Link>
     </Card>
   );

@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isDemoMode } from '@/lib/demo-mode';
+import { t } from '@/i18n';
 
 interface DemoBannerProps {
   className?: string;
@@ -23,9 +24,7 @@ export function DemoBanner({ className, compact, show = false }: DemoBannerProps
       role="note"
     >
       <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
-      <p className={cn('text-xs font-semibold text-warning', compact ? '' : 'font-medium')}>
-        DEMO DATA — Not real election information. All candidates, sources and positions are fictional.
-      </p>
+      <p className={cn('text-xs font-semibold text-warning', compact ? '' : 'font-medium')}>{t("DEMO DATA — Not real election information. All candidates, sources and positions are fictional.")}</p>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { SourceBadge } from './SourceBadge';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/date-utils';
 import type { Source } from '@/types';
+import { t } from '@/i18n';
 
 interface SourceCardProps {
   source: Source;
@@ -44,7 +45,7 @@ export function SourceCard({ source, showBadge = true, className }: SourceCardPr
               </div>
             )}
             {source.description && (
-              <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{source.description}</p>
+              <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{t(source.description)}</p>
             )}
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5" />

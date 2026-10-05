@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { Candidate } from '@/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -50,10 +51,10 @@ export function CandidateCard({ candidate, contestLabel, className, to }: Candid
           {candidate.party && (
             partyClass ? (
               <span className={cn('mt-0.5 inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold', partyClass)}>
-                {candidate.party}
+                {candidate.party && t(candidate.party)}
               </span>
             ) : (
-              <p className="truncate text-sm text-muted-foreground">{candidate.party}</p>
+              <p className="truncate text-sm text-muted-foreground">{candidate.party && t(candidate.party)}</p>
             )
           )}
           {contestLabel && (

@@ -5,6 +5,7 @@ import { SourceBadge } from './SourceBadge';
 import type { NewsArticle } from '@/types';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/date-utils';
+import { t } from '@/i18n';
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -28,14 +29,10 @@ export function NewsCard({ article, className }: NewsCardProps) {
             <div className="flex flex-wrap items-center gap-2">
               <SourceBadge type={article.article_type} />
               {isOpinion && (
-                <span className="text-xs text-muted-foreground italic">
-                  This is opinion, not factual reporting.
-                </span>
+                <span className="text-xs text-muted-foreground italic">{t("This is opinion, not factual reporting.")}</span>
               )}
               {isCampaign && (
-                <span className="text-xs text-muted-foreground italic">
-                  This is campaign material, not independent reporting.
-                </span>
+                <span className="text-xs text-muted-foreground italic">{t("This is campaign material, not independent reporting.")}</span>
               )}
             </div>
             <h3 className="mt-2 font-medium text-foreground leading-snug group-hover:text-primary transition-colors">

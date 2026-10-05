@@ -11,6 +11,7 @@ import { CANDIDATE_TAG_OPTIONS } from '@/types';
 import { getTagsForCandidate, addTag, removeTag, tagLabel, tagColor } from '@/services/tags';
 import type { CandidateTag } from '@/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface CandidateTagsProps {
   candidateId: string;
@@ -66,29 +67,22 @@ export function CandidateTags({ candidateId }: CandidateTagsProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Tag className="h-5 w-5 text-muted-foreground" />
-          <h3 className="font-semibold text-foreground">Community Tags</h3>
+          <h3 className="font-semibold text-foreground">{t("Community Tags")}</h3>
         </div>
         {user && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 rounded-xl touch-target">
-                <Plus className="h-4 w-4" />
-                Add Tag
-              </Button>
+                <Plus className="h-4 w-4" />{t("Add Tag")}</Button>
             </DialogTrigger>
             <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add a tag to this candidate</DialogTitle>
-                <DialogDescription>
-                  Tags are informational labels to help voters understand a candidate's positions.
-                  They are not endorsements. Choose from the list below.
-                </DialogDescription>
+                <DialogTitle>{t("Add a tag to this candidate")}</DialogTitle>
+                <DialogDescription>{t("Tags are informational labels to help voters understand a candidate's positions. They are not endorsements. Choose from the list below.")}</DialogDescription>
               </DialogHeader>
               <div className="mt-2 space-y-2">
                 {availableTags.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    You've already added all available tags for this candidate.
-                  </p>
+                  <p className="text-sm text-muted-foreground text-center py-4">{t("You've already added all available tags for this candidate.")}</p>
                 ) : (
                   availableTags.map((opt) => (
                     <button
@@ -98,8 +92,8 @@ export function CandidateTags({ candidateId }: CandidateTagsProps) {
                       className="flex w-full items-center justify-between rounded-xl border border-border p-3 text-left transition-all hover:border-primary/30 hover:bg-secondary/50 disabled:opacity-50"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{opt.label}</p>
-                        <p className="text-xs text-muted-foreground">{opt.description}</p>
+                        <p className="text-sm font-semibold text-foreground">{t(opt.label)}</p>
+                        <p className="text-xs text-muted-foreground">{t(opt.description)}</p>
                       </div>
                       {submitting === opt.value ? (
                         <Loader2 className="h-4 w-4 animate-spin shrink-0 text-muted-foreground" />
@@ -112,10 +106,7 @@ export function CandidateTags({ candidateId }: CandidateTagsProps) {
               </div>
               <div className="mt-4 rounded-lg bg-secondary/50 p-3">
                 <p className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                  Tags are community-contributed and informational only. They do not represent
-                  Gov Search App's endorsement or editorial judgment.
-                </p>
+                  <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />{t("Tags are community-contributed and informational only. They do not represent Gov Search App's endorsement or editorial judgment.")}</p>
               </div>
             </DialogContent>
           </Dialog>
@@ -124,16 +115,14 @@ export function CandidateTags({ candidateId }: CandidateTagsProps) {
 
       {uniqueTagValues.length === 0 ? (
         <div className="mt-4">
-          <p className="text-sm text-muted-foreground">
-            No tags yet.{' '}
+          <p className="text-sm text-muted-foreground">{t("No tags yet.")}{' '}
             {authLoading ? (
               ''
             ) : user ? (
-              'Click "Add Tag" to add an informational label.'
+              t("Click \"Add Tag\" to add an informational label.")
             ) : (
               <>
-                <Link to="/signin" className="text-primary hover:underline font-medium">Sign in</Link> to add tags.
-              </>
+                <Link to="/signin" className="text-primary hover:underline font-medium">{t("Sign in")}</Link> {t("to add tags.")}</>
             )}
           </p>
         </div>
@@ -171,9 +160,7 @@ export function CandidateTags({ candidateId }: CandidateTagsProps) {
 
       {uniqueTagValues.length > 0 && (
         <p className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground/70">
-          <Info className="h-3 w-3 shrink-0 mt-0.5" />
-          Community-contributed tags are informational only and do not represent Gov Search App's endorsement.
-        </p>
+          <Info className="h-3 w-3 shrink-0 mt-0.5" />{t("Community-contributed tags are informational only and do not represent Gov Search App's endorsement.")}</p>
       )}
     </Card>
   );

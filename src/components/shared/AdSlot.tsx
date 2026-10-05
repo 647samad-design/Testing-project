@@ -6,6 +6,7 @@ import { getActiveAds, trackAdEvent } from '@/services/advertising';
 import { getStoredRegion } from '@/services/elections';
 import { useIsPaidUser } from '@/hooks/use-subscription';
 import type { Advertisement, AdPlacement } from '@/types';
+import { t } from '@/i18n';
 
 interface AdSlotProps {
   placement: AdPlacement;
@@ -50,13 +51,11 @@ export const AdSlot = memo(function AdSlot({ placement, className = '' }: AdSlot
       <Card
         className="relative overflow-hidden border-dashed border-2 border-border/60 bg-gradient-to-br from-secondary/20 to-secondary/5 p-0 transition-all hover:border-border"
         role="complementary"
-        aria-label="Advertisement"
+        aria-label={t("Advertisement")}
       >
         <div className="flex items-center justify-between border-b border-border/40 bg-secondary/20 px-4 py-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Advertisement</span>
-          <a href="/advertise" className="text-[10px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-            Advertise here
-          </a>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{t("Advertisement")}</span>
+          <a href="/advertise" className="text-[10px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors">{t("Advertise here")}</a>
         </div>
         <a
           href={safeUrl(ad.destination_url)}
@@ -75,8 +74,7 @@ export const AdSlot = memo(function AdSlot({ placement, className = '' }: AdSlot
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-foreground text-sm leading-snug line-clamp-1">{ad.ad_title}</p>
             {ad.ad_description && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{ad.ad_description}</p>}
-            <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary">
-              Learn more <ExternalLink className="h-3 w-3" />
+            <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary">{t("Learn more")} <ExternalLink className="h-3 w-3" />
             </span>
           </div>
         </a>

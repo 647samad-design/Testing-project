@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface LoadingStateProps {
   message?: string;
@@ -59,9 +60,7 @@ export function ErrorState({ title = 'Something went wrong', message, onRetry, c
         <button
           onClick={onRetry}
           className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Try Again
-        </button>
+        >{t("Try Again")}</button>
       )}
     </div>
   );

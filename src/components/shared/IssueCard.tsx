@@ -5,6 +5,7 @@ import { VerificationBadge } from './VerificationBadge';
 import { Button } from '@/components/ui/button';
 import type { CandidatePosition } from '@/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 interface IssueCardProps {
   position: CandidatePosition;
@@ -38,16 +39,14 @@ export function IssueCard({ position, candidateId, onShowEvidence, className }: 
         {position.summary ? (
           <p className="text-sm text-foreground leading-relaxed">{position.summary}</p>
         ) : (
-          <p className="text-sm text-muted-foreground italic">
-            Position not verified. Insufficient reliable information available.
-          </p>
+          <p className="text-sm text-muted-foreground italic">{t("Position not verified. Insufficient reliable information available.")}</p>
         )}
       </div>
 
       <div className="mt-4 flex items-center gap-3">
         {sourceCount > 0 && (
           <span className="text-xs text-muted-foreground">
-            {sourceCount} Source{sourceCount === 1 ? '' : 's'}
+            {sourceCount} {t("Source")}{sourceCount === 1 ? '' : 's'}
           </span>
         )}
         {onShowEvidence && sourceCount > 0 && (
@@ -57,9 +56,7 @@ export function IssueCard({ position, candidateId, onShowEvidence, className }: 
             onClick={() => onShowEvidence(position)}
             className="text-primary hover:text-primary/80 -ml-2 rounded-xl touch-target font-semibold"
           >
-            <MessageSquare className="h-4 w-4" />
-            Show Me the Evidence
-          </Button>
+            <MessageSquare className="h-4 w-4" />{t("Show Me the Evidence")}</Button>
         )}
       </div>
     </Card>

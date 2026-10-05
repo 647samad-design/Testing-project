@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { LANGUAGE_EVENT } from '@/i18n';
 import { edgeFunctionErrorMessage } from '@/lib/edge-function-error';
 import type { Profile, LanguageName } from '@/types';
 
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const effectiveLang = lang ?? savedLang ?? 'en';
     localStorage.setItem('ballotlens_lang', effectiveLang);
     document.documentElement.setAttribute('lang', effectiveLang);
+    window.dispatchEvent(new CustomEvent(LANGUAGE_EVENT, { detail: effectiveLang }));
   }
 
   useEffect(() => {
@@ -201,6 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Update localStorage + DOM immediately for instant feedback
     localStorage.setItem('ballotlens_lang', language);
     document.documentElement.setAttribute('lang', language);
+    window.dispatchEvent(new CustomEvent(LANGUAGE_EVENT, { detail: language }));
 
     // Update profile in DB if signed in (skip for demo mode)
     if (user && !isDemo) {

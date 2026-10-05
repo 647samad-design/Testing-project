@@ -12,6 +12,7 @@ import type { Story } from '@/types';
 import { getVoterDistricts } from '@/services/elections';
 import { saveLocation, getLocation } from '@/services/districts';
 import { useAuth } from '@/hooks/use-auth';
+import { t } from '@/i18n';
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -85,15 +86,10 @@ export function LandingPage() {
             <div className="mb-6 flex justify-center">
               <DemoBanner compact />
             </div>
-            <h1 className="font-display text-5xl font-semibold tracking-tight text-foreground sm:text-6xl md:text-7xl leading-[1.05]">
-              Know what's on
-              <br />
-              <span className="text-primary">your ballot.</span>
+            <h1 className="font-display text-5xl font-semibold tracking-tight text-foreground sm:text-6xl md:text-7xl leading-[1.05]">{t("Know what's on")}<br />
+              <span className="text-primary">{t("your ballot.")}</span>
             </h1>
-            <p className="mt-7 text-lg text-muted-foreground sm:text-xl leading-relaxed max-w-2xl mx-auto">
-              Research the candidates, issues and decisions on your ballot —
-              with evidence from reliable sources, not opinions.
-            </p>
+            <p className="mt-7 text-lg text-muted-foreground sm:text-xl leading-relaxed max-w-2xl mx-auto">{t("Research the candidates, issues and decisions on your ballot — with evidence from reliable sources, not opinions.")}</p>
 
             {/* Address search */}
             <div className="mt-8 mx-auto max-w-2xl">
@@ -102,12 +98,12 @@ export function LandingPage() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Enter your ZIP code"
+                    placeholder={t("Enter your ZIP code")}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleFindBallot()}
                     className="pl-12 h-14 text-base rounded-2xl shadow-sm border-border/60 bg-card"
-                    aria-label="Enter your address or ZIP code"
+                    aria-label={t("Enter your address or ZIP code")}
                   />
                 </div>
                 <Button
@@ -116,7 +112,7 @@ export function LandingPage() {
                   disabled={loading}
                   className="h-14 px-7 rounded-2xl text-base font-bold touch-target shadow-md shadow-primary/20"
                 >
-                  {loading ? 'Finding…' : 'Find My Ballot'}
+                  {loading ? t("Finding…") : t("Find My Ballot")}
                 </Button>
               </div>
               {error && (
@@ -128,14 +124,10 @@ export function LandingPage() {
 
             {/* Quick CTA buttons */}
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Button size="lg" variant="outline" onClick={() => navigate('/candidates')} className="rounded-2xl font-semibold touch-target">
-                Explore Candidates
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button size="lg" variant="outline" onClick={() => navigate('/candidates')} className="rounded-2xl font-semibold touch-target">{t("Explore Candidates")}<ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button size="lg" variant="ghost" onClick={() => navigate('/ask')} className="rounded-2xl font-semibold text-accent hover:text-accent/80 touch-target">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Ask AI
-              </Button>
+                <Sparkles className="mr-2 h-4 w-4" />{t("Ask AI")}</Button>
             </div>
           </div>
         </div>
@@ -147,13 +139,8 @@ export function LandingPage() {
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
             <MapPin className="h-7 w-7 text-primary" />
           </div>
-          <h2 className="text-3xl font-bold sm:text-4xl tracking-tight">Your ballot is personal.</h2>
-          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-            People living close to one another can have different ballots because
-            of congressional, state, county, municipal, judicial, school and
-            special districts. Gov Search App looks up the races and measures that
-            apply to your specific location.
-          </p>
+          <h2 className="text-3xl font-bold sm:text-4xl tracking-tight">{t("Your ballot is personal.")}</h2>
+          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{t("People living close to one another can have different ballots because of congressional, state, county, municipal, judicial, school and special districts. Gov Search App looks up the races and measures that apply to your specific location.")}</p>
         </div>
       </section>
 
@@ -161,12 +148,8 @@ export function LandingPage() {
       <section className="bg-secondary/30 border-y border-border/60">
         <div className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16">
           <div className="text-center">
-            <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">
-              Research. Don't guess.
-            </h2>
-            <p className="mt-3 text-muted-foreground text-lg">
-              Three things Gov Search App gives you for every race.
-            </p>
+            <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">{t("Research. Don't guess.")}</h2>
+            <p className="mt-3 text-muted-foreground text-lg">{t("Three things Gov Search App gives you for every race.")}</p>
           </div>
 
           <div className="mt-8 md:mt-10 grid gap-5 md:grid-cols-3">
@@ -174,30 +157,24 @@ export function LandingPage() {
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
                 <FileText className="h-8 w-8 text-primary" strokeWidth={1.8} />
               </div>
-              <h3 className="mt-5 font-bold text-xl">Your Ballot</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                See the races and ballot measures that actually apply to you.
-              </p>
+              <h3 className="mt-5 font-bold text-xl">{t("Your Ballot")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{t("See the races and ballot measures that actually apply to you.")}</p>
             </Card>
 
             <Card className="p-8 text-center hover:shadow-xl hover:shadow-primary/5 transition-all rounded-2xl touch-target">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
                 <Scale className="h-8 w-8 text-accent" strokeWidth={1.8} />
               </div>
-              <h3 className="mt-5 font-bold text-xl">The Candidates</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Explore biographies, positions, voting records and public statements.
-              </p>
+              <h3 className="mt-5 font-bold text-xl">{t("The Candidates")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{t("Explore biographies, positions, voting records and public statements.")}</p>
             </Card>
 
             <Card className="p-8 text-center hover:shadow-xl hover:shadow-primary/5 transition-all rounded-2xl touch-target">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-success/10">
                 <ShieldCheck className="h-8 w-8 text-success" strokeWidth={1.8} />
               </div>
-              <h3 className="mt-5 font-bold text-xl">The Evidence</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                Follow the source behind every claim. Always.
-              </p>
+              <h3 className="mt-5 font-bold text-xl">{t("The Evidence")}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{t("Follow the source behind every claim. Always.")}</p>
             </Card>
           </div>
         </div>
@@ -206,27 +183,21 @@ export function LandingPage() {
       {/* SOCIAL FEED SHOWCASE */}
       <section className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16">
         <div className="text-center mb-8 md:mb-10">
-          <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">
-            More than research. It's a movement.
-          </h2>
-          <p className="mt-3 text-muted-foreground text-lg max-w-2xl mx-auto">
-            Follow candidates, track issues, ask questions, and get updates — all in your personalized feed.
-          </p>
+          <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">{t("More than research. It's a movement.")}</h2>
+          <p className="mt-3 text-muted-foreground text-lg max-w-2xl mx-auto">{t("Follow candidates, track issues, ask questions, and get updates — all in your personalized feed.")}</p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3 [&>*]:min-w-0">
           {/* Follow card */}
           <Card className="p-6 rounded-3xl hover:shadow-lg hover:shadow-primary/5 transition-all animate-slide-up stagger-1">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 mb-4">
               <Heart className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="font-bold text-lg mb-2">Follow What Matters</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Follow candidates AND issues — from Housing to Public Safety to Education. Your feed gets personal.
-            </p>
+            <h3 className="font-bold text-lg mb-2">{t("Follow What Matters")}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">{t("Follow candidates AND issues — from Housing to Public Safety to Education. Your feed gets personal.")}</p>
             <div className="flex flex-wrap gap-2">
-              {['Housing', 'Education', 'Taxes', 'Climate', 'Public Safety'].map((t) => (
-                <span key={t} className="rounded-full bg-primary/5 border border-primary/15 px-3 py-1 text-xs font-bold text-primary">{t}</span>
+              {[t('Housing'), t('Education'), t('Taxes'), t('Climate'), t('Public Safety')].map((label) => (
+                <span key={label} className="rounded-full bg-primary/5 border border-primary/15 px-3 py-1 text-xs font-bold text-primary">{label}</span>
               ))}
             </div>
           </Card>
@@ -236,18 +207,16 @@ export function LandingPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 mb-4">
               <MessageCircle className="h-6 w-6 text-accent" />
             </div>
-            <h3 className="font-bold text-lg mb-2">Ask Candidates Directly</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Submit questions and get answers. Browse a searchable knowledge base organized by topic.
-            </p>
+            <h3 className="font-bold text-lg mb-2">{t("Ask Candidates Directly")}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">{t("Submit questions and get answers. Browse a searchable knowledge base organized by topic.")}</p>
             <div className="space-y-2">
               <div className="rounded-xl bg-secondary/40 p-2.5 text-xs">
-                <p className="font-bold text-foreground">Q: What's your plan for affordable housing?</p>
-                <p className="text-muted-foreground mt-1">A: We need mixed-income zoning reform...</p>
+                <p className="font-bold text-foreground">{t("Q: What's your plan for affordable housing?")}</p>
+                <p className="text-muted-foreground mt-1">{t("A: We need mixed-income zoning reform...")}</p>
               </div>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1 font-semibold text-success">Useful (24)</span>
-                <span className="flex items-center gap-1 font-semibold text-primary">Evidence (18)</span>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1 font-semibold text-success">{t("Useful (24)")}</span>
+                <span className="flex items-center gap-1 font-semibold text-primary">{t("Evidence (18)")}</span>
               </div>
             </div>
           </Card>
@@ -257,23 +226,21 @@ export function LandingPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-success/10 mb-4">
               <Rss className="h-6 w-6 text-success" />
             </div>
-            <h3 className="font-bold text-lg mb-2">Never Miss an Update</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Candidates post updates, events, and position changes. You see it all in one place.
-            </p>
+            <h3 className="font-bold text-lg mb-2">{t("Never Miss an Update")}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">{t("Candidates post updates, events, and position changes. You see it all in one place.")}</p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 rounded-xl bg-secondary/40 p-2.5">
                 <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-primary to-accent" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold truncate">Sen. Smith posted an update</p>
-                  <p className="text-[10px] text-muted-foreground">2h ago</p>
+                  <p className="text-xs font-bold truncate">{t("Sen. Smith posted an update")}</p>
+                  <p className="text-[10px] text-muted-foreground">{t("2h ago")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 rounded-xl bg-secondary/40 p-2.5">
                 <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-accent to-warning" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold truncate">New town hall event Thursday</p>
-                  <p className="text-[10px] text-muted-foreground">5h ago</p>
+                  <p className="text-xs font-bold truncate">{t("New town hall event Thursday")}</p>
+                  <p className="text-[10px] text-muted-foreground">{t("5h ago")}</p>
                 </div>
               </div>
             </div>
@@ -283,9 +250,7 @@ export function LandingPage() {
         <div className="mt-8 text-center">
           <Link to="/feed">
             <Button size="lg" variant="outline" className="rounded-2xl gap-2 touch-target">
-              <Rss className="h-4 w-4" />
-              Explore the Feed
-              <ArrowRight className="h-4 w-4" />
+              <Rss className="h-4 w-4" />{t("Explore the Feed")}<ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>
@@ -301,11 +266,8 @@ export function LandingPage() {
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
             <Heart className="h-7 w-7 text-accent" />
           </div>
-          <h2 className="text-3xl font-bold sm:text-4xl tracking-tight">Built for voters, not campaigns.</h2>
-          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-            Gov Search App doesn't tell you who to vote for. It gives you the
-            information to decide for yourself.
-          </p>
+          <h2 className="text-3xl font-bold sm:text-4xl tracking-tight">{t("Built for voters, not campaigns.")}</h2>
+          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{t("Gov Search App doesn't tell you who to vote for. It gives you the information to decide for yourself.")}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             {['No endorsements', 'No political scores', 'No left/right rankings', 'Evidence-based only'].map((tag) => (
               <span key={tag} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-semibold text-muted-foreground">
@@ -319,9 +281,7 @@ export function LandingPage() {
       {/* HOW GOV SEARCH APP WORKS */}
       <section className="bg-secondary/30 border-y border-border/60">
         <div className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16">
-          <h2 className="text-center font-display text-3xl font-semibold sm:text-4xl tracking-tight">
-            How it works
-          </h2>
+          <h2 className="text-center font-display text-3xl font-semibold sm:text-4xl tracking-tight">{t("How it works")}</h2>
           <div className="mt-8 md:mt-10 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             {[
               { step: 1, title: 'Enter your location', icon: MapPin },
@@ -340,9 +300,7 @@ export function LandingPage() {
               </Card>
             ))}
           </div>
-          <p className="mt-8 text-center text-sm font-semibold text-muted-foreground">
-            Gov Search App does not tell you who to vote for.
-          </p>
+          <p className="mt-8 text-center text-sm font-semibold text-muted-foreground">{t("Gov Search App does not tell you who to vote for.")}</p>
         </div>
       </section>
 
@@ -352,18 +310,13 @@ export function LandingPage() {
           <div className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
             <div className="mb-8 flex items-end justify-between">
               <div>
-                <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">
-                  Stay engaged between elections.
-                </h2>
-                <p className="mt-2 text-muted-foreground text-lg">
-                  Plain-English explainers, voter stories, and civic education.
-                </p>
+                <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">{t("Stay engaged between elections.")}</h2>
+                <p className="mt-2 text-muted-foreground text-lg">{t("Plain-English explainers, voter stories, and civic education.")}</p>
               </div>
-              <Button variant="outline" size="sm" className="gap-2 rounded-xl touch-target shrink-0" onClick={() => navigate('/stories')}>
-                All Stories <ArrowRight className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="gap-2 rounded-xl touch-target shrink-0" onClick={() => navigate('/stories')}>{t("All Stories")} <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-3 [&>*]:min-w-0">
               {stories.map((story, i) => (
                 <Link key={story.id} to={`/stories/${story.slug}`} className={`animate-slide-up stagger-${i + 1}`}>
                   <Card className="group h-full overflow-hidden rounded-2xl transition-all hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30 hover-lift touch-target">
@@ -390,7 +343,7 @@ export function LandingPage() {
                       )}
                       <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
                         {story.read_time_minutes && (
-                          <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {story.read_time_minutes} min read</span>
+                          <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {story.read_time_minutes} {t("min read")}</span>
                         )}
                       </div>
                     </div>
@@ -404,28 +357,24 @@ export function LandingPage() {
 
       {/* FINAL CTA */}
       <section className="mx-auto max-w-content px-4 sm:px-6 py-14 md:py-16 text-center">
-        <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">
-          Ready to see your ballot?
-        </h2>
-        <p className="mt-3 text-lg text-muted-foreground">
-          Enter your address and start researching in seconds.
-        </p>
+        <h2 className="font-display text-3xl font-semibold sm:text-4xl tracking-tight">{t("Ready to see your ballot?")}</h2>
+        <p className="mt-3 text-lg text-muted-foreground">{t("Enter your address and start researching in seconds.")}</p>
         <div className="mt-8 mx-auto max-w-2xl">
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Enter your ZIP code"
+                placeholder={t("Enter your ZIP code")}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleFindBallot()}
                 className="pl-12 h-14 text-base rounded-2xl shadow-sm border-border/60 bg-card"
-                aria-label="Enter your address or ZIP code"
+                aria-label={t("Enter your address or ZIP code")}
               />
             </div>
             <Button size="lg" onClick={handleFindBallot} disabled={loading} className="h-14 px-8 rounded-2xl text-base font-bold touch-target shadow-md shadow-primary/20">
-              {loading ? 'Finding…' : 'See My Ballot'}
+              {loading ? t("Finding…") : t("See My Ballot")}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
@@ -436,9 +385,7 @@ export function LandingPage() {
           )}
         </div>
         <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <Button size="lg" variant="outline" onClick={() => navigate('/candidates')} className="h-14 px-8 rounded-2xl text-base font-semibold touch-target">
-            Explore Candidates
-          </Button>
+          <Button size="lg" variant="outline" onClick={() => navigate('/candidates')} className="h-14 px-8 rounded-2xl text-base font-semibold touch-target">{t("Explore Candidates")}</Button>
         </div>
       </section>
     </div>

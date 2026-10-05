@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { parseDateOnly } from '@/lib/date-utils';
 import type { CandidatePromise, PromiseStatus } from '@/types';
+import { t } from '@/i18n';
 
 const STATUS_STYLES: Record<PromiseStatus, { label: string; icon: typeof CheckCircle2; color: string; bg: string; dot: string }> = {
   completed: { label: 'Completed', icon: CheckCircle2, color: 'text-success', bg: 'bg-success/8', dot: 'bg-success' },
@@ -59,7 +60,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
     if (!proposing) return;
     try {
       await proposePromiseStatus(proposing.id, proposing.status, proposalEvidence, proposalUrl);
-      toast.success('Sent for review. The status changes once a Gov Search App reviewer checks your evidence.');
+      toast.success(t("Sent for review. The status changes once a Gov Search App reviewer checks your evidence."));
       setProposing(null); setProposalEvidence(''); setProposalUrl('');
       await load();
     } catch (err) {
@@ -81,7 +82,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
     }
   }
 
-  if (loading) return <div className="py-8 text-center text-muted-foreground text-sm">Loading promises...</div>;
+  if (loading) return <div className="py-8 text-center text-muted-foreground text-sm">{t("Loading promises...")}</div>;
 
   const counts: Record<PromiseStatus, number> = {
     completed: 0, in_progress: 0, not_started: 0, contradicted: 0, unverified: 0,
@@ -100,7 +101,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
             return (
               <div key={key} className={cn('flex items-center gap-1.5 rounded-xl px-3 py-1.5', style.bg)}>
                 <Icon className={cn('h-3.5 w-3.5', style.color)} />
-                <span className={cn('text-xs font-bold', style.color)}>{style.label}</span>
+                <span className={cn('text-xs font-bold', style.color)}>{t(style.label)}</span>
                 <span className="text-xs font-bold text-foreground">{count}</span>
               </div>
             );
@@ -113,16 +114,14 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
         <>
           {!showAdd ? (
             <Button variant="outline" size="sm" className="rounded-xl gap-2" onClick={() => setShowAdd(true)}>
-              <Plus className="h-4 w-4" />
-              Add Promise
-            </Button>
+              <Plus className="h-4 w-4" />{t("Add Promise")}</Button>
           ) : (
             <Card className="p-4 rounded-2xl space-y-3">
               <input
                 type="text"
                 value={newPromise}
                 onChange={(e) => setNewPromise(e.target.value)}
-                placeholder="What was promised?"
+                placeholder={t("What was promised?")}
                 className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               <div className="flex gap-2">
@@ -136,17 +135,13 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
                   type="url"
                   value={newSource}
                   onChange={(e) => setNewSource(e.target.value)}
-                  placeholder="Source URL"
+                  placeholder={t("Source URL")}
                   className="flex-1 rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <div className="flex gap-2">
-                <Button size="sm" className="rounded-xl" onClick={handleAdd} disabled={!newPromise.trim()}>
-                  Save
-                </Button>
-                <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setShowAdd(false)}>
-                  Cancel
-                </Button>
+                <Button size="sm" className="rounded-xl" onClick={handleAdd} disabled={!newPromise.trim()}>{t("Save")}</Button>
+                <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setShowAdd(false)}>{t("Cancel")}</Button>
               </div>
             </Card>
           )}
@@ -157,7 +152,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
       {promises.length === 0 ? (
         <div className="text-center py-10">
           <Target className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
-          <p className="text-sm text-muted-foreground">No promises tracked yet.</p>
+          <p className="text-sm text-muted-foreground">{t("No promises tracked yet.")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -174,11 +169,10 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
                     <p className="text-sm font-semibold text-foreground leading-snug">{promise.promise_text}</p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <Badge variant="outline" className={cn('rounded-lg text-[10px] font-bold', style.color, style.bg)}>
-                        {style.label}
+                        {t(style.label)}
                       </Badge>
                       {promise.date_made && (
-                        <span className="text-xs text-muted-foreground">
-                          Promised {parseDateOnly(promise.date_made).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        <span className="text-xs text-muted-foreground">{t("Promised")} {parseDateOnly(promise.date_made).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                       )}
                       {promise.issue && (
@@ -186,9 +180,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
                       )}
                       {promise.source_url && (
                         <a href={safeUrl(promise.source_url)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
-                          <ExternalLink className="h-3 w-3" />
-                          Source
-                        </a>
+                          <ExternalLink className="h-3 w-3" />{t("Source")}</a>
                       )}
                     </div>
                     {promise.status_evidence && (
@@ -196,21 +188,19 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
                     )}
 
                     {promise.proposed_status && canEdit && (
-                      <p className="mt-2 text-xs rounded-lg bg-warning/10 text-warning px-2 py-1">
-                        Proposed: {STATUS_STYLES[promise.proposed_status].label} — awaiting Gov Search App review
-                      </p>
+                      <p className="mt-2 text-xs rounded-lg bg-warning/10 text-warning px-2 py-1">{t("Proposed:")} {STATUS_STYLES[promise.proposed_status].label} {t("— awaiting Gov Search App review")}</p>
                     )}
 
                     {proposing?.id === promise.id && (
                       <div className="mt-2 space-y-2 rounded-xl border border-border p-3 bg-background">
-                        <p className="text-xs font-medium">Propose “{STATUS_STYLES[proposing.status].label}” — a reviewer will check your evidence before it's shown.</p>
+                        <p className="text-xs font-medium">{t("Propose “")}{STATUS_STYLES[proposing.status].label}{t("” — a reviewer will check your evidence before it's shown.")}</p>
                         <textarea value={proposalEvidence} onChange={(e) => setProposalEvidence(e.target.value)} rows={2}
-                          placeholder="What happened? (required)" className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs" />
-                        <input value={proposalUrl} onChange={(e) => setProposalUrl(e.target.value)} placeholder="Evidence link (recommended)"
+                          placeholder={t("What happened? (required)")} className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs" />
+                        <input value={proposalUrl} onChange={(e) => setProposalUrl(e.target.value)} placeholder={t("Evidence link (recommended)")}
                           className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs" />
                         <div className="flex gap-2">
-                          <Button size="sm" className="rounded-lg h-7 text-xs" disabled={!proposalEvidence.trim()} onClick={handleProposal}>Submit for review</Button>
-                          <Button size="sm" variant="outline" className="rounded-lg h-7 text-xs" onClick={() => setProposing(null)}>Cancel</Button>
+                          <Button size="sm" className="rounded-lg h-7 text-xs" disabled={!proposalEvidence.trim()} onClick={handleProposal}>{t("Submit for review")}</Button>
+                          <Button size="sm" variant="outline" className="rounded-lg h-7 text-xs" onClick={() => setProposing(null)}>{t("Cancel")}</Button>
                         </div>
                       </div>
                     )}
@@ -229,7 +219,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
                                 : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
                             )}
                           >
-                            {s.label}
+                            {t(s.label)}
                           </button>
                         ))}
                       </div>
