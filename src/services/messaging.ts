@@ -140,7 +140,7 @@ export async function sendMessage(
 async function notifyMessageRecipient(
   conversationId: string,
   senderRole: 'voter' | 'candidate',
-  body: string
+  _body: string
 ): Promise<void> {
   const { data: conv } = await supabase
     .from('conversations')

@@ -1,9 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type {
-  Follow, FeedPost, VoterQuestion, QuestionRating,
-  AppNotification, CampaignTeamMember, FollowableType, FeedPostType,
-  TeamRole, RatingType, Candidate, Issue,
-} from '@/types';
+import type { Follow, FeedPost, VoterQuestion, AppNotification, CampaignTeamMember, FollowableType, FeedPostType, TeamRole, RatingType, Candidate, Issue } from '@/types';
 
 // ─── Follows ───
 

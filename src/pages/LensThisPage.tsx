@@ -1,14 +1,9 @@
 import { usePageMeta } from '@/hooks/use-page-meta';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import {
-  Search, Link2, Send, CheckCircle2, AlertTriangle, XCircle, HelpCircle,
-  Info, Sparkles, ClipboardPaste, ExternalLink, ChevronRight, Loader2,
-  Newspaper, Mic, Tv, MessageSquare, FileText, Zap, ShieldCheck,
-  TrendingUp, BookOpen, Quote, ArrowRight, Eye, Scale,
-} from 'lucide-react';
+import { Search, Link2, CheckCircle2, AlertTriangle, XCircle, HelpCircle, Info, Sparkles, ClipboardPaste, ExternalLink, Loader2, Newspaper, Tv, MessageSquare, FileText, Zap, ShieldCheck, TrendingUp, BookOpen, Quote, ArrowRight, Eye, Scale } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,7 +13,7 @@ import { assessClaim } from '@/services/ai';
 import { isDemoMode } from '@/lib/demo-mode';
 import { getFactChecks, submitFactCheck } from '@/services/civic';
 import { cn } from '@/lib/utils';
-import type { FactCheck, FactCheckAssessment, FactCheckPlatform } from '@/types';
+import type { FactCheck, FactCheckPlatform } from '@/types';
 import { t } from '@/i18n';
 
 // ─── Types ─────────────────────────────────────────────────────────────────

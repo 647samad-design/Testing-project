@@ -2,7 +2,7 @@ import { usePageMeta } from '@/hooks/use-page-meta';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Loader2, ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowLeft, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';

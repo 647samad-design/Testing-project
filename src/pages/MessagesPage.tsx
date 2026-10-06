@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MessageSquare, Send, ArrowLeft, Mail, MailOpen, Eye } from 'lucide-react';
+import { MessageSquare, Send, Mail, MailOpen, Eye } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { toast } from 'sonner';
-import { ClipboardList, CheckCircle2, XCircle, ExternalLink, Plus, FileText, Scale } from 'lucide-react';
+import { ClipboardList, XCircle, ExternalLink, Plus, FileText, Scale } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

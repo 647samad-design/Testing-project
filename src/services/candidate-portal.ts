@@ -173,16 +173,12 @@ export async function submitEvent(
 }
 
 export async function getMyClaimedCandidates(): Promise<{ candidate_id: string; status: string; full_name: string }[]> {
-  try {
-    const { data, error } = await supabase
-      .from('candidate_claims')
-      .select('candidate_id, status, full_name')
-      .order('submitted_at', { ascending: false });
-    if (error) throw error;
-    return (data as { candidate_id: string; status: string; full_name: string }[]) ?? [];
-  } catch (e) {
-    // Rethrow: returning [] made the portal say "No claimed profiles yet" during
-    // an outage, inviting candidates to file a second claim.
-    throw e;
-  }
+  // Errors propagate on purpose: returning [] made the portal say "No claimed
+  // profiles yet" during an outage, inviting candidates to file a second claim.
+  const { data, error } = await supabase
+    .from('candidate_claims')
+    .select('candidate_id, status, full_name')
+    .order('submitted_at', { ascending: false });
+  if (error) throw error;
+  return (data as { candidate_id: string; status: string; full_name: string }[]) ?? [];
 }

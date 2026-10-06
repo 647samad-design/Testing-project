@@ -115,7 +115,6 @@ export function getDemoMeasureById(id: string): BallotMeasure | null {
   return demoMeasures.find((m) => m.id === id) ?? null;
 }
 
-const now = new Date().toISOString();
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
 
 function mkNews(id: string, candId: string, title: string, publisher: string, summary: string, category: string, articleType: string, daysOld: number): NewsArticle {

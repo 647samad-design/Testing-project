@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { safeUrl } from '@/lib/safe-url';
-import { Link } from 'react-router-dom';
-import { Users, Vote, FileText, Bookmark, ShieldCheck, AlertCircle, User as UserIcon, BarChart3, Plus, Check, Flag, X } from 'lucide-react';
+import { Users, Vote, FileText, Bookmark, ShieldCheck, AlertCircle, User as UserIcon, Plus, Check, Flag, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

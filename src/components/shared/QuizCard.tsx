@@ -65,7 +65,6 @@ export function QuizCard({
 
   if (!question) return null;
 
-  const accent = accentColor === 'accent' ? 'accent' : 'primary';
   const accentText = accentColor === 'accent' ? 'text-accent' : 'text-primary';
   const accentBg = accentColor === 'accent' ? 'bg-accent' : 'bg-primary';
   const accentBgLight = accentColor === 'accent' ? 'bg-accent/10' : 'bg-primary/10';

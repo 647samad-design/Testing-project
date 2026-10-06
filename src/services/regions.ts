@@ -1,7 +1,7 @@
 import type {
   BallotContest, BallotMeasure, Candidate, Election, District,
 } from '@/types';
-import { demoElection, demoMeasures } from '@/services/demo-data';
+import { demoElection } from '@/services/demo-data';
 
 export interface RegionConfig {
   state: string;

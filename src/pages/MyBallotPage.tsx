@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { CalendarDays, MapPin, ArrowLeft, FileText, Gavel, Vote, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BallotContestCard } from '@/components/shared/BallotContestCard';
@@ -30,7 +30,6 @@ const levelLabels: Record<string, string> = {
 
 export function MyBallotPage() {
   usePageMeta({ title: t("My Ballot"), description: t("See your personalized ballot with every race and measure for your address.") });
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [, setAddress] = useState('');
   const [addressInput, setAddressInput] = useState('');

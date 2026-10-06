@@ -9,7 +9,7 @@ export async function getAdsForPlacement(
   viewerZip?: string | null,
 ): Promise<Advertisement[]> {
   try {
-    let query = supabase
+    const query = supabase
       .from('advertisements')
       .select('*')
       .eq('placement', placement)

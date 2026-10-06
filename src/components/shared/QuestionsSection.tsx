@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MessageCircle, ThumbsUp, ThumbsDown, BadgeCheck, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageCircle, ThumbsUp, BadgeCheck, Send, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { getVoterQuestions, askQuestion, answerQuestion, rateQuestion } from '@/services/social';
 import { getIssues } from '@/services/districts';
-import { cn } from '@/lib/utils';
 import type { VoterQuestion, Issue, RatingType } from '@/types';
 import { t } from '@/i18n';
 
@@ -237,7 +236,7 @@ export function QuestionsSection({ candidateId, canAnswer }: { candidateId: stri
   );
 }
 
-function RatingButton({ label, count, type, questionId, onRate }: {
+function RatingButton({ label, count, onRate }: {
   label: string;
   count: number;
   type: RatingType;

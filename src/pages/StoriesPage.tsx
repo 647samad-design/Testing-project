@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { ArrowLeft, Clock, Calendar, BookOpen, TrendingUp, Heart, Scale, Vote, type LucideProps } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { AdSlot } from '@/components/shared/AdSlot';

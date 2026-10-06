@@ -11,8 +11,6 @@ import { IssueCard } from '@/components/shared/IssueCard';
 import { EvidenceCard } from '@/components/shared/EvidenceCard';
 import { SourceDrawer } from '@/components/shared/SourceDrawer';
 import { DemoBanner } from '@/components/shared/DemoBanner';
-import { VerificationBadge } from '@/components/shared/VerificationBadge';
-import { SourceBadge } from '@/components/shared/SourceBadge';
 import { LoadingState, ErrorState, EmptyState } from '@/components/shared/StateComponents';
 import { getCandidate, getCandidatePositions, getCandidateStatements, getVotingRecord, getJudicialRecord, getCandidateRaceOffice } from '@/services/candidates';
 import { getNews, getVideos, getSocialPosts } from '@/services/news';

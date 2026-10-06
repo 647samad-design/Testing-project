@@ -54,7 +54,6 @@ describe('isFollowing', () => {
 
   it('always filters by the current user, never relying on RLS alone', async () => {
     getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
-    const eqUserMock = vi.fn().mockReturnThis();
     const eqTypeMock = vi.fn().mockReturnThis();
     const eqIdMock = vi.fn();
     const maybeSingleMock = vi.fn().mockResolvedValue({ data: { id: 'f1' }, error: null });

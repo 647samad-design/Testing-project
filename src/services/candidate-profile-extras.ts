@@ -1,9 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/use-auth';
-import type {
-  CandidateProfileExtras, CandidateGetToKnow, CandidateFundingSource,
-  CandidateEndorsement, CandidateElectionReminder,
-} from '@/types';
+import type { CandidateProfileExtras, CandidateGetToKnow, CandidateFundingSource, CandidateEndorsement } from '@/types';
 
 export async function getProfileExtras(candidateId: string): Promise<CandidateProfileExtras | null> {
   try {

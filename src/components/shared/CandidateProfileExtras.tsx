@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Briefcase, MapPin, Building2, Home, Bell, Calendar, Clock,
-  Play, CircleDollarSign, Percent, Handshake, Award, Users,
-  Heart, Utensils, Trophy, Briefcase as BriefcaseIcon, MapPin as MapPinIcon,
-  Sparkles, CalendarDays, Info, ShieldCheck,
-} from 'lucide-react';
+import { Briefcase, MapPin, Building2, Home, Bell, Calendar, Clock, Play, CircleDollarSign, Handshake, Award, Users, Heart, Utensils, Trophy, Briefcase as BriefcaseIcon, MapPin as MapPinIcon, Sparkles, CalendarDays, Info } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { parseDateOnly } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
@@ -24,7 +19,7 @@ import { t } from '@/i18n';
 // ─── Candidate Snapshot ────────────────────────────────────────────────────
 
 export function CandidateSnapshot({
-  candidateId, photoUrl, fullName, party,
+  candidateId, party,
 }: {
   candidateId: string;
   photoUrl: string | null;

@@ -73,7 +73,7 @@ export function CandidatesPage() {
         setAllIsDemo(usingSamples);
         setAllContests(contests);
         setAllCandidates(contests.flatMap((c) => c.candidates ?? []));
-      } catch (e) {
+      } catch {
         setError('We couldn’t load candidates right now. Please check your connection and try again in a moment.');
       } finally {
         setLoading(false);

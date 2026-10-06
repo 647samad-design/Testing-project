@@ -3,13 +3,12 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, Scale, ChevronDown, GitCompare, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { VerificationBadge } from '@/components/shared/VerificationBadge';
 import { DistrictBadge } from './DistrictBadge';
 import { compareCandidates } from '@/services/candidates';
 import { getUserIssues } from '@/services/districts';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
-import type { BallotContest, Candidate, CandidatePosition, Issue } from '@/types';
+import type { BallotContest, CandidatePosition, Issue } from '@/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 

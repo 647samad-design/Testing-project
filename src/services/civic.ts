@@ -1,8 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type {
-  OfficeDescription, FactCheck, CandidatePromise, CandidateClaimAnalysis,
-  FactCheckAssessment, FactCheckPlatform, PromiseStatus, AuthorityAssessment,
-} from '@/types';
+import type { OfficeDescription, FactCheck, CandidatePromise, CandidateClaimAnalysis, FactCheckPlatform, PromiseStatus, AuthorityAssessment } from '@/types';
 
 // ─── Office Descriptions ───
 

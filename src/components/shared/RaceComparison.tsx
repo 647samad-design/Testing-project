@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { VerificationBadge } from '@/components/shared/VerificationBadge';
 import { compareCandidates } from '@/services/candidates';
-import { getUserIssues, getIssues } from '@/services/districts';
+import { getUserIssues } from '@/services/districts';
 import { getTagsForCandidates, tagLabel, tagColor } from '@/services/tags';
 import { demoIssues } from '@/services/demo-data';
 import { supabase } from '@/lib/supabase';

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { MessageSquare, Send, ExternalLink, ShieldAlert, Sparkles, Search } from 'lucide-react';
+import { Send, ExternalLink, ShieldAlert, Sparkles, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

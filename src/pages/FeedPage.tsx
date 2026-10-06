@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { Link } from 'react-router-dom';
 import {
@@ -16,10 +16,7 @@ import { LoadingState } from '@/components/shared/StateComponents';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { ReportButton } from '@/components/shared/ReportButton';
 import { parseDateOnly } from '@/lib/date-utils';
-import {
-  getSocialFeed, getFollowedCandidates, getFollowedIssues,
-  togglePostLike, getNotifications, getFollowerCount,
-} from '@/services/social';
+import { getSocialFeed, getFollowedCandidates, getFollowedIssues, togglePostLike, getNotifications } from '@/services/social';
 import { cn } from '@/lib/utils';
 import type { FeedPost, Candidate, Issue, AppNotification, FeedPostType } from '@/types';
 import { t } from '@/i18n';

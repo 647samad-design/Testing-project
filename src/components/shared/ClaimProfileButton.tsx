@@ -15,7 +15,7 @@ interface ClaimProfileButtonProps {
   candidateName: string;
 }
 
-export function ClaimProfileButton({ candidateId, candidateName }: ClaimProfileButtonProps) {
+export function ClaimProfileButton({ candidateId }: ClaimProfileButtonProps) {
   const { user, loading: authLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);

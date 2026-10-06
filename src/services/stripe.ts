@@ -111,7 +111,8 @@ export async function getMyManagedCandidates(): Promise<MyManagedCandidate[]> {
     .select('candidate_id, status, is_comped, current_period_end, candidates(first_name, last_name)')
     .in('candidate_id', candidateIds);
   if (error) throw error;
-  return (data ?? []).map((row: any) => ({
+  type Row = { candidate_id: string; status: string; is_comped: boolean; current_period_end: string | null; candidates: { first_name: string; last_name: string } | null };
+  return ((data ?? []) as unknown as Row[]).map((row) => ({
     candidate_id: row.candidate_id,
     status: row.status,
     is_comped: row.is_comped,

@@ -1,4 +1,4 @@
-import type { AIResponse, ClaimAssessment, Source, CandidatePosition, VotingRecord, CandidateStatement } from '@/types';
+import type { AIResponse, ClaimAssessment, Source } from '@/types';
 import { fetchAllRows } from '@/lib/fetch-all';
 import { supabase } from '@/lib/supabase';
 import { getCandidatePositions, getVotingRecord, getCandidateStatements } from './candidates';

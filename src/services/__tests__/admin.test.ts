@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock the Supabase client before importing the service under test, since the
 // real client throws at import time if env vars aren't set (fine in prod/dev,
 // not in a unit test).
-const { rpcMock, singleMock, selectAfterInsertMock, eqMock, updateMock, deleteEqMock, deleteMock, insertMock, upsertMock, fromMock } = vi.hoisted(() => {
+const { rpcMock, singleMock, eqMock, updateMock, deleteEqMock, deleteMock, insertMock, upsertMock, fromMock } = vi.hoisted(() => {
   const rpcMock = vi.fn().mockResolvedValue({ data: null, error: null });
   const singleMock = vi.fn().mockResolvedValue({ data: { id: 'new-id' }, error: null });
   const selectAfterInsertMock = vi.fn(() => ({ single: singleMock }));

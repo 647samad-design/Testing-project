@@ -14,7 +14,7 @@ interface IssueCardProps {
   className?: string;
 }
 
-export function IssueCard({ position, candidateId, onShowEvidence, className }: IssueCardProps) {
+export function IssueCard({ position, onShowEvidence, className }: IssueCardProps) {
   const issueName = position.issue?.name ?? 'Unknown Issue';
   const sourceCount = position.sources?.length ?? 0;
 

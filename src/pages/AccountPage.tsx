@@ -1,15 +1,7 @@
 import { pathIn } from '@/i18n/routing';
 import { useEffect, useState, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import {
-  User, MapPin, Heart, Bookmark, LogOut, Scale, Eye, Settings,
-  TrendingUp, Users, MessageSquare, Sparkles, Zap, Award,
-  Flame, Target, CheckCircle2, ChevronRight, Rss, Newspaper,
-  Vote as VoteIcon, Calendar, Mic, BookOpen, GitCompare, Search,
-  Activity, BarChart3, Trophy, Radio, ArrowRight, Bell, Clock,
-  Layers, Gauge, Pin, Camera, Briefcase, GraduationCap, Home,
-  CheckCircle, Circle, ArrowRight as ArrowRightIcon,
-} from 'lucide-react';
+import { MapPin, Heart, Bookmark, LogOut, Scale, Eye, Settings, Users, MessageSquare, Sparkles, Zap, Award, Flame, CheckCircle2, ChevronRight, Rss, Newspaper, Vote as VoteIcon, BookOpen, GitCompare, Search, Activity, Trophy, Radio, ArrowRight, Clock, Camera, Briefcase, GraduationCap, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

@@ -14,7 +14,6 @@ import { getMediaByTab } from '@/services/news';
 import { getCandidate } from '@/services/candidates';
 import { formatDate } from '@/lib/date-utils';
 import type { NewsArticle, Video as VideoType, SocialPost, Candidate } from '@/types';
-import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 
 const tabs = [
