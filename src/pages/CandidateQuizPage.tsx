@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ import { t } from '@/i18n';
 type Phase = 'loading' | 'quiz' | 'saving' | 'done';
 
 export function CandidateQuizPage() {
+  usePageMeta({ title: t("Candidate Questionnaire"), noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('loading');
@@ -186,9 +188,9 @@ export function CandidateQuizPage() {
       questions={questions}
       onComplete={handleComplete}
       title={t("Where Do You Stand?")}
-      subtitle="Answer these questions so voters can find candidates who share their values. All answers are reviewed before going live."
+      subtitle={t("Answer these questions so voters can find candidates who share their values. All answers are reviewed before going live.")}
       accentColor="accent"
-      saveLabel="Submit for Review"
+      saveLabel={t("Submit for Review")}
       initialAnswers={draftAnswers}
     />
   );

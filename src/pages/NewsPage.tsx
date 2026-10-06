@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { useEffect, useState } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -31,6 +32,7 @@ const tabs = [
 ];
 
 export function NewsPage() {
+  usePageMeta({ title: t("News") });
   const [searchParams] = useSearchParams();
   const candidateId = searchParams.get('c') ?? undefined;
   const [activeTab, setActiveTab] = useState('all');

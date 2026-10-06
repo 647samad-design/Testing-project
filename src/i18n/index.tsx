@@ -11,6 +11,7 @@
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { LanguageName } from '@/types';
+import { langFromPath, currentUrlIn } from './routing';
 
 type Dict = Record<string, string>;
 const loaders: Record<Exclude<LanguageName, 'en'>, () => Promise<{ default: Dict }>> = {
@@ -40,10 +41,20 @@ export function currentLanguage(): LanguageName {
 }
 
 function initialLanguage(): LanguageName {
-  try {
-    const saved = localStorage.getItem('ballotlens_lang') as LanguageName | null;
-    if (saved && SUPPORTED.includes(saved)) return saved;
-  } catch { /* storage unavailable */ }
+  // The URL decides: /es/... is Spanish for everyone, including search engines.
+  const fromUrl = langFromPath(window.location.pathname);
+  let saved: LanguageName | null = null;
+  try { saved = localStorage.getItem('ballotlens_lang') as LanguageName | null; } catch { /* storage unavailable */ }
+  if (fromUrl !== 'en') {
+    try { localStorage.setItem('ballotlens_lang', fromUrl); } catch { /* ignore */ }
+    return fromUrl;
+  }
+  // An unprefixed URL for someone who chose another language: send them to it.
+  // (Crawlers have no saved choice, so they always get the English page here.)
+  if (saved && saved !== 'en' && SUPPORTED.includes(saved)) {
+    window.location.replace(currentUrlIn(saved));
+    return saved;
+  }
   return 'en';
 }
 
@@ -57,7 +68,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onChange = (e: Event) => {
       const next = (e as CustomEvent<LanguageName>).detail;
-      if (SUPPORTED.includes(next)) setLang(next);
+      if (!SUPPORTED.includes(next)) return;
+      // Each language has its own URL; switching moves to the same page there.
+      if (next !== langFromPath(window.location.pathname)) {
+        window.location.assign(currentUrlIn(next));
+        return;
+      }
+      setLang(next);
     };
     window.addEventListener(LANGUAGE_EVENT, onChange);
     return () => window.removeEventListener(LANGUAGE_EVENT, onChange);

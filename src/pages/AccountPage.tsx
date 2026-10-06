@@ -1,3 +1,4 @@
+import { pathIn } from '@/i18n/routing';
 import { useEffect, useState, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import {
@@ -30,7 +31,7 @@ import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { getElections } from '@/services/civic';
 import { parseDateOnly } from '@/lib/date-utils';
-import { t } from '@/i18n';
+import { t, currentLanguage } from '@/i18n';
 
 export function AccountPage() {
   usePageMeta({ title: t("Account"), noindex: true });
@@ -458,7 +459,7 @@ export function AccountPage() {
                 color="text-primary"
                 bg="bg-primary/10"
                 title={`${Math.max(0, Math.ceil((new Date('2026-11-03').getTime() - Date.now()) / 86400000))} days to Election Day`}
-                desc="Check your registration status and polling location."
+                desc={t("Check your registration status and polling location.")}
                 link="/ballot"
               />
               {quizDone ? (
@@ -467,7 +468,7 @@ export function AccountPage() {
                   color="text-success"
                   bg="bg-success/10"
                   title={t("Quiz complete — see your matches")}
-                  desc="You've taken the issue quiz. Browse candidates to see alignment."
+                  desc={t("You've taken the issue quiz. Browse candidates to see alignment.")}
                   link="/candidates"
                 />
               ) : (
@@ -476,7 +477,7 @@ export function AccountPage() {
                   color="text-accent"
                   bg="bg-accent/10"
                   title={t("Take the issue quiz")}
-                  desc="8 quick questions to find candidates who share your views."
+                  desc={t("8 quick questions to find candidates who share your views.")}
                   link="/onboarding"
                 />
               )}
@@ -485,7 +486,7 @@ export function AccountPage() {
                 color="text-warning"
                 bg="bg-warning/10"
                 title={t("Fact-check something")}
-                desc="Paste a link or quote — we'll break down what's true."
+                desc={t("Paste a link or quote — we'll break down what's true.")}
                 link="/lens"
               />
               <BriefingItem
@@ -493,7 +494,7 @@ export function AccountPage() {
                 color="text-muted-foreground"
                 bg="bg-secondary"
                 title={t("Catch up on Civic Wire")}
-                desc="Latest updates from candidates, election results, and news."
+                desc={t("Latest updates from candidates, election results, and news.")}
                 link="/feed"
               />
             </div>
@@ -1004,7 +1005,7 @@ function DangerZoneCard() {
       }
       toast.success(t("Your account has been permanently deleted."));
       await signOut();
-      window.location.href = '/';
+      window.location.href = pathIn(currentLanguage(), '/');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete account.');
       setDeleting(false);

@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { extractZip, INVALID_ZIP_MESSAGE } from '@/lib/zip';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -15,6 +16,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { t } from '@/i18n';
 
 export function LandingPage() {
+  usePageMeta({});
   const navigate = useNavigate();
   const { user } = useAuth();
   const [address, setAddress] = useState('');

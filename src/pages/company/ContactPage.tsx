@@ -1,8 +1,11 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
+import { Link } from 'react-router-dom';
 import { Mail, MapPin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { t } from '@/i18n';
 
 export function ContactPage() {
+  usePageMeta({ title: t("Contact Us") });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">
@@ -26,7 +29,7 @@ export function ContactPage() {
       </div>
 
       <p className="mt-8 text-sm text-muted-foreground">{t("Are you a candidate? You can also claim and verify your profile directly from your")}{' '}
-        <a href="/candidate-portal" className="text-primary hover:underline">{t("Candidate Portal")}</a>.
+        <Link to="/candidate-portal" className="text-primary hover:underline">{t("Candidate Portal")}</Link>.
       </p>
     </div>
   );

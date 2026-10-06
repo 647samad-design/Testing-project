@@ -37,7 +37,38 @@ function collectKeys(): Set<string> {
   return keys;
 }
 
+/** User-facing sentences passed as plain string props (subtitle="...", desc="...")
+ * in translated files bypass t(); this caught several the wrapper missed. */
+function untranslatedProps(): string[] {
+  const root = path.resolve(__dirname, '../..');
+  const SKIP = new Set(['className', 'href', 'to', 'src', 'type', 'variant', 'size', 'id', 'name', 'value', 'key', 'role', 'htmlFor', 'autoComplete', 'inputMode', 'pattern', 'target', 'rel', 'side', 'align', 'defaultValue', 'd', 'viewBox', 'points', 'transform', 'fill', 'stroke']);
+  const found: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) { if (!['__tests__', 'locales', 'ui'].includes(e.name)) walk(p); continue; }
+      if (!e.name.endsWith('.tsx')) continue;
+      const src = fs.readFileSync(p, 'utf8');
+      if (!src.includes("from '@/i18n'")) continue;
+      const sf = ts.createSourceFile(p, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const visit = (n: ts.Node) => {
+        if (ts.isJsxAttribute(n) && n.initializer && ts.isStringLiteral(n.initializer)) {
+          const name = n.name.getText(sf), v = n.initializer.text;
+          if (!SKIP.has(name) && /^[A-Z]/.test(v) && /\s/.test(v)) found.push(`${path.relative(root, p)}: ${name}="${v}"`);
+        }
+        ts.forEachChild(n, visit);
+      };
+      visit(sf);
+    }
+  };
+  walk(root);
+  return found;
+}
+
 describe('translations are complete', () => {
+  it('no user-facing sentence is passed as a plain string prop in translated files', () => {
+    expect(untranslatedProps()).toEqual([]);
+  });
   const keys = collectKeys();
   it('found the translated strings', () => expect(keys.size).toBeGreaterThan(300));
   for (const [lang, dict] of Object.entries({ es, pt, ht, ru })) {

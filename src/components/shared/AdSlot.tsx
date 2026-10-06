@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState, memo } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { Megaphone, ExternalLink } from 'lucide-react';
@@ -55,7 +56,7 @@ export const AdSlot = memo(function AdSlot({ placement, className = '' }: AdSlot
       >
         <div className="flex items-center justify-between border-b border-border/40 bg-secondary/20 px-4 py-1.5">
           <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{t("Advertisement")}</span>
-          <a href="/advertise" className="text-[10px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors">{t("Advertise here")}</a>
+          <Link to="/advertise" className="text-[10px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors">{t("Advertise here")}</Link>
         </div>
         <a
           href={safeUrl(ad.destination_url)}

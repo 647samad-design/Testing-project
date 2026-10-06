@@ -1,3 +1,5 @@
+import { currentLanguage } from '@/i18n';
+import { ALL_LANGS, pathIn } from '@/i18n/routing';
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
@@ -19,6 +21,8 @@ interface PageMetaOptions {
    * indexable by default, including pages that only make sense to the
    * signed-in user viewing them. */
   noindex?: boolean;
+  /** Page exists only in English (legal pages): canonical is the English URL in every language, no hreflang. */
+  englishOnly?: boolean;
   /** Structured data (schema.org) for this specific page — e.g. a Person
    * schema for a candidate profile, or a NewsArticle schema for a story.
    * Passed as a plain object; JSON-stringified into a <script type="application/ld+json">. */
@@ -47,6 +51,25 @@ function setCanonical(url: string) {
     document.head.appendChild(el);
   }
   el.setAttribute('href', url);
+}
+
+const OG_LOCALE: Record<string, string> = { en: 'en_US', es: 'es_US', pt: 'pt_BR', ht: 'ht_HT', ru: 'ru_RU' };
+
+/** <link rel="alternate" hreflang> for every language version of this page,
+ * plus x-default (English), so search engines show each reader their language. */
+function setAlternates(path: string | null) {
+  document.querySelectorAll('link[rel="alternate"][data-hreflang]').forEach((el) => el.remove());
+  if (path === null) return;
+  const add = (hreflang: string, href: string) => {
+    const el = document.createElement('link');
+    el.setAttribute('rel', 'alternate');
+    el.setAttribute('hreflang', hreflang);
+    el.setAttribute('href', href);
+    el.setAttribute('data-hreflang', '');
+    document.head.appendChild(el);
+  };
+  for (const l of ALL_LANGS) add(l, `${SITE_URL}${pathIn(l, path)}`);
+  add('x-default', `${SITE_URL}${pathIn('en', path)}`);
 }
 
 const STRUCTURED_DATA_ID = 'page-structured-data';
@@ -80,18 +103,24 @@ function setStructuredData(data: Record<string, unknown> | undefined) {
  * own meta doesn't leave a stale title, noindex flag, or structured data
  * block behind.
  */
-export function usePageMeta({ title, description, image, noindex, structuredData }: PageMetaOptions) {
+export function usePageMeta({ title, description, image, noindex, englishOnly, structuredData }: PageMetaOptions) {
   const location = useLocation();
 
   useEffect(() => {
     const fullTitle = title ? `${title} | Gov Search App` : DEFAULT_TITLE;
     const desc = description ?? DEFAULT_DESCRIPTION;
-    const canonicalUrl = `${SITE_URL}${location.pathname}`;
+    // location.pathname has the language prefix removed by the router basename;
+    // put it back so a Spanish page's canonical is the Spanish URL (otherwise it
+    // pointed Google at the English page and the translation was never indexed).
+    const lang = currentLanguage();
+    const canonicalUrl = `${SITE_URL}${pathIn(englishOnly ? 'en' : lang, location.pathname)}`;
     const ogImage = image ?? DEFAULT_OG_IMAGE;
 
     document.title = fullTitle;
     setMetaTag('name', 'description', desc);
     setCanonical(canonicalUrl);
+    setAlternates(noindex || englishOnly ? null : location.pathname);
+    setMetaTag('property', 'og:locale', OG_LOCALE[lang]);
     setMetaTag('property', 'og:url', canonicalUrl);
     setMetaTag('property', 'og:title', title ?? 'Gov Search App');
     setMetaTag('property', 'og:description', desc);

@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { Search, ShieldCheck, GitCompare, MessageSquare } from 'lucide-react';
 import { t, msg } from '@/i18n';
 
@@ -25,6 +26,7 @@ const steps = [
 ];
 
 export function HowItWorksPage() {
+  usePageMeta({ title: t("How It Works") });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">

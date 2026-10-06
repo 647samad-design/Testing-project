@@ -1,3 +1,5 @@
+import { currentLanguage } from '@/i18n';
+import { pathIn } from '@/i18n/routing';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReload = () => {
-    window.location.href = '/';
+    window.location.href = pathIn(currentLanguage(), '/');
   };
 
   render() {

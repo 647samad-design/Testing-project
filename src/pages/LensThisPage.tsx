@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { toast } from 'sonner';
@@ -145,6 +146,7 @@ const DEMO_SCAN: ScannedClaim = {
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export function LensThisPage() {
+  usePageMeta({ title: t("Put It Through the Lens") });
   const { user } = useAuth();
   const [inputUrl, setInputUrl] = useState('');
   const [inputText, setInputText] = useState('');

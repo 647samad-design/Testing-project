@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Loader2, Users, Sparkles } from 'lucide-react';
@@ -12,6 +13,7 @@ import { t } from '@/i18n';
 type Phase = 'loading' | 'quiz' | 'saving' | 'done';
 
 export function OnboardingQuizPage() {
+  usePageMeta({ title: t("Take the Quiz"), noindex: true });
   const { user, isDemo } = useAuth();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('loading');
@@ -133,9 +135,9 @@ export function OnboardingQuizPage() {
       questions={questions}
       onComplete={handleComplete}
       title={t("Where Do You Stand?")}
-      subtitle="Answer a few questions so we can find candidates who share your values."
+      subtitle={t("Answer a few questions so we can find candidates who share your values.")}
       accentColor="primary"
-      saveLabel="Find My Candidates"
+      saveLabel={t("Find My Candidates")}
     />
   );
 }

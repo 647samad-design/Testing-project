@@ -1,7 +1,10 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
+import { Link } from 'react-router-dom';
 
 import { t } from '@/i18n';const LAST_UPDATED = 'September 17, 2026';
 
 export function AccessibilityPage() {
+  usePageMeta({ title: t("Accessibility Statement") });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">
@@ -16,7 +19,7 @@ export function AccessibilityPage() {
         <p>{t("As with any actively developed platform, some pages or components may not yet fully meet this standard. We prioritize fixes based on impact and would rather be upfront about that than overstate our current conformance.")}</p>
         <h2>{t("Feedback")}</h2>
         <p>{t("If you encounter an accessibility barrier anywhere on Gov Search App, please")}{' '}
-          <a href="/contact">{t("let us know")}</a>{t(". Include the page you were on and, if possible, the assistive technology you were using — it helps us reproduce and fix the issue faster.")}</p>
+          <Link to="/contact">{t("let us know")}</Link>{t(". Include the page you were on and, if possible, the assistive technology you were using — it helps us reproduce and fix the issue faster.")}</p>
       </div>
     </div>
   );

@@ -1,5 +1,8 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
+import { Link } from 'react-router-dom';
 
 import { t } from '@/i18n';export function MethodologyPage() {
+  usePageMeta({ title: t("Methodology") });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">
@@ -30,7 +33,7 @@ import { t } from '@/i18n';export function MethodologyPage() {
         <p>{t("Gov Search App does not accept payment from candidates or campaigns in exchange for favorable coverage, positioning, or omission of unfavorable information. Candidate and Pro subscriptions and Candidate Management fees fund the platform's operating costs; they do not affect what appears on any candidate's profile.")}</p>
 
         <h2>{t("Corrections")}</h2>
-        <p>{t("If you believe something on Gov Search App is inaccurate or out of date,")} <a href="/contact">{t("contact us")}</a> {t("with the specific page and claim — we review corrections promptly and update sourced content when warranted.")}</p>
+        <p>{t("If you believe something on Gov Search App is inaccurate or out of date,")} <Link to="/contact">{t("contact us")}</Link> {t("with the specific page and claim — we review corrections promptly and update sourced content when warranted.")}</p>
       </div>
     </div>
   );

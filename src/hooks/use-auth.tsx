@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { LANGUAGE_EVENT } from '@/i18n';
+import { langFromPath } from '@/i18n/routing';
 import { edgeFunctionErrorMessage } from '@/lib/edge-function-error';
 import type { Profile, LanguageName } from '@/types';
 
@@ -59,7 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // chosen". If this device has another language picked (e.g. chosen before
     // signing up), keep it and save it to the profile instead of flipping the
     // whole site back to English on sign-in.
-    const deviceChoice = savedLang && savedLang !== 'en' ? savedLang : null;
+    // A language page the user is on (/es/...) counts as their choice too, so
+    // someone who arrived from a Spanish search result stays in Spanish on sign-up.
+    const urlLang = langFromPath(window.location.pathname);
+    const deviceChoice = urlLang !== 'en' ? urlLang : savedLang && savedLang !== 'en' ? savedLang : null;
     const effectiveLang = lang && lang !== 'en' ? lang : deviceChoice ?? lang ?? 'en';
     if (p && deviceChoice && lang === 'en' && p.id !== 'demo-user') {
       supabase.from('profiles').update({ language_preference: deviceChoice }).eq('id', p.id).then(() => {});

@@ -1,3 +1,5 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { safeUrl } from '@/lib/safe-url';
 import { ExternalLink } from 'lucide-react';
@@ -7,6 +9,7 @@ import type { Source } from '@/types';
 import { t } from '@/i18n';
 
 export function SourcesPage() {
+  usePageMeta({ title: t("Sources") });
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +25,7 @@ export function SourcesPage() {
       <header className="mb-10 border-b border-border pb-8">
         <h1 className="font-display text-4xl font-semibold tracking-tight">{t("Sources")}</h1>
         <p className="mt-3 text-muted-foreground">{t("Every claim on Gov Search App is tied to a source. Here's a sample of what we cite — see our")}{' '}
-          <a href="/methodology" className="text-primary hover:underline">{t("Methodology")}</a> {t("page for how we choose and verify them.")}</p>
+          <Link to="/methodology" className="text-primary hover:underline">{t("Methodology")}</Link> {t("page for how we choose and verify them.")}</p>
       </header>
 
       {loading ? (

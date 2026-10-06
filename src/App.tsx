@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { I18nProvider } from '@/i18n';
+import { basenameFor, langFromPath } from '@/i18n/routing';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Header, Footer } from '@/components/shared/Layout';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
@@ -65,7 +66,7 @@ function App() {
     <ErrorBoundary>
     <AuthProvider>
       <I18nProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basenameFor(langFromPath(window.location.pathname))}>
         <ScrollToTop />
         <div className="flex min-h-screen flex-col">
           <Header />

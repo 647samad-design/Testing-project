@@ -1,5 +1,8 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
+import { Link } from 'react-router-dom';
 
 import { t } from '@/i18n';export function AboutPage() {
+  usePageMeta({ title: t("About Gov Search App") });
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">
@@ -16,8 +19,8 @@ import { t } from '@/i18n';export function AboutPage() {
           <li>{t("A platform covering elections has to hold itself to a higher security and accuracy bar than most software, because the stakes for getting it wrong are higher.")}</li>
         </ul>
         <p>{t("Gov Search App is operated by Gov Search App, based in Miami, Florida. See our")}{' '}
-          <a href="/methodology">{t("Methodology")}</a> {t("page for how we source and verify information, or")}{' '}
-          <a href="/contact">{t("get in touch")}</a> {t("if you have questions.")}</p>
+          <Link to="/methodology">{t("Methodology")}</Link> {t("page for how we source and verify information, or")}{' '}
+          <Link to="/contact">{t("get in touch")}</Link> {t("if you have questions.")}</p>
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { LegalLanguageNotice } from '@/components/shared/LegalLanguageNotice';
 const LAST_UPDATED = 'September 15, 2026';
 
 export function DisclaimerPage() {
+  usePageMeta({ title: 'Disclaimer', englishOnly: true });
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">
