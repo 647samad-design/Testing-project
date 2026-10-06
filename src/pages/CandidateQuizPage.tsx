@@ -13,6 +13,7 @@ import {
   type QuizQuestion,
 } from '@/services/quiz';
 import { supabase } from '@/lib/supabase';
+import { t } from '@/i18n';
 
 type Phase = 'loading' | 'quiz' | 'saving' | 'done';
 
@@ -133,7 +134,7 @@ export function CandidateQuizPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="h-8 w-8 text-accent animate-spin mb-4" />
-        <p className="text-sm text-muted-foreground">Loading quiz questions...</p>
+        <p className="text-sm text-muted-foreground">{t("Loading quiz questions...")}</p>
       </div>
     );
   }
@@ -142,7 +143,7 @@ export function CandidateQuizPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
         <Loader2 className="h-8 w-8 text-accent animate-spin mb-4" />
-        <p className="text-sm text-muted-foreground">Saving your positions...</p>
+        <p className="text-sm text-muted-foreground">{t("Saving your positions...")}</p>
       </div>
     );
   }
@@ -153,19 +154,14 @@ export function CandidateQuizPage() {
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-success/10">
           <CheckCircle2 className="h-8 w-8 text-success" />
         </div>
-        <h1 className="font-display text-2xl font-bold mb-2">Positions Saved!</h1>
-        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-          Your answers have been submitted for review. Once approved by our team,
-          voters will be able to see where you stand on the issues and find alignment with your campaign.
-        </p>
+        <h1 className="font-display text-2xl font-bold mb-2">{t("Positions Saved!")}</h1>
+        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{t("Your answers have been submitted for review. Once approved by our team, voters will be able to see where you stand on the issues and find alignment with your campaign.")}</p>
         <Button
           onClick={() => navigate('/candidate-portal')}
           className="w-full rounded-2xl gap-2 font-bold"
           size="lg"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Portal
-        </Button>
+          <ArrowLeft className="h-4 w-4" />{t("Back to Portal")}</Button>
       </div>
     );
   }
@@ -178,9 +174,7 @@ export function CandidateQuizPage() {
             <AlertCircle className="h-6 w-6 text-warning" />
           </div>
           <p className="text-sm text-muted-foreground mb-4">{error}</p>
-          <Button onClick={() => navigate('/candidate-portal')} variant="outline" className="rounded-2xl">
-            Back to Portal
-          </Button>
+          <Button onClick={() => navigate('/candidate-portal')} variant="outline" className="rounded-2xl">{t("Back to Portal")}</Button>
         </Card>
       </div>
     );
@@ -191,7 +185,7 @@ export function CandidateQuizPage() {
       key={draftKey}
       questions={questions}
       onComplete={handleComplete}
-      title="Where Do You Stand?"
+      title={t("Where Do You Stand?")}
       subtitle="Answer these questions so voters can find candidates who share their values. All answers are reviewed before going live."
       accentColor="accent"
       saveLabel="Submit for Review"

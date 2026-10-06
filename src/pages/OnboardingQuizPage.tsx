@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { QuizCard } from '@/components/shared/QuizCard';
 import { fetchQuizQuestions, saveUserQuizAnswers, getQuizMatches, type QuizQuestion, type QuizMatch } from '@/services/quiz';
 import { supabase } from '@/lib/supabase';
+import { t } from '@/i18n';
 
 type Phase = 'loading' | 'quiz' | 'saving' | 'done';
 
@@ -59,7 +60,7 @@ export function OnboardingQuizPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
-        <p className="text-sm text-muted-foreground">Preparing your questions...</p>
+        <p className="text-sm text-muted-foreground">{t("Preparing your questions...")}</p>
       </div>
     );
   }
@@ -68,7 +69,7 @@ export function OnboardingQuizPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
         <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
-        <p className="text-sm text-muted-foreground">Saving your answers...</p>
+        <p className="text-sm text-muted-foreground">{t("Saving your answers...")}</p>
       </div>
     );
   }
@@ -79,17 +80,12 @@ export function OnboardingQuizPage() {
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-success/10">
           <CheckCircle2 className="h-8 w-8 text-success" />
         </div>
-        <h1 className="font-display text-2xl font-bold mb-2">You're all set!</h1>
-        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-          Your answers help us find candidates who align with your values.
-          You can retake the quiz anytime from your account settings.
-        </p>
+        <h1 className="font-display text-2xl font-bold mb-2">{t("You're all set!")}</h1>
+        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{t("Your answers help us find candidates who align with your values. You can retake the quiz anytime from your account settings.")}</p>
 
         {matches.length > 0 && (
           <div className="mb-6 text-left">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground text-center">
-              Your top matches
-            </p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground text-center">{t("Your top matches")}</p>
             <div className="space-y-2">
               {matches.slice(0, 3).map((m) => (
                 <Card
@@ -102,7 +98,7 @@ export function OnboardingQuizPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold truncate">{m.first_name} {m.last_name}</p>
-                    <p className="text-xs text-muted-foreground">{m.party || 'No party listed'}</p>
+                    <p className="text-xs text-muted-foreground">{m.party || t("No party listed")}</p>
                   </div>
                   <span className="shrink-0 text-sm font-bold text-primary">{m.match_percent}%</span>
                 </Card>
@@ -118,7 +114,7 @@ export function OnboardingQuizPage() {
             size="lg"
           >
             <Users className="h-4 w-4" />
-            {matches.length > 0 ? 'See All Candidates' : 'Find Your Candidates'}
+            {matches.length > 0 ? t("See All Candidates") : t("Find Your Candidates")}
           </Button>
           <Button
             onClick={() => navigate('/ballot')}
@@ -126,9 +122,7 @@ export function OnboardingQuizPage() {
             className="w-full rounded-2xl gap-2"
             size="lg"
           >
-            <Sparkles className="h-4 w-4" />
-            View My Ballot
-          </Button>
+            <Sparkles className="h-4 w-4" />{t("View My Ballot")}</Button>
         </div>
       </div>
     );
@@ -138,7 +132,7 @@ export function OnboardingQuizPage() {
     <QuizCard
       questions={questions}
       onComplete={handleComplete}
-      title="Where Do You Stand?"
+      title={t("Where Do You Stand?")}
       subtitle="Answer a few questions so we can find candidates who share your values."
       accentColor="primary"
       saveLabel="Find My Candidates"

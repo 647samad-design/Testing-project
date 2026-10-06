@@ -30,9 +30,10 @@ import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { getElections } from '@/services/civic';
 import { parseDateOnly } from '@/lib/date-utils';
+import { t } from '@/i18n';
 
 export function AccountPage() {
-  usePageMeta({ title: 'Account', noindex: true });
+  usePageMeta({ title: t("Account"), noindex: true });
   const { user, profile, signOut, isDemo, refreshProfile, loading: authLoading } = useAuth();
   const [fullName, setFullName] = useState('');
   const [zipCode, setZipCode] = useState('');
@@ -108,9 +109,9 @@ export function AccountPage() {
   // a moment even for a signed-in visitor. Redirecting to /signin on that
   // first render (as this used to do) would bounce a just-paid customer
   // straight to the sign-in page instead of their account.
-  if (authLoading) return <LoadingState message="Loading your account…" />;
+  if (authLoading) return <LoadingState message={t("Loading your account…")} />;
   if (!user) return <Navigate to="/signin" replace />;
-  if (loading) return <LoadingState message="Loading your dashboard…" />;
+  if (loading) return <LoadingState message={t("Loading your dashboard…")} />;
 
   async function handleSave() {
     if (isDemo) {
@@ -158,7 +159,7 @@ export function AccountPage() {
       try {
         await updateProfile({ photo_url: result.url });
         await refreshProfile();
-        toast.success('Profile photo updated.');
+        toast.success(t("Profile photo updated."));
       } catch (err) {
         toast.error(`Photo uploaded but not saved to your profile: ${err instanceof Error ? err.message : 'unknown error'}`);
       }
@@ -183,7 +184,7 @@ export function AccountPage() {
       return;
     }
     setPhotoUrl(null);
-    toast.success('Profile photo removed.');
+    toast.success(t("Profile photo removed."));
   }
 
   async function handleToggleStep(stepNumber: number, currentCompleted: boolean) {
@@ -231,9 +232,7 @@ export function AccountPage() {
       {isDemo && (
         <div className="mb-4 flex items-center gap-3 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3">
           <Eye className="h-5 w-5 text-warning shrink-0" />
-          <p className="text-sm text-warning font-medium">
-            You're exploring in demo mode. Changes won't be saved. Sign out to connect a real account.
-          </p>
+          <p className="text-sm text-warning font-medium">{t("You're exploring in demo mode. Changes won't be saved. Sign out to connect a real account.")}</p>
         </div>
       )}
 
@@ -244,9 +243,9 @@ export function AccountPage() {
           <div className="absolute top-4 right-4 flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => setEditMode(!editMode)} className="gap-1.5 rounded-xl touch-target">
               <Settings className="h-4 w-4" />
-              {editMode ? 'Cancel' : 'Edit'}
+              {editMode ? t("Cancel") : t("Edit")}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1.5 rounded-xl touch-target text-muted-foreground" aria-label="Sign out" title="Sign out">
+            <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1.5 rounded-xl touch-target text-muted-foreground" aria-label={t("Sign out")} title={t("Sign out")}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -271,8 +270,8 @@ export function AccountPage() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingPhoto}
                     className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:scale-110 transition-transform touch-target"
-                    aria-label={photoUrl ? 'Change photo' : 'Upload photo'}
-                    title={photoUrl ? 'Change photo' : 'Upload photo'}
+                    aria-label={photoUrl ? t("Change photo") : t("Upload photo")}
+                    title={photoUrl ? t("Change photo") : t("Upload photo")}
                   >
                     <Camera className="h-4 w-4" />
                   </button>
@@ -290,9 +289,7 @@ export function AccountPage() {
                   onClick={handleRemovePhoto}
                   disabled={uploadingPhoto}
                   className="mt-3 text-xs font-medium text-muted-foreground hover:text-destructive"
-                >
-                  Remove photo
-                </button>
+                >{t("Remove photo")}</button>
               )}
             </div>
 
@@ -309,15 +306,12 @@ export function AccountPage() {
                   </span>
                 )}
                 <span className="flex items-center gap-1 font-bold text-accent">
-                  <Trophy className="h-3.5 w-3.5" />
-                  Civic Level {civicLevel}
+                  <Trophy className="h-3.5 w-3.5" />{t("Civic Level")} {civicLevel}
                 </span>
                 <span className="flex items-center gap-1 font-bold text-warning">
                   <Flame className="h-3.5 w-3.5" />
-                  {streak} day streak
-                </span>
-                <span className="text-xs">
-                  Joined {joinedDate}
+                  {streak} {t("day streak")}</span>
+                <span className="text-xs">{t("Joined")} {joinedDate}
                 </span>
               </div>
 
@@ -347,42 +341,41 @@ export function AccountPage() {
         {/* Edit panel */}
         {editMode && (
           <div className="px-6 py-5 border-t border-border/50 animate-slide-up">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground">Display Name</label>
-                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your name" className="rounded-xl h-11" />
+                <label className="text-sm font-semibold text-foreground">{t("Display Name")}</label>
+                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("Your name")} className="rounded-xl h-11" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground">ZIP Code</label>
+                <label className="text-sm font-semibold text-foreground">{t("ZIP Code")}</label>
                 <Input value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="33101" maxLength={5} className="rounded-xl h-11" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground">Occupation / Industry</label>
-                <Input value={occupation} onChange={(e) => setOccupation(e.target.value)} placeholder="Software Engineer" className="rounded-xl h-11" />
+                <label className="text-sm font-semibold text-foreground">{t("Occupation / Industry")}</label>
+                <Input value={occupation} onChange={(e) => setOccupation(e.target.value)} placeholder={t("Software Engineer")} className="rounded-xl h-11" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground">Education</label>
-                <Input value={education} onChange={(e) => setEducation(e.target.value)} placeholder="FIU, B.S. Political Science" className="rounded-xl h-11" />
+                <label className="text-sm font-semibold text-foreground">{t("Education")}</label>
+                <Input value={education} onChange={(e) => setEducation(e.target.value)} placeholder={t("FIU, B.S. Political Science")} className="rounded-xl h-11" />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <label className="text-sm font-semibold text-foreground">Bio</label>
-                <Input value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell people about yourself" className="rounded-xl h-11" maxLength={160} />
-                <p className="text-xs text-muted-foreground">{bio.length}/160 characters</p>
+                <label className="text-sm font-semibold text-foreground">{t("Bio")}</label>
+                <Input value={bio} onChange={(e) => setBio(e.target.value)} placeholder={t("Tell people about yourself")} className="rounded-xl h-11" maxLength={160} />
+                <p className="text-xs text-muted-foreground">{bio.length}{t("/160 characters")}</p>
               </div>
             </div>
             <Button onClick={handleSave} disabled={saving} className="mt-4 w-full rounded-xl h-11 font-bold sm:w-auto">
-              {saving ? 'Saving…' : 'Save Changes'}
+              {saving ? t("Saving…") : t("Save Changes")}
             </Button>
             {savedMsg && <p className="text-sm text-success text-center font-semibold flex items-center justify-center gap-1 mt-3">
-              <CheckCircle2 className="h-4 w-4" /> Saved successfully!
-            </p>}
+              <CheckCircle2 className="h-4 w-4" /> {t("Saved successfully!")}</p>}
           </div>
         )}
 
         {/* Interested In */}
         {userIssues.length > 0 && (
           <div className="px-6 py-4 border-t border-border/50">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Interested In</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">{t("Interested In")}</p>
             <div className="flex flex-wrap gap-2">
               {userIssues.map((issue) => (
                 <span
@@ -399,31 +392,28 @@ export function AccountPage() {
 
         {/* Civic Activity */}
         <div className="px-6 py-4 border-t border-border/50 bg-secondary/20">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Civic Activity</p>
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">{t("Civic Activity")}</p>
+          <div className="grid grid-cols-3 gap-3 mb-4 [&>*]:min-w-0">
             <div className="text-center">
               <p className="font-display text-2xl font-extrabold text-primary">{electionsFollowed}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold">Elections Followed</p>
+              <p className="text-[10px] text-muted-foreground font-semibold">{t("Elections Followed")}</p>
             </div>
             <div className="text-center">
               <p className="font-display text-2xl font-extrabold text-accent">{questionsAsked}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold">Questions Asked</p>
+              <p className="text-[10px] text-muted-foreground font-semibold">{t("Questions Asked")}</p>
             </div>
             <div className="text-center">
               <p className="font-display text-2xl font-extrabold text-success">{questionsAnswered}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold">Answered by Candidates</p>
+              <p className="text-[10px] text-muted-foreground font-semibold">{t("Answered by Candidates")}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge className="rounded-lg gap-1 bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">
-              <Award className="h-3 w-3" /> Local Expert
-            </Badge>
+              <Award className="h-3 w-3" /> {t("Local Expert")}</Badge>
             <Badge className="rounded-lg gap-1 bg-accent/10 text-accent border-accent/20 hover:bg-accent/10">
-              <BookOpen className="h-3 w-3" /> Policy Explorer
-            </Badge>
+              <BookOpen className="h-3 w-3" /> {t("Policy Explorer")}</Badge>
             <Badge className="rounded-lg gap-1 bg-success/10 text-success border-success/20 hover:bg-success/10">
-              <Users className="h-3 w-3" /> Community Contributor
-            </Badge>
+              <Users className="h-3 w-3" /> {t("Community Contributor")}</Badge>
           </div>
         </div>
       </Card>
@@ -431,23 +421,21 @@ export function AccountPage() {
       {/* TABS: Dashboard / Election Journey */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'dashboard' | 'journey' | 'billing' | 'notifications')} className="mb-6">
         <TabsList className="w-full justify-start overflow-x-auto no-scrollbar">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="journey">
-            Election Journey
-            {completedSteps > 0 && (
+          <TabsTrigger value="dashboard">{t("Dashboard")}</TabsTrigger>
+          <TabsTrigger value="journey">{t("Election Journey")}{completedSteps > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/15 px-1.5 py-0 text-[10px] font-extrabold text-primary">
                 {completedSteps}/{totalSteps}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="billing">Billing</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="billing">{t("Billing")}</TabsTrigger>
+          <TabsTrigger value="notifications">{t("Notifications")}</TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD TAB */}
         <TabsContent value="dashboard" className="mt-6">
           {/* MAIN GRID: Dashboard + Sidebar */}
-          <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_340px] [&>*]:min-w-0">
         {/* Left column — the daily dashboard */}
         <div className="space-y-6">
           {/* TODAY'S BRIEFING */}
@@ -458,7 +446,7 @@ export function AccountPage() {
                   <Radio className="h-4 w-4 text-primary" />
                   <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive animate-pulse" />
                 </div>
-                <h2 className="font-bold text-sm uppercase tracking-wide">Today's Briefing</h2>
+                <h2 className="font-bold text-sm uppercase tracking-wide">{t("Today's Briefing")}</h2>
               </div>
               <span className="text-[10px] font-bold text-muted-foreground">
                 {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}
@@ -478,7 +466,7 @@ export function AccountPage() {
                   icon={CheckCircle2}
                   color="text-success"
                   bg="bg-success/10"
-                  title="Quiz complete — see your matches"
+                  title={t("Quiz complete — see your matches")}
                   desc="You've taken the issue quiz. Browse candidates to see alignment."
                   link="/candidates"
                 />
@@ -487,7 +475,7 @@ export function AccountPage() {
                   icon={Sparkles}
                   color="text-accent"
                   bg="bg-accent/10"
-                  title="Take the issue quiz"
+                  title={t("Take the issue quiz")}
                   desc="8 quick questions to find candidates who share your views."
                   link="/onboarding"
                 />
@@ -496,7 +484,7 @@ export function AccountPage() {
                 icon={Search}
                 color="text-warning"
                 bg="bg-warning/10"
-                title="Fact-check something"
+                title={t("Fact-check something")}
                 desc="Paste a link or quote — we'll break down what's true."
                 link="/lens"
               />
@@ -504,7 +492,7 @@ export function AccountPage() {
                 icon={Newspaper}
                 color="text-muted-foreground"
                 bg="bg-secondary"
-                title="Catch up on Civic Wire"
+                title={t("Catch up on Civic Wire")}
                 desc="Latest updates from candidates, election results, and news."
                 link="/feed"
               />
@@ -516,11 +504,9 @@ export function AccountPage() {
             <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <Bookmark className="h-4 w-4 text-primary" />
-                <h2 className="font-bold text-sm uppercase tracking-wide">Your Watchlist</h2>
+                <h2 className="font-bold text-sm uppercase tracking-wide">{t("Your Watchlist")}</h2>
               </div>
-              <Link to="/candidates" className="text-xs font-bold text-primary hover:underline">
-                Browse all
-              </Link>
+              <Link to="/candidates" className="text-xs font-bold text-primary hover:underline">{t("Browse all")}</Link>
             </div>
             <div className="p-3">
               {savedCandidates.length > 0 ? (
@@ -544,7 +530,7 @@ export function AccountPage() {
                         <p className="text-sm font-bold text-foreground truncate">
                           {c.first_name} {c.last_name}
                         </p>
-                        <span className="text-xs text-muted-foreground">{c.party ?? 'Independent'}</span>
+                        <span className="text-xs text-muted-foreground">{c.party ?? t("Independent")}</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-colors" />
                     </Link>
@@ -553,11 +539,10 @@ export function AccountPage() {
               ) : (
                 <div className="text-center py-8">
                   <Users className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-semibold text-muted-foreground">Your watchlist is empty</p>
-                  <p className="text-xs text-muted-foreground mt-1">Follow candidates to track them here.</p>
+                  <p className="text-sm font-semibold text-muted-foreground">{t("Your watchlist is empty")}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t("Follow candidates to track them here.")}</p>
                   <Link to="/candidates" className="mt-3 inline-block">
-                    <Button size="sm" variant="outline" className="rounded-xl gap-1.5">
-                      Discover candidates <ArrowRight className="h-3.5 w-3.5" />
+                    <Button size="sm" variant="outline" className="rounded-xl gap-1.5">{t("Discover candidates")} <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
                   </Link>
                 </div>
@@ -574,10 +559,8 @@ export function AccountPage() {
           {/* QUICK ACTIONS */}
           <div>
             <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
-              Explore
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Zap className="h-5 w-5 text-primary" />{t("Explore")}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 [&>*]:min-w-0">
               {QUICK_ACTIONS.map((action) => (
                 <Link
                   key={action.to}
@@ -590,8 +573,8 @@ export function AccountPage() {
                   <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl mb-3 transition-transform group-hover:scale-110', action.bg)}>
                     <action.icon className={cn('h-5 w-5', action.color)} />
                   </div>
-                  <p className="font-bold text-sm text-foreground">{action.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{action.desc}</p>
+                  <p className="font-bold text-sm text-foreground">{t(action.label)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t(action.desc)}</p>
                   <ChevronRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground/30 group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
                 </Link>
               ))}
@@ -607,13 +590,11 @@ export function AccountPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
                 <Trophy className="h-4 w-4 text-primary" />
               </div>
-              <h3 className="font-bold text-sm">Your Alignment</h3>
+              <h3 className="font-bold text-sm">{t("Your Alignment")}</h3>
             </div>
             {quizDone ? (
               <div>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                  Based on your quiz answers, here are your top issue alignments:
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-4">{t("Based on your quiz answers, here are your top issue alignments:")}</p>
                 <div className="space-y-2.5">
                   {userIssues.slice(0, 3).map((issue, i) => (
                     <div key={issue.id} className="flex items-center gap-2">
@@ -625,20 +606,15 @@ export function AccountPage() {
                     </div>
                   ))}
                 </div>
-                <Link to="/compare" className="mt-4 flex items-center justify-center gap-1.5 text-xs font-bold text-primary hover:underline">
-                  Compare candidates <ArrowRight className="h-3 w-3" />
+                <Link to="/compare" className="mt-4 flex items-center justify-center gap-1.5 text-xs font-bold text-primary hover:underline">{t("Compare candidates")} <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
             ) : (
               <div>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                  Take the 8-question quiz to see how your views align with candidates.
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-4">{t("Take the 8-question quiz to see how your views align with candidates.")}</p>
                 <Link to="/onboarding">
                   <Button size="sm" className="w-full rounded-xl gap-1.5 font-bold">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Take the Quiz
-                  </Button>
+                    <Sparkles className="h-3.5 w-3.5" />{t("Take the Quiz")}</Button>
                 </Link>
               </div>
             )}
@@ -649,10 +625,10 @@ export function AccountPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Heart className="h-5 w-5 text-primary" />
-                <h3 className="font-bold">Following</h3>
+                <h3 className="font-bold">{t("Following")}</h3>
               </div>
               <Link to="/candidates">
-                <Button size="sm" variant="ghost" className="text-xs rounded-lg px-2">View all</Button>
+                <Button size="sm" variant="ghost" className="text-xs rounded-lg px-2">{t("View all")}</Button>
               </Link>
             </div>
             {savedCandidates.length > 0 ? (
@@ -674,7 +650,7 @@ export function AccountPage() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{c.first_name} {c.last_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{c.party ?? 'Candidate'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.party ?? t("Candidate")}</p>
                     </div>
                   </Link>
                 ))}
@@ -682,10 +658,8 @@ export function AccountPage() {
             ) : (
               <div className="text-center py-4">
                 <Heart className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Not following anyone yet.</p>
-                <Link to="/candidates" className="mt-2 inline-block text-sm font-semibold text-primary hover:underline">
-                  Browse candidates →
-                </Link>
+                <p className="text-sm text-muted-foreground">{t("Not following anyone yet.")}</p>
+                <Link to="/candidates" className="mt-2 inline-block text-sm font-semibold text-primary hover:underline">{t("Browse candidates →")}</Link>
               </div>
             )}
           </Card>
@@ -698,10 +672,9 @@ export function AccountPage() {
           <Card className="rounded-3xl overflow-hidden">
             <div className="flex items-center justify-between bg-gradient-to-r from-primary/10 to-accent/5 px-6 py-4 border-b border-border/50">
               <div>
-                <h2 className="font-display text-xl font-bold tracking-tight">Your 2026 Election Journey</h2>
+                <h2 className="font-display text-xl font-bold tracking-tight">{t("Your 2026 Election Journey")}</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {completedSteps} of {totalSteps} steps completed
-                </p>
+                  {completedSteps} {t("of")} {totalSteps} {t("steps completed")}</p>
               </div>
               <div className="relative">
                 <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
@@ -765,16 +738,14 @@ export function AccountPage() {
                             'text-sm font-bold transition-colors',
                             completed ? 'text-success' : 'text-foreground group-hover:text-primary'
                           )}>
-                            {step.label}
+                            {t(step.label)}
                           </p>
                           {stepData?.progress_detail && (
                             <p className="text-xs text-muted-foreground mt-0.5">{stepData.progress_detail}</p>
                           )}
                         </div>
                         {completed ? (
-                          <Badge variant="outline" className="rounded-lg text-[9px] font-bold border-success/30 text-success shrink-0">
-                            Done
-                          </Badge>
+                          <Badge variant="outline" className="rounded-lg text-[9px] font-bold border-success/30 text-success shrink-0">{t("Done")}</Badge>
                         ) : (
                           <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-colors shrink-0" />
                         )}
@@ -876,20 +847,18 @@ function NotificationSettingsTab() {
     }
   }
 
-  if (loading || !prefs) return <LoadingState message="Loading notification settings…" />;
+  if (loading || !prefs) return <LoadingState message={t("Loading notification settings…")} />;
 
   return (
     <div className="space-y-5">
       <Card className="p-6 rounded-2xl">
-        <h3 className="font-bold text-lg">Instant Alerts</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Account security emails (verification, password resets) always send regardless of these settings.
-        </p>
+        <h3 className="font-bold text-lg">{t("Instant Alerts")}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{t("Account security emails (verification, password resets) always send regardless of these settings.")}</p>
         <div className="mt-4 space-y-4">
           <label className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium">Election reminders</p>
-              <p className="text-xs text-muted-foreground">Registration deadlines and upcoming Election Day reminders.</p>
+              <p className="text-sm font-medium">{t("Election reminders")}</p>
+              <p className="text-xs text-muted-foreground">{t("Registration deadlines and upcoming Election Day reminders.")}</p>
             </div>
             <input
               type="checkbox"
@@ -904,8 +873,8 @@ function NotificationSettingsTab() {
                   used to promise emails for any "major update to a candidate",
                   which no function sends: candidate updates go to the bell and
                   the digest. */}
-              <p className="text-sm font-medium">Results for races you follow</p>
-              <p className="text-xs text-muted-foreground">An email when a race you follow is called or its results are certified. Candidate updates appear in your notifications and digest.</p>
+              <p className="text-sm font-medium">{t("Results for races you follow")}</p>
+              <p className="text-xs text-muted-foreground">{t("An email when a race you follow is called or its results are certified. Candidate updates appear in your notifications and digest.")}</p>
             </div>
             <input
               type="checkbox"
@@ -918,12 +887,10 @@ function NotificationSettingsTab() {
       </Card>
 
       <Card className="p-6 rounded-2xl">
-        <h3 className="font-bold text-lg">Gov Search App Digest</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Everything else — new positions, articles, and profile updates — grouped into one email instead of many.
-        </p>
+        <h3 className="font-bold text-lg">{t("Gov Search App Digest")}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{t("Everything else — new positions, articles, and profile updates — grouped into one email instead of many.")}</p>
         <div className="mt-4">
-          <p className="text-sm font-medium mb-2">Frequency</p>
+          <p className="text-sm font-medium mb-2">{t("Frequency")}</p>
           <div className="flex gap-2">
             {(['weekly', 'daily', 'off'] as const).map((freq) => (
               <button
@@ -941,7 +908,7 @@ function NotificationSettingsTab() {
 
         {prefs.digest_frequency !== 'off' && (
           <div className="mt-5 space-y-3 border-t border-border pt-4">
-            <p className="text-sm font-medium">Include in digest</p>
+            <p className="text-sm font-medium">{t("Include in digest")}</p>
             {[
               { key: 'digest_candidate_updates' as const, label: 'Candidate updates', desc: 'New positions and profile changes for candidates you follow.' },
               { key: 'digest_ballot_measure_updates' as const, label: 'Ballot measure updates', desc: 'Changes to ballot measures you follow.' },
@@ -950,8 +917,8 @@ function NotificationSettingsTab() {
             ].map((row) => (
               <label key={row.key} className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm">{row.label}</p>
-                  <p className="text-xs text-muted-foreground">{row.desc}</p>
+                  <p className="text-sm">{t(row.label)}</p>
+                  <p className="text-xs text-muted-foreground">{t(row.desc)}</p>
                 </div>
                 <input
                   type="checkbox"
@@ -965,7 +932,7 @@ function NotificationSettingsTab() {
         )}
       </Card>
 
-      {saving && <p className="text-xs text-muted-foreground">Saving…</p>}
+      {saving && <p className="text-xs text-muted-foreground">{t("Saving…")}</p>}
 
       <ChangePasswordCard />
 
@@ -990,30 +957,30 @@ function ChangePasswordCard() {
     setSaving(false);
     if (error) { toast.error(error); return; }
     setCurrent(''); setNext(''); setConfirm('');
-    toast.success('Password changed.');
+    toast.success(t("Password changed."));
   }
 
   if (isDemo) return null;
   return (
     <Card className="p-6 rounded-3xl">
-      <h3 className="font-bold text-lg">Change password</h3>
-      <p className="mt-1 text-sm text-muted-foreground">Use at least 8 characters. You'll stay signed in on this device.</p>
+      <h3 className="font-bold text-lg">{t("Change password")}</h3>
+      <p className="mt-1 text-sm text-muted-foreground">{t("Use at least 8 characters. You'll stay signed in on this device.")}</p>
       <form onSubmit={handleSubmit} className="mt-4 grid gap-3 sm:max-w-md">
         <div>
-          <Label htmlFor="pw-current" className="text-xs">Current password</Label>
+          <Label htmlFor="pw-current" className="text-xs">{t("Current password")}</Label>
           <Input id="pw-current" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} required />
         </div>
         <div>
-          <Label htmlFor="pw-new" className="text-xs">New password</Label>
+          <Label htmlFor="pw-new" className="text-xs">{t("New password")}</Label>
           <Input id="pw-new" type="password" autoComplete="new-password" minLength={8} value={next} onChange={(e) => setNext(e.target.value)} required />
         </div>
         <div>
-          <Label htmlFor="pw-confirm" className="text-xs">Confirm new password</Label>
+          <Label htmlFor="pw-confirm" className="text-xs">{t("Confirm new password")}</Label>
           <Input id="pw-confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
-          {mismatch && <p className="mt-1 text-xs text-destructive">Passwords don't match.</p>}
+          {mismatch && <p className="mt-1 text-xs text-destructive">{t("Passwords don't match.")}</p>}
         </div>
         <Button type="submit" disabled={saving || !current || next.length < 8 || mismatch} className="w-fit">
-          {saving ? 'Changing…' : 'Change password'}
+          {saving ? t("Changing…") : t("Change password")}
         </Button>
       </form>
     </Card>
@@ -1035,7 +1002,7 @@ function DangerZoneCard() {
         setDeleting(false);
         return;
       }
-      toast.success('Your account has been permanently deleted.');
+      toast.success(t("Your account has been permanently deleted."));
       await signOut();
       window.location.href = '/';
     } catch (err) {
@@ -1046,24 +1013,17 @@ function DangerZoneCard() {
 
   return (
     <Card className="p-6 rounded-2xl border-destructive/30">
-      <h3 className="font-bold text-lg text-destructive">Danger Zone</h3>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Permanently delete your account and all associated data — saved candidates, messages,
-        notes, and any candidate profile claims. This cannot be undone.
-      </p>
+      <h3 className="font-bold text-lg text-destructive">{t("Danger Zone")}</h3>
+      <p className="mt-1 text-sm text-muted-foreground">{t("Permanently delete your account and all associated data — saved candidates, messages, notes, and any candidate profile claims. This cannot be undone.")}</p>
       {!open ? (
-        <Button variant="outline" className="mt-4 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setOpen(true)}>
-          Delete My Account
-        </Button>
+        <Button variant="outline" className="mt-4 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setOpen(true)}>{t("Delete My Account")}</Button>
       ) : (
         <div className="mt-4 space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-          <p className="text-sm font-medium">
-            Type <span className="font-mono font-bold">DELETE</span> to confirm. This is permanent and cannot be reversed.
-          </p>
+          <p className="text-sm font-medium">{t("Type")} <span className="font-mono font-bold">{t("DELETE")}</span> {t("to confirm. This is permanent and cannot be reversed.")}</p>
           <Input
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
-            placeholder="Type DELETE"
+            placeholder={t("Type DELETE")}
             className="max-w-xs"
           />
           <div className="flex gap-2">
@@ -1072,9 +1032,9 @@ function DangerZoneCard() {
               disabled={confirmText !== 'DELETE' || deleting}
               onClick={handleDelete}
             >
-              {deleting ? 'Deleting…' : 'Permanently Delete My Account'}
+              {deleting ? t("Deleting…") : t("Permanently Delete My Account")}
             </Button>
-            <Button variant="outline" onClick={() => { setOpen(false); setConfirmText(''); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setOpen(false); setConfirmText(''); }}>{t("Cancel")}</Button>
           </div>
         </div>
       )}
@@ -1110,7 +1070,7 @@ function BillingTab() {
           if (sub && sub.plan !== 'free') {
             toast.success(`Payment successful! You're now on the ${PLAN_LABELS[sub.plan] ?? sub.plan} plan.`);
           } else {
-            toast.success("Payment received — it's finishing setup and should appear here shortly. Refresh in a moment if it doesn't.");
+            toast.success(t("Payment received — it's finishing setup and should appear here shortly. Refresh in a moment if it doesn't."));
           }
           // Strip the query param so refreshing the page doesn't re-trigger this.
           window.history.replaceState({}, '', window.location.pathname);
@@ -1148,7 +1108,7 @@ function BillingTab() {
     }
   }
 
-  if (loading) return <LoadingState message="Loading billing info…" />;
+  if (loading) return <LoadingState message={t("Loading billing info…")} />;
 
   const planLabel = subscription ? (PLAN_LABELS[subscription.plan] ?? subscription.plan) : 'Free';
   const isPaid = !!subscription && subscription.plan !== 'free';
@@ -1158,7 +1118,7 @@ function BillingTab() {
       <Card className="p-6 rounded-2xl">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your Plan</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("Your Plan")}</p>
             <h3 className="mt-1 text-2xl font-bold flex items-center gap-2">
               {planLabel}
               {isPaid && (
@@ -1169,37 +1129,32 @@ function BillingTab() {
             </h3>
             {isPaid && subscription?.current_period_end && (
               <p className="mt-1 text-sm text-muted-foreground">
-                {subscription.cancel_at_period_end ? 'Cancels' : 'Renews'} on{' '}
+                {subscription.cancel_at_period_end ? t("Cancels") : t("Renews")} {t("on")}{' '}
                 {new Date(subscription.current_period_end).toLocaleDateString()}
               </p>
             )}
             {isPaid && subscription?.created_at && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Purchased {new Date(subscription.created_at).toLocaleDateString(undefined, { dateStyle: 'long' })}
+              <p className="mt-0.5 text-xs text-muted-foreground">{t("Purchased")} {new Date(subscription.created_at).toLocaleDateString(undefined, { dateStyle: 'long' })}
               </p>
             )}
             {!isPaid && (
-              <p className="mt-1 text-sm text-muted-foreground">
-                You're on the free plan — core ballot info is always free.
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("You're on the free plan — core ballot info is always free.")}</p>
             )}
           </div>
 
           {isPaid ? (
             <Button variant="outline" className="rounded-xl gap-1.5" disabled={portalLoading} onClick={handleManageBilling}>
-              {portalLoading ? 'Opening…' : 'Manage Billing'}
+              {portalLoading ? t("Opening…") : t("Manage Billing")}
             </Button>
           ) : (
             <Button className="rounded-xl gap-1.5" onClick={() => handleUpgrade('pro_monthly')}>
-              <Sparkles className="h-4 w-4" /> Upgrade to Pro
-            </Button>
+              <Sparkles className="h-4 w-4" /> {t("Upgrade to Pro")}</Button>
           )}
         </div>
       </Card>
 
       <Card className="p-6 rounded-2xl">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          What's included with {planLabel}
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t("What's included with")} {planLabel}
         </p>
         <ul className="space-y-2">
           {featuresForPlan(subscription?.plan ?? 'free').map((feature) => (
@@ -1210,23 +1165,19 @@ function BillingTab() {
           ))}
         </ul>
         {!isPaid && (
-          <p className="mt-4 text-xs text-muted-foreground">
-            You won't get Candidate or Pro features until you subscribe — nothing extra unlocks automatically.
-          </p>
+          <p className="mt-4 text-xs text-muted-foreground">{t("You won't get Candidate or Pro features until you subscribe — nothing extra unlocks automatically.")}</p>
         )}
       </Card>
 
       {managedCandidates.length > 0 && (
         <Card className="p-6 rounded-2xl">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Candidate Management
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t("Candidate Management")}</p>
           <div className="space-y-3">
             {managedCandidates.map((c) => (
               <div key={c.candidate_id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
                 <span className="font-medium">{c.first_name} {c.last_name}</span>
                 <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                  {c.is_comped ? (c.status === 'active' ? 'Comped (free)' : `Comped — ${c.status}`) : c.status}
+                  {c.is_comped ? (c.status === 'active' ? t("Comped (free)") : `Comped — ${c.status}`) : c.status}
                 </Badge>
               </div>
             ))}
@@ -1234,10 +1185,7 @@ function BillingTab() {
         </Card>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        Need to update your payment method, download an invoice, or cancel? Use "Manage Billing" above —
-        it opens Stripe's secure billing portal.
-      </p>
+      <p className="text-xs text-muted-foreground">{t("Need to update your payment method, download an invoice, or cancel? Use \"Manage Billing\" above — it opens Stripe's secure billing portal.")}</p>
     </div>
   );
 }
@@ -1300,7 +1248,7 @@ function UpcomingElectionsCard() {
     <Card className="rounded-3xl">
       <div className="flex items-center gap-2 px-5 py-3 border-b border-border/50">
         <Activity className="h-4 w-4 text-warning" />
-        <h2 className="font-bold text-sm uppercase tracking-wide">Upcoming Elections</h2>
+        <h2 className="font-bold text-sm uppercase tracking-wide">{t("Upcoming Elections")}</h2>
       </div>
       <div className="p-3 space-y-1">
         {elections.map((e) => {
@@ -1318,7 +1266,7 @@ function UpcomingElectionsCard() {
                 </p>
               </div>
               <Badge variant="outline" className="rounded-lg text-[10px] font-bold border-warning/30 text-warning">
-                {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `in ${days} days`}
+                {days === 0 ? t("Today") : days === 1 ? t("Tomorrow") : `in ${days} days`}
               </Badge>
               <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-colors" />
             </Link>

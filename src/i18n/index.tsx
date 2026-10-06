@@ -31,6 +31,10 @@ export function t(source: string, vars?: Record<string, string | number>): strin
   return vars ? text.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : text;
 }
 
+/** Marks a string defined in data (plan features, menus) for translation.
+ * Returns it unchanged; translate it with t() where it is rendered. */
+export const msg = (source: string): string => source;
+
 export function currentLanguage(): LanguageName {
   return current;
 }

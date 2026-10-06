@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { QuizQuestion } from '@/services/quiz';
+import { t } from '@/i18n';
 
 interface QuizCardProps {
   questions: QuizQuestion[];
@@ -83,12 +84,10 @@ export function QuizCard({
       {/* Progress bar */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold text-muted-foreground">
-            Question {currentIndex + 1} of {total}
+          <span className="text-xs font-bold text-muted-foreground">{t("Question")} {currentIndex + 1} {t("of")} {total}
           </span>
           <span className="text-xs font-bold text-muted-foreground">
-            {answeredCount} answered
-          </span>
+            {answeredCount} {t("answered")}</span>
         </div>
         <div className="h-2 rounded-full bg-secondary overflow-hidden">
           <div
@@ -161,9 +160,7 @@ export function QuizCard({
           disabled={currentIndex === 0}
           className="rounded-2xl gap-1.5"
         >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </Button>
+          <ChevronLeft className="h-4 w-4" />{t("Back")}</Button>
 
         <Button
           onClick={goNext}
@@ -176,9 +173,7 @@ export function QuizCard({
               <ArrowRight className="h-4 w-4" />
             </>
           ) : (
-            <>
-              Next
-              <ChevronRight className="h-4 w-4" />
+            <>{t("Next")}<ChevronRight className="h-4 w-4" />
             </>
           )}
         </Button>
@@ -189,9 +184,7 @@ export function QuizCard({
         <button
           onClick={() => onComplete(answers)}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-        >
-          Skip remaining questions
-        </button>
+        >{t("Skip remaining questions")}</button>
       </div>
     </div>
   );

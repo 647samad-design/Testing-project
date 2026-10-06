@@ -22,9 +22,10 @@ import { LoadingState, ErrorState } from '@/components/shared/StateComponents';
 import { Link } from 'react-router-dom';
 import type { Issue } from '@/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 export function IssuesPage() {
-  usePageMeta({ title: 'Issues', description: 'Select the issues you care about most.' });
+  usePageMeta({ title: t("Issues"), description: t("Select the issues you care about most.") });
   const { user, loading: authLoading } = useAuth();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -101,7 +102,7 @@ export function IssuesPage() {
     setCustomDialogOpen(false);
   }
 
-  if (loading) return <LoadingState message="Loading issues…" />;
+  if (loading) return <LoadingState message={t("Loading issues…")} />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
   // Group by category
@@ -111,15 +112,12 @@ export function IssuesPage() {
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <div className="mb-6">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">What matters to you?</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Select the issues you care about. Gov Search App will never infer your political ideology from your selections.
-        </p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight">{t("What matters to you?")}</h1>
+        <p className="mt-2 text-lg text-muted-foreground">{t("Select the issues you care about. Gov Search App will never infer your political ideology from your selections.")}</p>
         {!authLoading && !user && (
           <div className="mt-3 rounded-lg border border-border bg-secondary/50 p-3">
             <p className="text-sm text-muted-foreground">
-              <Link to="/signin" className="font-medium text-primary hover:underline">Sign in</Link> to save your issue selections to your profile. Your selections are always private.
-            </p>
+              <Link to="/signin" className="font-medium text-primary hover:underline">{t("Sign in")}</Link> {t("to save your issue selections to your profile. Your selections are always private.")}</p>
           </div>
         )}
         <div className="mt-4">
@@ -130,10 +128,8 @@ export function IssuesPage() {
       {/* Custom issues */}
       {customIssues.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Your Custom Issues
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Your Custom Issues")}</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             {customIssues.map((issue) => (
               <IssueToggle
                 key={issue.id}
@@ -152,7 +148,7 @@ export function IssuesPage() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             {cat}
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             {issues
               .filter((i) => !i.is_custom && (i.category ?? 'Other') === cat)
               .map((issue) => (
@@ -170,31 +166,25 @@ export function IssuesPage() {
       {/* Create custom issue */}
       <div className="mt-8">
         <Button variant="outline" onClick={() => setCustomDialogOpen(true)} className="gap-2 rounded-xl touch-target">
-          <Plus className="h-4 w-4" />
-          Create Your Own Issue
-        </Button>
+          <Plus className="h-4 w-4" />{t("Create Your Own Issue")}</Button>
       </div>
 
       {/* Custom issue dialog */}
       <Dialog open={customDialogOpen} onOpenChange={setCustomDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create a custom issue</DialogTitle>
-            <DialogDescription>
-              Add an issue you care about that isn't in our list. Example: "I care about police body cameras."
-            </DialogDescription>
+            <DialogTitle>{t("Create a custom issue")}</DialogTitle>
+            <DialogDescription>{t("Add an issue you care about that isn't in our list. Example: \"I care about police body cameras.\"")}</DialogDescription>
           </DialogHeader>
           <Input
-            placeholder="Enter your custom issue…"
+            placeholder={t("Enter your custom issue…")}
             value={customIssueName}
             onChange={(e) => setCustomIssueName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreateCustom()}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCustomDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateCustom} disabled={!customIssueName.trim() || !user}>
-              Add Issue
-            </Button>
+            <Button variant="outline" onClick={() => setCustomDialogOpen(false)}>{t("Cancel")}</Button>
+            <Button onClick={handleCreateCustom} disabled={!customIssueName.trim() || !user}>{t("Add Issue")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -217,14 +207,14 @@ function IssueToggle({ issue, selected, onToggle }: { issue: Issue; selected: bo
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onToggle()}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           <Scale className={cn('mt-0.5 h-5 w-5 shrink-0', selected ? 'text-primary' : 'text-muted-foreground')} />
-          <div className="flex-1">
+          <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
             <p className={cn('font-medium text-sm', selected ? 'text-foreground' : 'text-foreground')}>
               {issue.name}
             </p>
             {issue.is_custom && (
-              <p className="text-xs text-muted-foreground">Custom issue</p>
+              <p className="text-xs text-muted-foreground">{t("Custom issue")}</p>
             )}
             <div className="mt-2" onClick={(e) => e.stopPropagation()}>
               <IssueFollowButton issueId={issue.id} issueName={issue.name} />

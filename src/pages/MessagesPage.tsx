@@ -17,9 +17,10 @@ import {
 import type { Conversation, Message } from '@/types';
 import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t } from '@/i18n';
 
 export function MessagesPage() {
-  usePageMeta({ title: 'Messages', noindex: true });
+  usePageMeta({ title: t("Messages"), noindex: true });
   const { user, isDemo, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeId = searchParams.get('c');
@@ -119,7 +120,7 @@ export function MessagesPage() {
   if (authLoading) {
     return (
       <div className="mx-auto max-w-content px-4 sm:px-6 py-8">
-        <LoadingState message="Loading…" />
+        <LoadingState message={t("Loading…")} />
       </div>
     );
   }
@@ -128,45 +129,43 @@ export function MessagesPage() {
     return (
       <div className="mx-auto max-w-content px-4 sm:px-6 py-8">
         <EmptyState
-          title="Sign in to view messages"
-          description="You need an account to send and receive messages with candidates."
+          title={t("Sign in to view messages")}
+          description={t("You need an account to send and receive messages with candidates.")}
           icon={<MessageSquare className="h-10 w-10" />}
         />
         <div className="mt-4 text-center">
           <Link to="/signin">
-            <Button className="rounded-xl">Sign In</Button>
+            <Button className="rounded-xl">{t("Sign In")}</Button>
           </Link>
         </div>
       </div>
     );
   }
 
-  if (loading) return <LoadingState message="Loading messages…" />;
+  if (loading) return <LoadingState message={t("Loading messages…")} />;
 
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       {isDemo && (
         <div className="mb-4 flex items-center gap-3 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3">
           <Eye className="h-5 w-5 text-warning shrink-0" />
-          <p className="text-sm text-warning font-medium">
-            Demo mode — messaging is not available. Create a real account to send messages.
-          </p>
+          <p className="text-sm text-warning font-medium">{t("Demo mode — messaging is not available. Create a real account to send messages.")}</p>
         </div>
       )}
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">Messages</h1>
+      <h1 className="mb-6 text-3xl font-bold tracking-tight">{t("Messages")}</h1>
 
       {conversations.length === 0 ? (
         <EmptyState
-          title="No conversations yet"
-          description="Visit a candidate's profile and click Message to start a conversation."
+          title={t("No conversations yet")}
+          description={t("Visit a candidate's profile and click Message to start a conversation.")}
           icon={<MessageSquare className="h-10 w-10" />}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-[320px_1fr] h-[calc(100vh-220px)] min-h-[400px]">
+        <div className="grid gap-4 md:grid-cols-[320px_1fr] h-[calc(100vh-220px)] min-h-[400px] [&>*]:min-w-0">
           {/* Conversation list */}
           <Card className="rounded-2xl overflow-hidden flex flex-col">
             <div className="border-b border-border p-3">
-              <h2 className="text-sm font-semibold text-muted-foreground px-2">Conversations</h2>
+              <h2 className="text-sm font-semibold text-muted-foreground px-2">{t("Conversations")}</h2>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {conversations.map((conv) => {
@@ -210,7 +209,7 @@ export function MessagesPage() {
                         )}
                       </div>
                       <p className="truncate text-xs text-muted-foreground">
-                        {conv.last_message?.body ?? 'No messages yet'}
+                        {conv.last_message?.body ?? t("No messages yet")}
                       </p>
                     </div>
                     {hasUnread && (
@@ -252,7 +251,7 @@ export function MessagesPage() {
                       {activeConversation.candidate?.first_name} {activeConversation.candidate?.last_name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {activeConversation.candidate?.party ?? 'Independent'}
+                      {activeConversation.candidate?.party ?? t("Independent")}
                     </p>
                   </div>
                 </Link>
@@ -262,9 +261,7 @@ export function MessagesPage() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.length === 0 ? (
                   <div className="flex h-full items-center justify-center">
-                    <p className="text-sm text-muted-foreground">
-                      Start the conversation — send a message below.
-                    </p>
+                    <p className="text-sm text-muted-foreground">{t("Start the conversation — send a message below.")}</p>
                   </div>
                 ) : (
                   messages.map((msg) => {
@@ -304,7 +301,7 @@ export function MessagesPage() {
                 <div className="flex items-center gap-2">
                   <Input
                     type="text"
-                    placeholder="Type a message…"
+                    placeholder={t("Type a message…")}
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -326,7 +323,7 @@ export function MessagesPage() {
             <Card className="rounded-2xl flex items-center justify-center">
               <div className="text-center">
                 <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground/40 mb-2" />
-                <p className="text-sm text-muted-foreground">Select a conversation to view messages</p>
+                <p className="text-sm text-muted-foreground">{t("Select a conversation to view messages")}</p>
               </div>
             </Card>
           )}

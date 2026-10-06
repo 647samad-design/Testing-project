@@ -13,6 +13,7 @@ import { SourceCard } from '@/components/shared/SourceCard';
 import { getClaims, submitClaim, getClaimEvidence } from '@/services/sources';
 import { getCandidates } from '@/services/candidates';
 import type { Claim, AssessmentStatus, Candidate, ClaimEvidence } from '@/types';
+import { t } from '@/i18n';
 
 const ASSESSMENT_META: Record<AssessmentStatus, { label: string; icon: typeof CheckCircle2; color: string; bg: string }> = {
   supported: { label: 'Supported by Evidence', icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' },
@@ -23,8 +24,8 @@ const ASSESSMENT_META: Record<AssessmentStatus, { label: string; icon: typeof Ch
 
 export function ClaimsLibraryPage() {
   usePageMeta({
-    title: 'Claims Library',
-    description: 'Browse researched political claims with cited evidence, or submit a claim for our team to look into.',
+    title: t("Claims Library"),
+    description: t("Browse researched political claims with cited evidence, or submit a claim for our team to look into."),
   });
   const { user } = useAuth();
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -60,7 +61,7 @@ export function ClaimsLibraryPage() {
     try {
       const result = await submitClaim(claimText.trim(), claimCandidateId || undefined);
       if (!result) throw new Error('Failed to submit claim.');
-      toast.success('Claim submitted — our team will research it.');
+      toast.success(t("Claim submitted — our team will research it."));
       setClaimText('');
       setClaimCandidateId('');
       setSubmitOpen(false);
@@ -95,19 +96,16 @@ export function ClaimsLibraryPage() {
     !search.trim() || c.claim_text.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return <LoadingState message="Loading claims library…" />;
+  if (loading) return <LoadingState message={t("Loading claims library…")} />;
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
       <header className="mb-6">
         <div className="flex items-center gap-2.5">
           <Scale className="h-6 w-6 text-primary" />
-          <h1 className="font-display text-2xl font-bold">Claims Library</h1>
+          <h1 className="font-display text-2xl font-bold">{t("Claims Library")}</h1>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          A researched library of political claims — each one reviewed by our team and backed by
-          cited sources. Don't see a claim you've heard? Submit it below.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("A researched library of political claims — each one reviewed by our team and backed by cited sources. Don't see a claim you've heard? Submit it below.")}</p>
       </header>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row">
@@ -116,22 +114,21 @@ export function ClaimsLibraryPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search claims…"
+            placeholder={t("Search claims…")}
             className="pl-10"
           />
         </div>
         {user && (
           <Button onClick={() => setSubmitOpen(true)} className="gap-1.5 shrink-0">
-            <Plus className="h-4 w-4" /> Submit a Claim
-          </Button>
+            <Plus className="h-4 w-4" /> {t("Submit a Claim")}</Button>
         )}
       </div>
 
       {filteredClaims.length === 0 ? (
         <EmptyState
           icon={<Scale className="h-8 w-8" />}
-          title={claims.length === 0 ? 'No claims yet' : 'No matching claims'}
-          description={claims.length === 0 ? 'Be the first to submit a claim for our team to research.' : 'Try a different search.'}
+          title={claims.length === 0 ? t("No claims yet") : t("No matching claims")}
+          description={claims.length === 0 ? t("Be the first to submit a claim for our team to research.") : t("Try a different search.")}
         />
       ) : (
         <div className="space-y-3">
@@ -149,12 +146,11 @@ export function ClaimsLibraryPage() {
                     <p className="font-medium flex-1">{claim.claim_text}</p>
                     <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${meta.bg} ${meta.color}`}>
                       <Icon className="h-3.5 w-3.5" />
-                      {meta.label}
+                      {t(meta.label)}
                     </span>
                   </div>
                   {claim.candidate && (
-                    <Link to={`/candidates/${claim.candidate.id}`} className="mt-1.5 inline-block text-xs text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
-                      Related to {claim.candidate.first_name} {claim.candidate.last_name}
+                    <Link to={`/candidates/${claim.candidate.id}`} className="mt-1.5 inline-block text-xs text-primary hover:underline" onClick={(e) => e.stopPropagation()}>{t("Related to")} {claim.candidate.first_name} {claim.candidate.last_name}
                     </Link>
                   )}
                 </button>
@@ -164,10 +160,10 @@ export function ClaimsLibraryPage() {
                       <p className="text-sm text-muted-foreground leading-relaxed">{claim.explanation}</p>
                     )}
                     {evidenceLoading && !evidenceByClaimId[claim.id] ? (
-                      <p className="text-sm text-muted-foreground">Loading evidence…</p>
+                      <p className="text-sm text-muted-foreground">{t("Loading evidence…")}</p>
                     ) : (evidenceByClaimId[claim.id]?.length ?? 0) > 0 ? (
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("Evidence")}</p>
                         {evidenceByClaimId[claim.id].map((ev) => (
                           <div key={ev.id}>
                             {ev.source && <SourceCard source={ev.source} showBadge={false} />}
@@ -187,33 +183,30 @@ export function ClaimsLibraryPage() {
       <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Submit a claim</DialogTitle>
-            <DialogDescription>
-              Heard something you're not sure is true? Submit it here and our team will research it
-              with cited sources.
-            </DialogDescription>
+            <DialogTitle>{t("Submit a claim")}</DialogTitle>
+            <DialogDescription>{t("Heard something you're not sure is true? Submit it here and our team will research it with cited sources.")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <Input
               value={claimText}
               onChange={(e) => setClaimText(e.target.value)}
-              placeholder="e.g. 'Candidate X voted to raise property taxes three times'"
+              placeholder={t("e.g. 'Candidate X voted to raise property taxes three times'")}
             />
             <select
               value={claimCandidateId}
               onChange={(e) => setClaimCandidateId(e.target.value)}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
             >
-              <option value="">Not about a specific candidate</option>
+              <option value="">{t("Not about a specific candidate")}</option>
               {candidates.map((c) => (
                 <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
               ))}
             </select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSubmitOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setSubmitOpen(false)}>{t("Cancel")}</Button>
             <Button onClick={handleSubmitClaim} disabled={!claimText.trim() || submitting}>
-              {submitting ? 'Submitting…' : 'Submit Claim'}
+              {submitting ? t("Submitting…") : t("Submit Claim")}
             </Button>
           </DialogFooter>
         </DialogContent>

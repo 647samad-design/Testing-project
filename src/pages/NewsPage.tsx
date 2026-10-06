@@ -14,6 +14,7 @@ import { getCandidate } from '@/services/candidates';
 import { formatDate } from '@/lib/date-utils';
 import type { NewsArticle, Video as VideoType, SocialPost, Candidate } from '@/types';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 
 const tabs = [
   { id: 'all', label: 'All' },
@@ -61,9 +62,7 @@ export function NewsPage() {
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <div className="mb-6">
         <h1 className="font-display text-4xl font-semibold tracking-tight">News & Media</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Coverage from multiple source types. Gov Search App clearly distinguishes reporting from opinion.
-        </p>
+        <p className="mt-2 text-lg text-muted-foreground">{t("Coverage from multiple source types. Gov Search App clearly distinguishes reporting from opinion.")}</p>
         <div className="mt-4">
           <DemoBanner compact />
         </div>
@@ -79,14 +78,12 @@ export function NewsPage() {
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-muted-foreground">Showing media for</p>
+              <p className="text-sm text-muted-foreground">{t("Showing media for")}</p>
               <p className="font-bold text-foreground truncate">{candidate.first_name} {candidate.last_name}</p>
             </div>
             <Link to={`/candidates/${candidate.id}`}>
               <button className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary touch-target">
-                <User className="h-4 w-4" />
-                View Profile
-              </button>
+                <User className="h-4 w-4" />{t("View Profile")}</button>
             </Link>
           </div>
         </Card>
@@ -105,23 +102,21 @@ export function NewsPage() {
         <TabsList className="w-full justify-start overflow-x-auto no-scrollbar h-auto flex-wrap">
           {tabs.map((tab) => (
             <TabsTrigger key={tab.id} value={tab.id} className="shrink-0">
-              {tab.label}
+              {t(tab.label)}
             </TabsTrigger>
           ))}
         </TabsList>
 
         {loading ? (
-          <LoadingState message="Loading media…" />
+          <LoadingState message={t("Loading media…")} />
         ) : (
           <div className="mt-6 space-y-6">
             {/* News articles */}
             {news.length > 0 && (
               <section>
                 <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Newspaper className="h-4 w-4" />
-                  Articles
-                </h2>
-                <div className="grid gap-3 md:grid-cols-2">
+                  <Newspaper className="h-4 w-4" />{t("Articles")}</h2>
+                <div className="grid gap-3 md:grid-cols-2 [&>*]:min-w-0">
                   {news.map((article) => (
                     <div key={article.id} className="space-y-1">
                       <NewsCard article={article} />
@@ -141,10 +136,8 @@ export function NewsPage() {
             {videos.length > 0 && (
               <section>
                 <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Video className="h-4 w-4" />
-                  Videos
-                </h2>
-                <div className="grid gap-3 md:grid-cols-2">
+                  <Video className="h-4 w-4" />{t("Videos")}</h2>
+                <div className="grid gap-3 md:grid-cols-2 [&>*]:min-w-0">
                   {videos.map((video) => (
                     <VideoCard key={video.id} video={video} />
                   ))}
@@ -156,10 +149,8 @@ export function NewsPage() {
             {social.length > 0 && (
               <section>
                 <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  <MessageCircle className="h-4 w-4" />
-                  Social Posts
-                </h2>
-                <div className="grid gap-3 md:grid-cols-2">
+                  <MessageCircle className="h-4 w-4" />{t("Social Posts")}</h2>
+                <div className="grid gap-3 md:grid-cols-2 [&>*]:min-w-0">
                   {social.map((post) => (
                     <SocialCard key={post.id} post={post} />
                   ))}
@@ -169,8 +160,8 @@ export function NewsPage() {
 
             {news.length === 0 && videos.length === 0 && social.length === 0 && (
               <EmptyState
-                title="No media in this category"
-                description="There are no items in this category yet. Try another tab."
+                title={t("No media in this category")}
+                description={t("There are no items in this category yet. Try another tab.")}
                 icon={<Newspaper className="h-10 w-10" />}
               />
             )}
@@ -232,9 +223,7 @@ function SocialCard({ post }: { post: SocialPost }) {
               {post.platform && (
                 <span className="text-xs font-medium text-muted-foreground">{post.platform}</span>
               )}
-              <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
-                Social Media
-              </span>
+              <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">{t("Social Media")}</span>
             </div>
             {post.candidate && (
               <p className="mt-1 text-sm font-medium text-foreground">

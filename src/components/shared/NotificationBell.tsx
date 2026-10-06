@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '@/services/social';
 import type { AppNotification } from '@/types';
+import { t } from '@/i18n';
 
 /**
  * A persistent, always-visible notification bell for the header. Previously,
@@ -63,7 +64,7 @@ export function NotificationBell() {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label="Notifications"
+        aria-label={t("Notifications")}
         className="relative flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors touch-target"
       >
         <Bell className="h-5 w-5" />
@@ -77,16 +78,14 @@ export function NotificationBell() {
       {open && (
         <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-background shadow-xl z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <p className="text-sm font-semibold">Notifications</p>
+            <p className="text-sm font-semibold">{t("Notifications")}</p>
             {unreadCount > 0 && (
-              <button onClick={handleMarkAllRead} className="text-xs text-primary hover:underline">
-                Mark all read
-              </button>
+              <button onClick={handleMarkAllRead} className="text-xs text-primary hover:underline">{t("Mark all read")}</button>
             )}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">No notifications yet.</p>
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">{t("No notifications yet.")}</p>
             ) : (
               notifications.slice(0, 15).map((n) => (
                 <Link

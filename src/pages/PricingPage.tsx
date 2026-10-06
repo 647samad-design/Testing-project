@@ -8,21 +8,22 @@ import { useNavigate } from 'react-router-dom';
 import { startCheckout, type CheckoutPlan } from '@/services/stripe';
 import { toast } from 'sonner';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t, msg } from '@/i18n';
 
 const candidateFeatures = [
-  'Follow unlimited candidates to your watchlist',
-  'Get email alerts when new info is added',
-  'Access advanced candidate comparison tools',
-  'See voting records with plain-English summaries',
-  'Track ballot measures with personalized notes',
-  'Ad-free browsing experience',
+  msg('Follow unlimited candidates to your watchlist'),
+  msg('Get email alerts when new info is added'),
+  msg('Access advanced candidate comparison tools'),
+  msg('See voting records with plain-English summaries'),
+  msg('Track ballot measures with personalized notes'),
+  msg('Ad-free browsing experience'),
 ];
 
 const proFeatures = [
   ...candidateFeatures,
-  'Expanded AI Research — up to 100 questions/day',
-  'Early access to new tools',
-  'Support our nonpartisan mission at the highest tier',
+  msg('Expanded AI Research — up to 100 questions/day'),
+  msg('Early access to new tools'),
+  msg('Support our nonpartisan mission at the highest tier'),
 ];
 
 type Plan = {
@@ -37,9 +38,9 @@ type Plan = {
 };
 
 const plans: Plan[] = [
-  { id: 'free', name: 'Free', price: 0, period: 'forever', description: 'Everything you need to research your ballot', features: ['See your full ballot', 'Research candidates', 'Compare positions', 'Follow evidence sources', 'Ask Gov Search AI — 5 questions/day', 'Follow up to 5 candidates'], cta: 'Current Plan', highlight: false },
-  { id: 'candidate_monthly', name: 'Candidate', price: 9, period: '/month', description: 'Advanced tools for engaged voters', features: candidateFeatures, cta: 'Go Candidate', highlight: false },
-  { id: 'pro_monthly', name: 'Pro', price: 29, period: '/month', description: 'Everything, for power users', features: proFeatures, cta: 'Go Pro', highlight: true },
+  { id: 'free', name: msg('Free'), price: 0, period: msg('forever'), description: 'Everything you need to research your ballot', features: [msg('See your full ballot'), msg('Research candidates'), msg('Compare positions'), msg('Follow evidence sources'), msg('Ask Gov Search AI — 5 questions/day'), msg('Follow up to 5 candidates')], cta: 'Current Plan', highlight: false },
+  { id: 'candidate_monthly', name: msg('Candidate'), price: 9, period: msg('/month'), description: 'Advanced tools for engaged voters', features: candidateFeatures, cta: 'Go Candidate', highlight: false },
+  { id: 'pro_monthly', name: msg('Pro'), price: 29, period: msg('/month'), description: 'Everything, for power users', features: proFeatures, cta: 'Go Pro', highlight: true },
 ];
 
 const yearlyPlans: Record<string, { id: CheckoutPlan; price: number }> = {
@@ -56,7 +57,7 @@ export function PricingPage() {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
-  usePageMeta({ title: 'Pricing', description: 'Simple, transparent pricing for voters and candidates.' });
+  usePageMeta({ title: t("Pricing"), description: t("Simple, transparent pricing for voters and candidates.") });
   const { user } = useAuth();
   const navigate = useNavigate();
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('monthly');
@@ -91,37 +92,29 @@ export function PricingPage() {
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
             <Crown className="h-7 w-7 text-primary" />
           </div>
-          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-            Free for everyone. More power for the rest.
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Gov Search App is free forever — no paywalls on ballot information. Candidate and Pro
-            add advanced tools for voters who want to go deeper.
-          </p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">{t("Free for everyone. More power for the rest.")}</h1>
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">{t("Gov Search App is free forever — no paywalls on ballot information. Candidate and Pro add advanced tools for voters who want to go deeper.")}</p>
 
           <div className="mt-6 inline-flex items-center rounded-full border border-border bg-secondary/40 p-1">
             <button
               onClick={() => setBilling('monthly')}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${billing === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
-            >
-              Monthly
-            </button>
+            >{t("Monthly")}</button>
             <button
               onClick={() => setBilling('yearly')}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${billing === 'yearly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
-            >
-              Yearly <span className="text-xs">(save ~17%)</span>
+            >{t("Yearly")} <span className="text-xs">{t("(save ~17%)")}</span>
             </button>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-content px-4 sm:px-6 py-12">
-        <div className="grid gap-5 md:grid-cols-3 max-w-5xl mx-auto">
+        <div className="grid gap-5 md:grid-cols-3 max-w-5xl mx-auto [&>*]:min-w-0">
           {plans.map((plan) => {
             const isYearly = billing === 'yearly' && yearlyPlans[plan.id];
             const displayPrice = isYearly ? yearlyPlans[plan.id].price : plan.price;
-            const displayPeriod = isYearly ? '/year' : plan.period;
+            const displayPeriod = t(isYearly ? msg('/year') : plan.period);
             const isLoading = loadingPlan === plan.id;
 
             return (
@@ -133,27 +126,26 @@ export function PricingPage() {
               >
                 {plan.highlight && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" /> Most Popular
-                  </span>
+                    <Sparkles className="h-3 w-3" /> {t("Most Popular")}</span>
                 )}
-                <h3 className="font-bold text-xl">{plan.name}</h3>
+                <h3 className="font-bold text-xl">{t(plan.name)}</h3>
                 <p className="mt-2 text-4xl font-extrabold text-foreground">
                   ${displayPrice}
                   <span className="text-base font-normal text-muted-foreground">{displayPeriod}</span>
                 </p>
-                <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t(plan.description)}</p>
                 <ul className="mt-4 space-y-2">
                   {plan.features.map((f, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                      <span className="text-muted-foreground">{f}</span>
+                      <span className="text-muted-foreground">{t(f)}</span>
                     </li>
                   ))}
                 </ul>
                 {plan.id === 'free' && !user ? (
                   // Signed-out visitors were shown a disabled "Current Plan".
                   <Button asChild variant="outline" className="mt-6 w-full rounded-xl">
-                    <Link to="/signin">Get started free</Link>
+                    <Link to="/signin">{t("Get started free")}</Link>
                   </Button>
                 ) : (
                   <Button
@@ -162,7 +154,7 @@ export function PricingPage() {
                     disabled={plan.id === 'free' || isLoading}
                     onClick={() => handleSubscribe(plan.id)}
                   >
-                    {plan.id === 'free' ? plan.cta : isLoading ? 'Redirecting…' : plan.cta}
+                    {plan.id === 'free' ? t(plan.cta) : isLoading ? t("Redirecting…") : t(plan.cta)}
                   </Button>
                 )}
               </Card>
@@ -173,14 +165,8 @@ export function PricingPage() {
 
       <section className="bg-secondary/30 border-y border-border/60">
         <div className="mx-auto max-w-content px-4 sm:px-6 py-12 text-center">
-          <h2 className="text-2xl font-bold tracking-tight">Why we charge for premium tiers</h2>
-          <p className="mt-3 text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Gov Search App will never charge for access to your ballot or candidate information.
-            Candidate and Pro subscriptions fund our nonpartisan research, source verification,
-            and keep the platform independent. Candidates themselves can claim their profile for
-            free — Candidate Management (team access, campaign tools, analytics) is a separate
-            paid upgrade available from a claimed profile's dashboard.
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight">{t("Why we charge for premium tiers")}</h2>
+          <p className="mt-3 text-muted-foreground max-w-2xl mx-auto leading-relaxed">{t("Gov Search App will never charge for access to your ballot or candidate information. Candidate and Pro subscriptions fund our nonpartisan research, source verification, and keep the platform independent. Candidates themselves can claim their profile for free — Candidate Management (team access, campaign tools, analytics) is a separate paid upgrade available from a claimed profile's dashboard.")}</p>
         </div>
       </section>
     </div>

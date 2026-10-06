@@ -18,6 +18,7 @@ import { isDemoMode } from '@/lib/demo-mode';
 import { getFactChecks, submitFactCheck } from '@/services/civic';
 import { cn } from '@/lib/utils';
 import type { FactCheck, FactCheckAssessment, FactCheckPlatform } from '@/types';
+import { t } from '@/i18n';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -279,15 +280,10 @@ export function LensThisPage() {
               <Search className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-3xl font-semibold tracking-tight">
-                Put It Through the Lens
-              </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Scan any claim, article, or post — we break down what's fact and what's fiction.
-              </p>
+              <h1 className="font-display text-3xl font-semibold tracking-tight">{t("Put It Through the Lens")}</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">{t("Scan any claim, article, or post — we break down what's fact and what's fiction.")}</p>
               <Link to="/claims" className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                <Scale className="h-3 w-3" /> Browse the researched Claims Library
-              </Link>
+                <Scale className="h-3 w-3" /> {t("Browse the researched Claims Library")}</Link>
             </div>
           </div>
         </div>
@@ -304,9 +300,7 @@ export function LensThisPage() {
               : 'text-muted-foreground hover:text-foreground'
           )}
         >
-          <Zap className="h-4 w-4 inline mr-1.5" />
-          Scanner
-        </button>
+          <Zap className="h-4 w-4 inline mr-1.5" />{t("Scanner")}</button>
         <button
           onClick={() => setActiveTab('community')}
           className={cn(
@@ -316,9 +310,7 @@ export function LensThisPage() {
               : 'text-muted-foreground hover:text-foreground'
           )}
         >
-          <BookOpen className="h-4 w-4 inline mr-1.5" />
-          Community Checks
-        </button>
+          <BookOpen className="h-4 w-4 inline mr-1.5" />{t("Community Checks")}</button>
       </div>
 
       {activeTab === 'scan' ? (
@@ -377,50 +369,42 @@ function ScannerTab({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px] [&>*]:min-w-0">
       {/* Input area */}
       <div className="space-y-4">
         <Card className="p-6 rounded-3xl">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-bold flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              What do you want to fact-check?
-            </h3>
+              <Sparkles className="h-4 w-4 text-primary" />{t("What do you want to fact-check?")}</h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={onPaste}
               className="text-xs gap-1.5 rounded-xl"
             >
-              <ClipboardPaste className="h-3.5 w-3.5" />
-              Paste
-            </Button>
+              <ClipboardPaste className="h-3.5 w-3.5" />{t("Paste")}</Button>
           </div>
 
           {/* URL input — prominent */}
           <div className="mb-4">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">
-              Link to Article, Post, or Video
-            </label>
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">{t("Link to Article, Post, or Video")}</label>
             <div className="relative group">
               <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <input
                 type="url"
                 value={inputUrl}
                 onChange={(e) => setInputUrl(e.target.value)}
-                placeholder="https://tiktok.com/... or https://news.com/article..."
+                placeholder={t("https://tiktok.com/... or https://news.com/article...")}
                 className="w-full rounded-2xl border border-border bg-card pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1.5 ml-1">
-              Paste a link from any platform — we'll fetch and preview the content.
-            </p>
+            <p className="text-[11px] text-muted-foreground mt-1.5 ml-1">{t("Paste a link from any platform — we'll fetch and preview the content.")}</p>
           </div>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-4">
             <div className="h-px flex-1 bg-border/60" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">or paste text</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("or paste text")}</span>
             <div className="h-px flex-1 bg-border/60" />
           </div>
 
@@ -429,7 +413,7 @@ function ScannerTab({
             <Textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder='"The candidate said crime is up 40% and our schools are failing..."'
+              placeholder={t("\"The candidate said crime is up 40% and our schools are failing...\"")}
               className="rounded-2xl resize-none text-sm"
               rows={4}
             />
@@ -437,9 +421,7 @@ function ScannerTab({
 
           {/* Platform selector */}
           <div className="mb-5">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">
-              Where did you see it?
-            </label>
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">{t("Where did you see it?")}</label>
             <div className="flex flex-wrap gap-2">
               {PLATFORM_OPTIONS.map((p) => {
                 const Icon = p.icon;
@@ -455,7 +437,7 @@ function ScannerTab({
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    {p.label}
+                    {t(p.label)}
                   </button>
                 );
               })}
@@ -476,10 +458,8 @@ function ScannerTab({
         {/* How it works */}
         <Card className="p-6 rounded-3xl bg-gradient-to-br from-primary/3 to-transparent">
           <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
-            <Eye className="h-4 w-4 text-primary" />
-            How the Scanner Works
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
+            <Eye className="h-4 w-4 text-primary" />{t("How the Scanner Works")}</h3>
+          <div className="grid gap-3 sm:grid-cols-2 [&>*]:min-w-0">
             {[
               { icon: Link2, step: '1', title: 'Paste a Link', desc: 'Blog, article, social post, podcast, or video URL' },
               { icon: Zap, step: '2', title: 'We Scan It', desc: 'Our system fetches the content and analyzes every claim' },
@@ -492,7 +472,7 @@ function ScannerTab({
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-foreground">{s.title}</p>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{s.desc}</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{t(s.desc)}</p>
                 </div>
               </div>
             ))}
@@ -507,24 +487,16 @@ function ScannerTab({
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10">
               <Quote className="h-4 w-4 text-accent" />
             </div>
-            <h3 className="font-bold text-sm">Preview: Annotated Claims</h3>
+            <h3 className="font-bold text-sm">{t("Preview: Annotated Claims")}</h3>
           </div>
-          <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-            When you scan content, each claim gets underlined with a color-coded verdict. Hover or tap to see the evidence.
-          </p>
+          <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{t("When you scan content, each claim gets underlined with a color-coded verdict. Hover or tap to see the evidence.")}</p>
 
           {/* Mini demo of annotated text */}
           <div className="rounded-2xl bg-card/80 p-4 text-xs leading-relaxed">
             <p>
-              <span className="underline decoration-wavy decoration-destructive/60 underline-offset-4 cursor-pointer">
-                Crime increased 40%
-              </span>
-              {' '}
-              since 2022. The opponent voted against
-              {' '}
-              <span className="underline decoration-wavy decoration-warning/60 underline-offset-4 cursor-pointer">
-                funding 500 new officers
-              </span>
+              <span className="underline decoration-wavy decoration-destructive/60 underline-offset-4 cursor-pointer">{t("Crime increased 40%")}</span>
+              {' '}{t("since 2022. The opponent voted against")}{' '}
+              <span className="underline decoration-wavy decoration-warning/60 underline-offset-4 cursor-pointer">{t("funding 500 new officers")}</span>
               .
             </p>
           </div>
@@ -537,7 +509,7 @@ function ScannerTab({
               return (
                 <div key={v} className="flex items-center gap-2 text-[11px]">
                   <Icon className={cn('h-3.5 w-3.5', s.color)} />
-                  <span className="font-bold text-muted-foreground">{s.label}</span>
+                  <span className="font-bold text-muted-foreground">{t(s.label)}</span>
                 </div>
               );
             })}
@@ -547,8 +519,7 @@ function ScannerTab({
         {!user && (
           <Card className="p-5 rounded-3xl bg-gradient-to-br from-accent/5 to-transparent border-accent/20">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              <strong className="text-foreground">Sign in</strong> to submit claims to the community fact-check queue and track your submissions.
-            </p>
+              <strong className="text-foreground">{t("Sign in")}</strong> {t("to submit claims to the community fact-check queue and track your submissions.")}</p>
           </Card>
         )}
       </div>
@@ -575,8 +546,8 @@ function ScanningState() {
         <div className="absolute -inset-3 rounded-3xl border-2 border-primary/10 animate-ping" style={{ animationDuration: '2s' }} />
       </div>
 
-      <h2 className="font-display text-xl font-bold mb-2">Scanning Content</h2>
-      <p className="text-sm text-muted-foreground mb-8">Analyzing claims and cross-referencing sources...</p>
+      <h2 className="font-display text-xl font-bold mb-2">{t("Scanning Content")}</h2>
+      <p className="text-sm text-muted-foreground mb-8">{t("Analyzing claims and cross-referencing sources...")}</p>
 
       <div className="w-full max-w-md space-y-3">
         {steps.map((step, i) => (
@@ -588,7 +559,7 @@ function ScanningState() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
               <step.icon className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-sm text-muted-foreground">{step.label}</span>
+            <span className="text-sm text-muted-foreground">{t(step.label)}</span>
             <Loader2 className="h-3.5 w-3.5 text-primary animate-spin ml-auto" />
           </div>
         ))}
@@ -615,23 +586,18 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h2 className="font-display text-xl font-bold">
-                {result.reviewed === false ? 'Not reviewed yet' : `Verdict: ${verdictStyle.label}`}
+                {result.reviewed === false ? t("Not reviewed yet") : `Verdict: ${t(verdictStyle.label)}`}
               </h2>
               {result.confidence > 0 && (
                 <Badge variant="secondary" className="rounded-lg text-[10px] font-bold">
-                  {result.confidence}% confidence
-                </Badge>
+                  {result.confidence}{t("% confidence")}</Badge>
               )}
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {result.notice ?? (
-                <>
-                  We found {result.annotations.length} claim{result.annotations.length === 1 ? '' : 's'} in this content.
-                  {' '}
-                  {result.annotations.filter((a) => a.verdict === 'false').length} were false,
-                  {' '}
-                  {result.annotations.filter((a) => a.verdict === 'misleading').length} were misleading.
-                </>
+                <>{t("We found")} {result.annotations.length} {t("claim")}{result.annotations.length === 1 ? '' : 's'} {t("in this content.")}{' '}
+                  {result.annotations.filter((a) => a.verdict === 'false').length} {t("were false,")}{' '}
+                  {result.annotations.filter((a) => a.verdict === 'misleading').length} {t("were misleading.")}</>
               )}
             </p>
           </div>
@@ -641,13 +607,11 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
             onClick={onReset}
             className="rounded-xl gap-1.5 shrink-0"
           >
-            <Search className="h-3.5 w-3.5" />
-            New Scan
-          </Button>
+            <Search className="h-3.5 w-3.5" />{t("New Scan")}</Button>
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_380px] [&>*]:min-w-0">
         {/* Source preview + annotated text */}
         <div className="space-y-4">
           {/* Source preview card */}
@@ -670,9 +634,7 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline shrink-0"
                 >
-                  <ExternalLink className="h-3 w-3" />
-                  Source
-                </a>
+                  <ExternalLink className="h-3 w-3" />{t("Source")}</a>
               )}
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
@@ -684,10 +646,8 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
           <Card className="p-6 rounded-3xl">
             <div className="flex items-center gap-2 mb-4">
               <Quote className="h-4 w-4 text-primary" />
-              <h3 className="font-bold text-sm">Claim Breakdown</h3>
-              <span className="text-[10px] text-muted-foreground ml-auto">
-                Tap underlined text for evidence
-              </span>
+              <h3 className="font-bold text-sm">{t("Claim Breakdown")}</h3>
+              <span className="text-[10px] text-muted-foreground ml-auto">{t("Tap underlined text for evidence")}</span>
             </div>
 
             <AnnotatedText
@@ -700,7 +660,7 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
 
           {/* Annotation list */}
           <Card className="p-5 rounded-3xl">
-            <h3 className="font-bold text-sm mb-3">All Claims ({result.annotations.length})</h3>
+            <h3 className="font-bold text-sm mb-3">{t("All Claims (")}{result.annotations.length})</h3>
             <div className="space-y-2">
               {result.annotations.map((ann) => {
                 const s = ASSESSMENT_STYLES[ann.verdict];
@@ -718,7 +678,7 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
                     <div className="flex items-center gap-2 mb-1">
                       <Icon className={cn('h-3.5 w-3.5', s.color)} />
                       <span className={cn('text-[10px] font-bold uppercase tracking-wider', s.color)}>
-                        {s.label}
+                        {t(s.label)}
                       </span>
                     </div>
                     <p className="text-xs font-semibold text-foreground leading-snug line-clamp-2">
@@ -740,10 +700,8 @@ function ScanResult({ result, onReset }: { result: ScannedClaim; onReset: () => 
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary">
                 <BookOpen className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="text-sm font-bold mb-1">Evidence Panel</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Tap or hover on any underlined claim to see the full fact-check with evidence and sources.
-              </p>
+              <p className="text-sm font-bold mb-1">{t("Evidence Panel")}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{t("Tap or hover on any underlined claim to see the full fact-check with evidence and sources.")}</p>
             </Card>
           )}
         </div>
@@ -821,25 +779,21 @@ function EvidencePanel({ annotation }: { annotation: Annotation }) {
         </div>
         <div>
           <span className={cn('text-xs font-bold uppercase tracking-wider', s.color)}>
-            {s.label}
+            {t(s.label)}
           </span>
-          <p className="text-[10px] text-muted-foreground">Evidence-based assessment</p>
+          <p className="text-[10px] text-muted-foreground">{t("Evidence-based assessment")}</p>
         </div>
       </div>
 
       <div className="mb-4">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-          The Claim
-        </p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">{t("The Claim")}</p>
         <p className="text-sm font-semibold text-foreground leading-snug italic">
           "{annotation.text}"
         </p>
       </div>
 
       <div className="mb-4">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-          The Evidence
-        </p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">{t("The Evidence")}</p>
         <p className="text-sm text-foreground/90 leading-relaxed">
           {annotation.evidence}
         </p>
@@ -857,7 +811,7 @@ function EvidencePanel({ annotation }: { annotation: Annotation }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-foreground truncate">
-              {annotation.sourceLabel ?? 'View Source'}
+              {annotation.sourceLabel ?? t("View Source")}
             </p>
             <p className="text-[10px] text-muted-foreground truncate">{annotation.sourceUrl}</p>
           </div>
@@ -880,13 +834,11 @@ function CommunityTab({
   publishedCount: number;
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_320px] [&>*]:min-w-0">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-primary" />
-            Community Fact Checks
-          </h3>
+            <BookOpen className="h-4 w-4 text-primary" />{t("Community Fact Checks")}</h3>
           <Badge variant="secondary" className="rounded-lg">{publishedCount}</Badge>
         </div>
 
@@ -897,9 +849,7 @@ function CommunityTab({
               'rounded-full px-3.5 py-1.5 text-xs font-bold transition-all',
               filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
             )}
-          >
-            All
-          </button>
+          >{t("All")}</button>
           {(Object.keys(ASSESSMENT_STYLES) as Verdict[]).map((key) => {
             const s = ASSESSMENT_STYLES[key];
             return (
@@ -912,7 +862,7 @@ function CommunityTab({
                 )}
               >
                 <s.icon className="h-3 w-3" />
-                {s.label}
+                {t(s.label)}
               </button>
             );
           })}
@@ -933,9 +883,7 @@ function CommunityTab({
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary">
               <HelpCircle className="h-7 w-7 text-muted-foreground/50" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              No fact checks published yet. Use the scanner to submit claims!
-            </p>
+            <p className="text-sm text-muted-foreground">{t("No fact checks published yet. Use the scanner to submit claims!")}</p>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -950,19 +898,17 @@ function CommunityTab({
       <div className="space-y-4">
         <Card className="p-5 rounded-3xl">
           <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            Stats
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
+            <TrendingUp className="h-4 w-4 text-primary" />{t("Stats")}</h3>
+          <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
             <div className="rounded-2xl bg-card/60 p-3">
               <p className="text-2xl font-bold text-foreground">{publishedCount}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold uppercase">Published</p>
+              <p className="text-[10px] text-muted-foreground font-semibold uppercase">{t("Published")}</p>
             </div>
             <div className="rounded-2xl bg-card/60 p-3">
               <p className="text-2xl font-bold text-foreground">
                 {checks.filter((c) => c.assessment === 'false').length}
               </p>
-              <p className="text-[10px] text-muted-foreground font-semibold uppercase">False Claims</p>
+              <p className="text-[10px] text-muted-foreground font-semibold uppercase">{t("False Claims")}</p>
             </div>
           </div>
         </Card>
@@ -982,7 +928,7 @@ function CommunityFactCheckCard({ check }: { check: FactCheck }) {
           <Icon className="h-4 w-4" />
         </div>
         <span className={cn('text-xs font-bold uppercase tracking-wider', style.color)}>
-          {style.label}
+          {t(style.label)}
         </span>
         {check.source_platform && (
           <Badge variant="outline" className="rounded-lg text-[10px] ml-auto capitalize">
@@ -998,7 +944,7 @@ function CommunityFactCheckCard({ check }: { check: FactCheck }) {
       )}
       {check.evidence_text && (
         <div className="rounded-xl bg-card/50 p-2.5 text-xs text-foreground/80 mb-2">
-          <p className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Evidence</p>
+          <p className="font-bold text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t("Evidence")}</p>
           {check.evidence_text}
         </div>
       )}
@@ -1009,9 +955,7 @@ function CommunityFactCheckCard({ check }: { check: FactCheck }) {
           rel="noopener noreferrer"
           className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
         >
-          <ExternalLink className="h-3 w-3" />
-          View Source
-        </a>
+          <ExternalLink className="h-3 w-3" />{t("View Source")}</a>
       )}
     </Card>
   );

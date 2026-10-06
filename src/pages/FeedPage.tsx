@@ -22,6 +22,7 @@ import {
 } from '@/services/social';
 import { cn } from '@/lib/utils';
 import type { FeedPost, Candidate, Issue, AppNotification, FeedPostType } from '@/types';
+import { t } from '@/i18n';
 
 const POST_TYPE_STYLES: Record<FeedPostType, { label: string; icon: typeof Zap; color: string; bg: string; ring: string }> = {
   update: { label: 'Update', icon: Zap, color: 'text-primary', bg: 'bg-primary/5', ring: 'ring-primary/15' },
@@ -44,7 +45,7 @@ const NOTIF_ICONS: Record<string, { icon: typeof Bell; color: string }> = {
 };
 
 export function FeedPage() {
-  usePageMeta({ title: 'Feed', noindex: true });
+  usePageMeta({ title: t("Feed"), noindex: true });
   const { user, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [followedCandidates, setFollowedCandidates] = useState<Candidate[]>([]);
@@ -75,7 +76,7 @@ export function FeedPage() {
   if (authLoading) {
     return (
       <div className="mx-auto max-w-content px-4 sm:px-6 py-20">
-        <LoadingState message="Loading…" />
+        <LoadingState message={t("Loading…")} />
       </div>
     );
   }
@@ -87,20 +88,14 @@ export function FeedPage() {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary/15 to-accent/15 animate-float">
             <Rss className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="font-display text-4xl font-semibold tracking-tight mb-3">Civic Wire</h1>
-          <p className="text-muted-foreground mb-8 leading-relaxed">
-            Follow candidates and issues. Get their latest posts, election results, and news from trusted sources — all in one personalized feed.
-          </p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight mb-3">{t("Civic Wire")}</h1>
+          <p className="text-muted-foreground mb-8 leading-relaxed">{t("Follow candidates and issues. Get their latest posts, election results, and news from trusted sources — all in one personalized feed.")}</p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link to="/signin">
-              <Button size="lg" className="rounded-2xl w-full sm:w-auto gap-2 shadow-md shadow-primary/20">
-                Sign In to Get Started
-              </Button>
+              <Button size="lg" className="rounded-2xl w-full sm:w-auto gap-2 shadow-md shadow-primary/20">{t("Sign In to Get Started")}</Button>
             </Link>
             <Link to="/candidates">
-              <Button size="lg" variant="outline" className="rounded-2xl w-full sm:w-auto">
-                Browse Candidates
-              </Button>
+              <Button size="lg" variant="outline" className="rounded-2xl w-full sm:w-auto">{t("Browse Candidates")}</Button>
             </Link>
           </div>
         </div>
@@ -169,12 +164,12 @@ export function FeedPage() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors">
               <UserPlus className="h-5 w-5 text-muted-foreground" />
             </div>
-            <span className="text-[11px] font-semibold text-muted-foreground">More</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">{t("More")}</span>
           </Link>
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px] [&>*]:min-w-0">
         {/* Main feed column */}
         <div className="space-y-4">
           {/* Feed header with filter pills */}
@@ -193,7 +188,7 @@ export function FeedPage() {
                         : 'bg-secondary text-muted-foreground hover:bg-secondary/70'
                     )}
                   >
-                    {f === 'all' ? 'All' : style?.label}
+                    {f === 'all' ? t("All") : style?.label}
                   </button>
                 );
               })}
@@ -232,10 +227,9 @@ export function FeedPage() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/15">
                   <Bell className="h-4 w-4 text-accent" />
                 </div>
-                <h3 className="font-bold text-sm">What's New</h3>
+                <h3 className="font-bold text-sm">{t("What's New")}</h3>
                 <span className="ml-auto text-[10px] font-bold text-accent bg-accent/10 rounded-full px-2 py-0.5">
-                  {unreadCount} unread
-                </span>
+                  {unreadCount} {t("unread")}</span>
               </div>
               <div className="space-y-1">
                 {notifications.slice(0, 6).map((n) => {
@@ -260,9 +254,7 @@ export function FeedPage() {
                 })}
               </div>
               {notifications.length > 6 && (
-                <Link to="/account" className="mt-3 block text-center text-xs font-bold text-accent hover:underline">
-                  View all notifications
-                </Link>
+                <Link to="/account" className="mt-3 block text-center text-xs font-bold text-accent hover:underline">{t("View all notifications")}</Link>
               )}
             </Card>
           )}
@@ -275,20 +267,19 @@ export function FeedPage() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
                   <Users className="h-4 w-4 text-primary" />
                 </div>
-                <h3 className="font-bold text-sm">Your Network</h3>
+                <h3 className="font-bold text-sm">{t("Your Network")}</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
                 <div className="rounded-2xl bg-primary/5 p-3 text-center">
                   <p className="text-2xl font-extrabold text-primary">{followedCandidates.length}</p>
-                  <p className="text-[11px] font-semibold text-muted-foreground">Candidates</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground">{t("Candidates")}</p>
                 </div>
                 <div className="rounded-2xl bg-accent/5 p-3 text-center">
                   <p className="text-2xl font-extrabold text-accent">{followedIssues.length}</p>
-                  <p className="text-[11px] font-semibold text-muted-foreground">Issues</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground">{t("Issues")}</p>
                 </div>
               </div>
-              <Link to="/candidates" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-primary hover:underline">
-                Discover more <ChevronRight className="h-3 w-3" />
+              <Link to="/candidates" className="mt-3 flex items-center justify-center gap-1 text-xs font-bold text-primary hover:underline">{t("Discover more")} <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
           </Card>
@@ -296,7 +287,7 @@ export function FeedPage() {
           {/* Followed candidates — compact list */}
           {followedCandidates.length > 0 && (
             <Card className="p-5 rounded-3xl">
-              <h3 className="font-bold text-sm mb-3">Following</h3>
+              <h3 className="font-bold text-sm mb-3">{t("Following")}</h3>
               <div className="space-y-1">
                 {followedCandidates.slice(0, 6).map((c) => (
                   <Link
@@ -315,7 +306,7 @@ export function FeedPage() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">{c.first_name} {c.last_name}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{c.party}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{c.party && t(c.party)}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-foreground transition-colors" />
                   </Link>
@@ -329,7 +320,7 @@ export function FeedPage() {
             <Card className="p-5 rounded-3xl">
               <div className="flex items-center gap-2 mb-3">
                 <Scale className="h-4 w-4 text-primary" />
-                <h3 className="font-bold text-sm">Issues You Follow</h3>
+                <h3 className="font-bold text-sm">{t("Issues You Follow")}</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {followedIssues.map((issue) => (
@@ -352,14 +343,14 @@ export function FeedPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
                 <Flame className="h-4 w-4 text-primary" />
               </div>
-              <h3 className="font-bold text-sm">Explore Gov Search App</h3>
+              <h3 className="font-bold text-sm">{t("Explore Gov Search App")}</h3>
             </div>
             <div className="space-y-2">
-              <ExploreLink to="/candidates" icon={Users} label="Browse all candidates" />
-              <ExploreLink to="/issues" icon={Scale} label="Follow more issues" />
-              <ExploreLink to="/compare" icon={TrendingUp} label="Compare candidates" />
-              <ExploreLink to="/ask" icon={Mic} label="Ask Gov Search AI" />
-              <ExploreLink to="/stories" icon={Newspaper} label="Read civic stories" />
+              <ExploreLink to="/candidates" icon={Users} label={t("Browse all candidates")} />
+              <ExploreLink to="/issues" icon={Scale} label={t("Follow more issues")} />
+              <ExploreLink to="/compare" icon={TrendingUp} label={t("Compare candidates")} />
+              <ExploreLink to="/ask" icon={Mic} label={t("Ask Gov Search AI")} />
+              <ExploreLink to="/stories" icon={Newspaper} label={t("Read civic stories")} />
             </div>
           </Card>
         </div>
@@ -422,9 +413,7 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
       {/* Pinned banner */}
       {post.is_pinned && (
         <div className="flex items-center gap-1.5 bg-primary/10 px-5 py-1.5 text-xs font-bold text-primary">
-          <Pin className="h-3 w-3" />
-          Pinned by campaign
-        </div>
+          <Pin className="h-3 w-3" />{t("Pinned by campaign")}</div>
       )}
 
       <div className="p-5">
@@ -470,14 +459,14 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
                 </Link>
               )}
               {candidate?.party && (
-                <span className="text-xs text-muted-foreground">{candidate.party}</span>
+                <span className="text-xs text-muted-foreground">{candidate.party && t(candidate.party)}</span>
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-muted-foreground">{formatTimeAgo(post.created_at)}</p>
               <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider', typeStyle.color)}>
                 <TypeIcon className="h-3 w-3" />
-                {typeStyle.label}
+                {t(typeStyle.label)}
               </span>
             </div>
           </div>
@@ -489,7 +478,7 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
         {/* Image */}
         {post.image_url && (
           <div className="relative rounded-2xl overflow-hidden mb-3 group">
-            <img src={post.image_url} alt={candidate ? `Photo shared by ${candidate.first_name} ${candidate.last_name}` : 'Post image'} className="w-full max-h-96 object-cover" />
+            <img src={post.image_url} alt={candidate ? `Photo shared by ${candidate.first_name} ${candidate.last_name}` : t("Post image")} className="w-full max-h-96 object-cover" />
           </div>
         )}
 
@@ -498,13 +487,13 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
           <div className="rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/8 to-transparent p-4 mb-3">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="h-4 w-4 text-accent" />
-              <span className="text-xs font-bold uppercase tracking-wider text-accent">Upcoming Event</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-accent">{t("Upcoming Event")}</span>
             </div>
             {post.event_date && (
               <div className="flex items-center gap-2 text-sm mb-1">
                 <span className="font-bold text-foreground">{formatDate(post.event_date)}</span>
                 {post.event_start_time && (
-                  <span className="text-muted-foreground">at {post.event_start_time}{post.event_end_time ? `–${post.event_end_time}` : ''}</span>
+                  <span className="text-muted-foreground">{t("at")} {post.event_start_time}{post.event_end_time ? `–${post.event_end_time}` : ''}</span>
                 )}
               </div>
             )}
@@ -521,18 +510,14 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
                     <div key={i} className="h-6 w-6 rounded-full bg-accent/20 border-2 border-card" />
                   ))}
                 </div>
-                <p className="text-xs font-semibold text-accent">{post.event_rsvp_count} interested</p>
+                <p className="text-xs font-semibold text-accent">{post.event_rsvp_count} {t("interested")}</p>
               </div>
             )}
             <div className="mt-3 flex gap-2">
               <Button size="sm" className="rounded-xl gap-1.5 text-xs h-8">
-                <Heart className="h-3.5 w-3.5" />
-                Interested
-              </Button>
+                <Heart className="h-3.5 w-3.5" />{t("Interested")}</Button>
               <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs h-8">
-                <Calendar className="h-3.5 w-3.5" />
-                Add to Calendar
-              </Button>
+                <Calendar className="h-3.5 w-3.5" />{t("Add to Calendar")}</Button>
             </div>
           </div>
         )}
@@ -562,17 +547,13 @@ function FeedPostCard({ post, onLike, onShare, likedAnim }: {
               to={`/candidates/${candidate.id}?tab=questions`}
               className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all touch-target"
             >
-              <MessageCircle className="h-4 w-4" />
-              Ask
-            </Link>
+              <MessageCircle className="h-4 w-4" />{t("Ask")}</Link>
           )}
           <button
             onClick={onShare}
             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all touch-target"
           >
-            <Share2 className="h-4 w-4" />
-            Share
-          </button>
+            <Share2 className="h-4 w-4" />{t("Share")}</button>
           <div className="ml-auto">
             <ReportButton contentType="feed_post" contentId={post.id} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all touch-target" />
           </div>
@@ -593,18 +574,16 @@ function EmptyFeed({ hasFollows }: { hasFollows: boolean }) {
         )}
       </div>
       <h3 className="font-bold text-lg mb-2">
-        {hasFollows ? 'No posts match this filter' : 'Your feed is waiting!'}
+        {hasFollows ? t("No posts match this filter") : t("Your feed is waiting!")}
       </h3>
       <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto leading-relaxed">
         {hasFollows
-          ? 'Try switching to "All" to see everything from the candidates you follow.'
-          : 'Follow candidates and issues to get their latest updates, events, and positions right here.'}
+          ? t("Try switching to \"All\" to see everything from the candidates you follow.")
+          : t("Follow candidates and issues to get their latest updates, events, and positions right here.")}
       </p>
       <Link to="/candidates">
         <Button className="rounded-2xl gap-2">
-          <Users className="h-4 w-4" />
-          Discover Candidates
-        </Button>
+          <Users className="h-4 w-4" />{t("Discover Candidates")}</Button>
       </Link>
     </Card>
   );

@@ -20,10 +20,11 @@ function collectKeys(): Set<string> {
       if (!src.includes("from '@/i18n'")) continue;
       const sf = ts.createSourceFile(p, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
       const visit = (n: ts.Node) => {
-        if (ts.isCallExpression(n) && n.expression.getText(sf) === 't') {
+        if (ts.isCallExpression(n) && ['t', 'msg'].includes(n.expression.getText(sf))) {
           const a = n.arguments[0];
           if (a && (ts.isStringLiteral(a) || ts.isNoSubstitutionTemplateLiteral(a))) keys.add(a.text);
         }
+        // msg('...') marks data strings that are translated where rendered.
         // label-like fields in objects (menus, badges, profile fields) are passed through t() where rendered
         if (ts.isPropertyAssignment(n) && ['label', 'description', 'desc', 'cta', 'heading', 'subtitle'].includes(n.name.getText(sf))
             && ts.isStringLiteral(n.initializer) && /[A-Za-z]{2}/.test(n.initializer.text)) keys.add(n.initializer.text);

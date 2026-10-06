@@ -12,6 +12,7 @@ import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { supabase } from '@/lib/supabase';
 import { getDemoContestById, getDemoMeasureById } from '@/services/demo-data';
 import type { BallotContest, BallotMeasure, Candidate, District } from '@/types';
+import { t } from '@/i18n';
 
 export function ContestDetailPage() {
   const { contestId } = useParams<{ contestId: string }>();
@@ -82,15 +83,13 @@ export function ContestDetailPage() {
     description: contest ? `Candidates, positions, and voting records for ${contest.office_name}.` : undefined,
   });
 
-  if (loading) return <LoadingState message="Loading contest…" />;
-  if (!contest) return <EmptyState title="Contest not found" description="This contest may not exist or has been removed." />;
+  if (loading) return <LoadingState message={t("Loading contest…")} />;
+  if (!contest) return <EmptyState title={t("Contest not found")} description={t("This contest may not exist or has been removed.")} />;
 
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <Link to="/ballot" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="h-4 w-4" />
-        Back to ballot
-      </Link>
+        <ArrowLeft className="h-4 w-4" />{t("Back to ballot")}</Link>
 
       <div className="mt-4 mb-6">
         <div className="flex items-center gap-2">
@@ -106,7 +105,7 @@ export function ContestDetailPage() {
           <p className="mt-1 text-muted-foreground">{contest.seat_description}</p>
         )}
         {contest.term_length && (
-          <p className="mt-1 text-sm text-muted-foreground">Term: {contest.term_length}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("Term:")} {contest.term_length}</p>
         )}
         <div className="mt-4">
           <DemoBanner compact show={candidates.some((c) => c.is_demo)} />
@@ -123,20 +122,20 @@ export function ContestDetailPage() {
         <div className="mb-8">
           <div className="mb-4 flex items-center gap-2">
             <GitCompare className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Compare on the Issues</h2>
+            <h2 className="text-lg font-semibold">{t("Compare on the Issues")}</h2>
           </div>
           <RaceComparison candidates={candidates} contestId={contest.id} />
         </div>
       )}
 
-      <h2 className="mb-4 text-lg font-semibold">Candidates in this race</h2>
+      <h2 className="mb-4 text-lg font-semibold">{t("Candidates in this race")}</h2>
       {candidates.length === 0 ? (
         <EmptyState
-          title="No candidates yet"
-          description="There are no candidates registered for this race yet."
+          title={t("No candidates yet")}
+          description={t("There are no candidates registered for this race yet.")}
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
           {candidates.map((c) => (
             <CandidateCard key={c.id} candidate={c} contestLabel={contest.office_name} />
           ))}
@@ -144,10 +143,7 @@ export function ContestDetailPage() {
       )}
 
       <div className="mt-8 rounded-lg border border-border bg-secondary/30 p-4">
-        <p className="text-sm text-muted-foreground">
-          Gov Search App does not endorse or recommend candidates. Research each candidate's
-          positions, voting records and public statements, then make your own decision.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("Gov Search App does not endorse or recommend candidates. Research each candidate's positions, voting records and public statements, then make your own decision.")}</p>
       </div>
     </div>
   );
@@ -186,15 +182,13 @@ export function MeasureDetailPage() {
     description: measure?.summary ?? undefined,
   });
 
-  if (loading) return <LoadingState message="Loading measure…" />;
-  if (!measure) return <EmptyState title="Measure not found" description="This ballot measure may not exist or has been removed." />;
+  if (loading) return <LoadingState message={t("Loading measure…")} />;
+  if (!measure) return <EmptyState title={t("Measure not found")} description={t("This ballot measure may not exist or has been removed.")} />;
 
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <Link to="/ballot" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="h-4 w-4" />
-        Back to ballot
-      </Link>
+        <ArrowLeft className="h-4 w-4" />{t("Back to ballot")}</Link>
 
       <div className="mt-4 mb-6">
         <span className="inline-flex items-center rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium uppercase text-muted-foreground">
@@ -208,35 +202,35 @@ export function MeasureDetailPage() {
 
       {measure.summary && (
         <Card className="p-6 mb-4">
-          <h2 className="font-semibold mb-2">Summary</h2>
+          <h2 className="font-semibold mb-2">{t("Summary")}</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">{measure.summary}</p>
         </Card>
       )}
 
       {measure.plain_english_summary && (
         <Card className="p-6 mb-4 bg-secondary/30">
-          <h2 className="font-semibold mb-2">In Plain English</h2>
+          <h2 className="font-semibold mb-2">{t("In Plain English")}</h2>
           <p className="text-sm text-foreground leading-relaxed">{measure.plain_english_summary}</p>
         </Card>
       )}
 
       {measure.eli5_explanation && (
         <Card className="p-6 mb-4 bg-accent/5">
-          <h2 className="font-semibold mb-2">Explain Like I'm 5</h2>
+          <h2 className="font-semibold mb-2">{t("Explain Like I'm 5")}</h2>
           <p className="text-sm text-foreground leading-relaxed">{measure.eli5_explanation}</p>
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 [&>*]:min-w-0">
         {measure.arguments_for && (
           <Card className="p-6">
-            <h2 className="font-semibold mb-2 text-success">Arguments For</h2>
+            <h2 className="font-semibold mb-2 text-success">{t("Arguments For")}</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">{measure.arguments_for}</p>
           </Card>
         )}
         {measure.arguments_against && (
           <Card className="p-6">
-            <h2 className="font-semibold mb-2 text-destructive">Arguments Against</h2>
+            <h2 className="font-semibold mb-2 text-destructive">{t("Arguments Against")}</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">{measure.arguments_against}</p>
           </Card>
         )}
@@ -245,19 +239,13 @@ export function MeasureDetailPage() {
       {measure.full_text_url && (
         <div className="mt-4">
           <a href={safeUrl(measure.full_text_url)} target="_blank" rel="noopener noreferrer">
-            <button className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary">
-              Read Full Text
-            </button>
+            <button className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary">{t("Read Full Text")}</button>
           </a>
         </div>
       )}
 
       <div className="mt-8 rounded-lg border border-border bg-secondary/30 p-4">
-        <p className="text-sm text-muted-foreground">
-          Gov Search App presents arguments for and against ballot measures as reported in
-          public records. Always consult your official voter guide for the full text and
-          official analysis.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("Gov Search App presents arguments for and against ballot measures as reported in public records. Always consult your official voter guide for the full text and official analysis.")}</p>
       </div>
     </div>
   );

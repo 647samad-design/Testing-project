@@ -8,6 +8,7 @@ import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { AdSlot } from '@/components/shared/AdSlot';
 import { getFeaturedStories, getRecentStories, getStoryBySlug, getStoryCategories } from '@/services/stories';
 import type { Story, StoryCategory } from '@/types';
+import { t } from '@/i18n';
 
 const categoryColors: Record<string, string> = {
   emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -65,7 +66,7 @@ export function StoriesPage() {
     }
   }, [activeCategory]);
 
-  if (loading) return <LoadingState message="Loading stories…" />;
+  if (loading) return <LoadingState message={t("Loading stories…")} />;
 
   return (
     <div className="animate-fade-in">
@@ -73,21 +74,16 @@ export function StoriesPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/8 via-background to-background" />
         <div className="absolute top-10 right-1/4 h-64 w-64 rounded-full bg-accent/8 blur-3xl animate-float" />
         <div className="relative mx-auto max-w-content px-4 sm:px-6 py-12 md:py-16">
-          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-            Civic Stories
-          </h1>
-          <p className="mt-3 text-lg text-muted-foreground max-w-2xl">
-            Stay informed and engaged between elections. Plain-English explainers,
-            voter stories, and civic education — no partisan spin.
-          </p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">{t("Civic Stories")}</h1>
+          <p className="mt-3 text-lg text-muted-foreground max-w-2xl">{t("Stay informed and engaged between elections. Plain-English explainers, voter stories, and civic education — no partisan spin.")}</p>
         </div>
       </section>
 
       <div className="mx-auto max-w-content px-4 sm:px-6 py-10">
         {featured.length > 0 && !activeCategory && (
           <section className="mb-12">
-            <h2 className="mb-5 text-2xl font-bold tracking-tight">Featured Stories</h2>
-            <div className="grid gap-5 md:grid-cols-3">
+            <h2 className="mb-5 text-2xl font-bold tracking-tight">{t("Featured Stories")}</h2>
+            <div className="grid gap-5 md:grid-cols-3 [&>*]:min-w-0">
               {featured.map((story, i) => {
                 const cat = story.category;
                 const colorClass = cat?.color ? categoryColors[cat.color] ?? 'bg-secondary text-foreground border-border' : 'bg-secondary text-foreground border-border';
@@ -112,7 +108,7 @@ export function StoriesPage() {
                         )}
                         <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
                           {story.read_time_minutes && (
-                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {story.read_time_minutes} min read</span>
+                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {story.read_time_minutes} {t("min read")}</span>
                           )}
                           {story.published_at && (
                             <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {formatDate(story.published_at)}</span>
@@ -133,9 +129,7 @@ export function StoriesPage() {
             className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
               !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:bg-secondary/70'
             }`}
-          >
-            All Stories
-          </button>
+          >{t("All Stories")}</button>
           {categories.map((cat) => {
             const colorClass = cat.color ? categoryColors[cat.color] ?? 'bg-secondary text-foreground border-border' : 'bg-secondary text-foreground border-border';
             return (
@@ -156,12 +150,12 @@ export function StoriesPage() {
 
         <section>
           <h2 className="mb-5 text-2xl font-bold tracking-tight">
-            {activeCategory ? categories.find(c => c.id === activeCategory)?.name : 'Recent Stories'}
+            {activeCategory ? categories.find(c => c.id === activeCategory)?.name : t("Recent Stories")}
           </h2>
           {stories.length === 0 ? (
-            <EmptyState title="No stories yet" description="Check back soon for new civic education content." icon={<BookOpen className="h-10 w-10" />} />
+            <EmptyState title={t("No stories yet")} description={t("Check back soon for new civic education content.")} icon={<BookOpen className="h-10 w-10" />} />
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
               {stories.map((story, i) => {
                 const cat = story.category;
                 const colorClass = cat?.color ? categoryColors[cat.color] ?? 'bg-secondary text-foreground border-border' : 'bg-secondary text-foreground border-border';
@@ -180,7 +174,7 @@ export function StoriesPage() {
                         )}
                         <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
                           {story.read_time_minutes && (
-                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {story.read_time_minutes} min</span>
+                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {story.read_time_minutes} {t("min")}</span>
                           )}
                           {story.published_at && <span>{formatDate(story.published_at)}</span>}
                         </div>
@@ -229,8 +223,8 @@ export function StoryDetailPage() {
     } : undefined,
   });
 
-  if (loading) return <LoadingState message="Loading story…" />;
-  if (!story) return <EmptyState title="Story not found" description="This story may have been removed." icon={<BookOpen className="h-10 w-10" />} />;
+  if (loading) return <LoadingState message={t("Loading story…")} />;
+  if (!story) return <EmptyState title={t("Story not found")} description={t("This story may have been removed.")} icon={<BookOpen className="h-10 w-10" />} />;
 
   const cat = story.category;
   const colorClass = cat?.color ? categoryColors[cat.color] ?? 'bg-secondary text-foreground border-border' : 'bg-secondary text-foreground border-border';
@@ -238,9 +232,7 @@ export function StoryDetailPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8 animate-fade-in">
       <Link to="/stories" className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-        <ArrowLeft className="h-4 w-4" />
-        All stories
-      </Link>
+        <ArrowLeft className="h-4 w-4" />{t("All stories")}</Link>
 
       <article className="mt-6">
         {cat && (
@@ -250,9 +242,9 @@ export function StoryDetailPage() {
         )}
         <h1 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl leading-tight">{story.title}</h1>
         <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-          {story.author_name && <span>By {story.author_name}</span>}
+          {story.author_name && <span>{t("By")} {story.author_name}</span>}
           {story.published_at && <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {formatDate(story.published_at)}</span>}
-          {story.read_time_minutes && <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {story.read_time_minutes} min read</span>}
+          {story.read_time_minutes && <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {story.read_time_minutes} {t("min read")}</span>}
         </div>
 
         {story.excerpt && (
@@ -279,10 +271,8 @@ export function StoryDetailPage() {
       </article>
 
       <div className="mt-10 border-t border-border pt-6">
-        <p className="text-xs text-muted-foreground">
-          This is editorial content from Gov Search App. It does not endorse any
-          candidate or political position. For candidate information, visit our{' '}
-          <Link to="/candidates" className="text-primary hover:underline">Candidates page</Link>.
+        <p className="text-xs text-muted-foreground">{t("This is editorial content from Gov Search App. It does not endorse any candidate or political position. For candidate information, visit our")}{' '}
+          <Link to="/candidates" className="text-primary hover:underline">{t("Candidates page")}</Link>.
         </p>
       </div>
 

@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import type { AIResponse, Candidate, ClaimAssessment } from '@/types';
 import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t } from '@/i18n';
 
 /** Example questions use REAL candidates from the database. They used to name
  * fictional demo candidates (Alex Morgan, Jordan Rivera, Taylor Brooks), which
@@ -25,18 +26,18 @@ function buildExampleQuestions(candidates: Candidate[]): string[] {
   const name = (c: Candidate) => `${c.first_name} ${c.last_name}`;
   // Only questions the assistant can actually answer (a generic "Compare
   // candidates on healthcare" just got "please specify a candidate").
-  const generic = ['Who is running for State Representative?'];
+  const generic = [t('Who is running for State Representative?')];
   if (real.length === 0) return generic;
   const templates = [
-    (c: Candidate) => `What has ${name(c)} said about healthcare?`,
-    (c: Candidate) => `What is ${name(c)}'s position on the economy?`,
-    (c: Candidate) => `What bills has ${name(c)} voted for?`,
+    (c: Candidate) => t('What has {name} said about healthcare?', { name: name(c) }),
+    (c: Candidate) => t("What is {name}'s position on the economy?", { name: name(c) }),
+    (c: Candidate) => t('What bills has {name} voted for?', { name: name(c) }),
   ];
   return [...real.map((c, i) => templates[i](c)), ...generic];
 }
 
 export function AskBallotLensPage() {
-  usePageMeta({ title: 'Ask Gov Search AI', description: 'Get sourced answers about candidates, positions, and voting records.' });
+  usePageMeta({ title: t("Ask Gov Search AI"), description: t("Get sourced answers about candidates, positions, and voting records.") });
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -102,11 +103,8 @@ export function AskBallotLensPage() {
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
       <div className="mb-6">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">Ask Gov Search AI</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Ask questions about candidates, issues, voting records and sources.
-          The AI answers only from retrieved evidence — it never invents information.
-        </p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight">{t("Ask Gov Search AI")}</h1>
+        <p className="mt-2 text-lg text-muted-foreground">{t("Ask questions about candidates, issues, voting records and sources. The AI answers only from retrieved evidence — it never invents information.")}</p>
         <div className="mt-4">
           <DemoBanner compact />
         </div>
@@ -121,9 +119,7 @@ export function AskBallotLensPage() {
             mode === 'ask' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:text-foreground'
           )}
         >
-          <Sparkles className="h-4 w-4" />
-          Ask a Question
-        </button>
+          <Sparkles className="h-4 w-4" />{t("Ask a Question")}</button>
         <button
           onClick={() => setMode('claim')}
           className={cn(
@@ -131,9 +127,7 @@ export function AskBallotLensPage() {
             mode === 'claim' ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:text-foreground'
           )}
         >
-          <Search className="h-4 w-4" />
-          Claim Explorer
-        </button>
+          <Search className="h-4 w-4" />{t("Claim Explorer")}</button>
       </div>
 
       {mode === 'ask' ? (
@@ -141,55 +135,51 @@ export function AskBallotLensPage() {
           {/* Question input */}
           <Card className="p-6 rounded-2xl">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-foreground">Your question</label>
+              <label className="text-sm font-semibold text-foreground">{t("Your question")}</label>
               {usage && (
                 <span className={cn(
                   'text-xs font-medium',
                   usage.remaining === 0 ? 'text-destructive' : 'text-muted-foreground'
                 )}>
-                  {usage.remaining} of {usage.limit} questions left today
-                </span>
+                  {usage.remaining} {t("of")} {usage.limit} {t("questions left today")}</span>
               )}
             </div>
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
               <Input
-                placeholder="Ask about a candidate's position, voting record, or sources…"
+                placeholder={t("Ask about a candidate's position, voting record, or sources…")}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
                 className="flex-1"
               />
               <Button onClick={handleAsk} disabled={loading || !question.trim()} className="gap-2">
-                <Send className="h-4 w-4" />
-                Ask
-              </Button>
+                <Send className="h-4 w-4" />{t("Ask")}</Button>
             </div>
 
             {usage && !usage.allowed && (
               <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
                 <p className="font-medium">
                   {usage.isPaid
-                    ? "You've reached today's 100-question limit."
-                    : "You've used today's 5 free questions."}
+                    ? t("You've reached today's 100-question limit.")
+                    : t("You've used today's 5 free questions.")}
                 </p>
                 {!usage.isPaid && (
                   <Link to="/pricing" className="mt-1 inline-flex items-center gap-1 text-primary font-semibold hover:underline">
-                    <Sparkles className="h-3.5 w-3.5" /> Upgrade for Expanded AI Research — up to 100 questions/day
-                  </Link>
+                    <Sparkles className="h-3.5 w-3.5" /> {t("Upgrade for Expanded AI Research — up to 100 questions/day")}</Link>
                 )}
               </div>
             )}
 
             {/* Candidate selector */}
             <div className="mt-4">
-              <label className="text-xs font-medium text-muted-foreground">Candidate (optional)</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("Candidate (optional)")}</label>
               <select
-                aria-label="Candidate (optional)"
+                aria-label={t("Candidate (optional)")}
                 value={selectedCandidate ?? ''}
                 onChange={(e) => setSelectedCandidate(e.target.value || undefined)}
                 className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               >
-                <option value="">All candidates</option>
+                <option value="">{t("All candidates")}</option>
                 {candidates.map((c) => (
                   <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
                 ))}
@@ -198,7 +188,7 @@ export function AskBallotLensPage() {
 
             {/* Example questions */}
             <div className="mt-4">
-              <p className="text-xs font-medium text-muted-foreground mb-2">Example questions:</p>
+              <p className="text-xs font-medium text-muted-foreground mb-2">{t("Example questions:")}</p>
               <div className="flex flex-wrap gap-2">
                 {buildExampleQuestions(candidates).map((q) => (
                   <button
@@ -214,7 +204,7 @@ export function AskBallotLensPage() {
           </Card>
 
           {/* Loading */}
-          {loading && <LoadingState message="Researching evidence…" />}
+          {loading && <LoadingState message={t("Researching evidence…")} />}
 
           {/* Response */}
           {response && !loading && (
@@ -227,26 +217,22 @@ export function AskBallotLensPage() {
         <div className="space-y-6">
           {/* Claim input */}
           <Card className="p-6 rounded-2xl">
-            <label className="text-sm font-semibold text-foreground">Enter a claim to explore</label>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Gov Search App does not label claims as simply TRUE or FALSE. It shows you the evidence and explains the context.
-            </p>
+            <label className="text-sm font-semibold text-foreground">{t("Enter a claim to explore")}</label>
+            <p className="mt-1 text-xs text-muted-foreground">{t("Gov Search App does not label claims as simply TRUE or FALSE. It shows you the evidence and explains the context.")}</p>
             <div className="mt-3 flex flex-col gap-3 sm:flex-row">
               <Input
-                placeholder="e.g., Candidate Smith voted to eliminate Social Security."
+                placeholder={t("e.g., Candidate Smith voted to eliminate Social Security.")}
                 value={claimInput}
                 onChange={(e) => setClaimInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleClaimCheck()}
                 className="flex-1"
               />
               <Button onClick={handleClaimCheck} disabled={loading || !claimInput.trim()} className="gap-2">
-                <Search className="h-4 w-4" />
-                Explore
-              </Button>
+                <Search className="h-4 w-4" />{t("Explore")}</Button>
             </div>
           </Card>
 
-          {loading && <LoadingState message="Examining the claim…" />}
+          {loading && <LoadingState message={t("Examining the claim…")} />}
 
           {claimResult && !loading && (
             <div ref={scrollRef}>
@@ -266,13 +252,13 @@ function AIResponseCard({ response }: { response: AIResponse }) {
       <section>
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Answer</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Answer")}</h3>
         </div>
         <p className="mt-3 text-foreground leading-relaxed">{response.answer}</p>
 
         {/* Confidence */}
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Confidence:</span>
+          <span className="text-xs text-muted-foreground">{t("Confidence:")}</span>
           <span className={cn(
             'rounded-full px-2 py-0.5 text-xs font-medium',
             response.confidence === 'high' && 'bg-success/10 text-success',
@@ -287,7 +273,7 @@ function AIResponseCard({ response }: { response: AIResponse }) {
       {/* EVIDENCE */}
       {response.evidence.length > 0 && (
         <section className="mt-6 border-t border-border pt-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Evidence</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Evidence")}</h3>
           <ul className="mt-3 space-y-2">
             {response.evidence.map((e, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground">
@@ -302,7 +288,7 @@ function AIResponseCard({ response }: { response: AIResponse }) {
       {/* SOURCES */}
       {response.sources.length > 0 && (
         <section className="mt-6 border-t border-border pt-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Sources</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Sources")}</h3>
           <div className="mt-3 space-y-2">
             {response.sources.filter((src) => src.url).map((src) => (
               <a
@@ -329,7 +315,7 @@ function AIResponseCard({ response }: { response: AIResponse }) {
         <section className="mt-6 border-t border-border pt-6">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-warning" />
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Limitations</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Limitations")}</h3>
           </div>
           <ul className="mt-3 space-y-2">
             {response.limitations.map((l, i) => (
@@ -358,22 +344,22 @@ function ClaimResultCard({ result }: { result: ClaimAssessment }) {
     <Card className="p-6 animate-slide-up">
       {/* CLAIM */}
       <section>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Claim</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Claim")}</h3>
         <p className="mt-3 text-foreground leading-relaxed">{result.claim}</p>
       </section>
 
       {/* ASSESSMENT */}
       <section className="mt-6 border-t border-border pt-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Assessment</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Assessment")}</h3>
         <span className={cn('mt-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium', ac.className)}>
-          {ac.label}
+          {t(ac.label)}
         </span>
       </section>
 
       {/* WHY */}
       {result.explanation && (
         <section className="mt-6 border-t border-border pt-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Why</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Why")}</h3>
           <p className="mt-3 text-foreground leading-relaxed">{result.explanation}</p>
         </section>
       )}
@@ -381,7 +367,7 @@ function ClaimResultCard({ result }: { result: ClaimAssessment }) {
       {/* EVIDENCE */}
       {result.evidence.length > 0 && (
         <section className="mt-6 border-t border-border pt-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Evidence</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Evidence")}</h3>
           <ul className="mt-3 space-y-2">
             {result.evidence.map((e, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground">
@@ -396,7 +382,7 @@ function ClaimResultCard({ result }: { result: ClaimAssessment }) {
       {/* SOURCES */}
       {result.sources.length > 0 && (
         <section className="mt-6 border-t border-border pt-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Sources</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{t("Sources")}</h3>
           <div className="mt-3 space-y-2">
             {result.sources.filter((src) => src.url).map((src) => (
               <a
@@ -419,10 +405,7 @@ function ClaimResultCard({ result }: { result: ClaimAssessment }) {
       )}
 
       <div className="mt-6 rounded-lg bg-secondary/50 p-4">
-        <p className="text-xs text-muted-foreground">
-          Gov Search App does not simply label political claims TRUE or FALSE without explaining the evidence.
-          Always review the original documentation.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("Gov Search App does not simply label political claims TRUE or FALSE without explaining the evidence. Always review the original documentation.")}</p>
       </div>
     </Card>
   );
