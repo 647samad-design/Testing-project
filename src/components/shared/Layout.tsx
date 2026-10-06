@@ -52,7 +52,7 @@ export function Header() {
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'whitespace-nowrap rounded-xl px-3 2xl:px-4 py-2.5 text-sm font-semibold transition-all touch-target',
+                    'whitespace-nowrap rounded-xl px-2.5 2xl:px-4 py-2.5 text-sm font-semibold transition-all touch-target',
                     isActive
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
@@ -92,9 +92,9 @@ export function Header() {
                   </Link>
                 )}
                 <Link to="/account">
-                  <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target">
+                  <Button variant="ghost" size="sm" className="gap-2 rounded-xl touch-target" aria-label={profile?.full_name ?? t("Account")} title={profile?.full_name ?? t("Account")}>
                     <User className="h-4 w-4 shrink-0" />
-                    <span className="max-w-[9rem] truncate">{profile?.full_name ?? t("Account")}</span>
+                    <span className="hidden max-w-[9rem] truncate 2xl:inline">{profile?.full_name ?? t("Account")}</span>
                     {isDemo && <span className="ml-1.5 rounded-md bg-warning/20 px-1.5 py-0.5 text-[10px] font-bold text-warning">{t("DEMO")}</span>}
                   </Button>
                 </Link>

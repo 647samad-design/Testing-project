@@ -1,9 +1,11 @@
+import { LegalLanguageNotice } from '@/components/shared/LegalLanguageNotice';
 const LAST_UPDATED = 'September 15, 2026';
 
 export function DisclaimerPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">
+        <LegalLanguageNotice />
         <h1 className="font-display text-4xl font-semibold tracking-tight">Disclaimer</h1>
         <p className="mt-3 text-sm text-muted-foreground">Last updated: {LAST_UPDATED}</p>
       </header>

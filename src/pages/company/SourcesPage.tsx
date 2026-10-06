@@ -4,6 +4,7 @@ import { ExternalLink } from 'lucide-react';
 import { getSources } from '@/services/sources';
 import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import type { Source } from '@/types';
+import { t } from '@/i18n';
 
 export function SourcesPage() {
   const [sources, setSources] = useState<Source[]>([]);
@@ -19,17 +20,15 @@ export function SourcesPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-14">
       <header className="mb-10 border-b border-border pb-8">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">Sources</h1>
-        <p className="mt-3 text-muted-foreground">
-          Every claim on Gov Search App is tied to a source. Here's a sample of what we cite — see our{' '}
-          <a href="/methodology" className="text-primary hover:underline">Methodology</a> page for how we choose and verify them.
-        </p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight">{t("Sources")}</h1>
+        <p className="mt-3 text-muted-foreground">{t("Every claim on Gov Search App is tied to a source. Here's a sample of what we cite — see our")}{' '}
+          <a href="/methodology" className="text-primary hover:underline">{t("Methodology")}</a> {t("page for how we choose and verify them.")}</p>
       </header>
 
       {loading ? (
-        <LoadingState message="Loading sources…" />
+        <LoadingState message={t("Loading sources…")} />
       ) : sources.length === 0 ? (
-        <EmptyState title="No sources listed yet" description="Sources will appear here as candidate and election content is published." />
+        <EmptyState title={t("No sources listed yet")} description={t("Sources will appear here as candidate and election content is published.")} />
       ) : (
         <div className="space-y-3">
           {sources.map((s) => (

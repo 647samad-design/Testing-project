@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { ALL_REGION_CONFIGS } from '@/services/regions';
 import type { AdPlan, CandidateServicePlan } from '@/types';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t } from '@/i18n';
 
 function formatPrice(price: number): string {
   if (price === 0) return 'Custom';
@@ -34,7 +35,7 @@ const placementOptions = [
 ];
 
 export function AdvertisingPage() {
-  usePageMeta({ title: 'Advertise with Gov Search App', description: 'Reach engaged local voters through Gov Search App.' });
+  usePageMeta({ title: t("Advertise with Gov Search App"), description: t("Reach engaged local voters through Gov Search App.") });
   const [plans, setPlans] = useState<AdPlan[]>([]);
   const [servicePlans, setServicePlans] = useState<CandidateServicePlan[]>([]);
 
@@ -54,30 +55,24 @@ export function AdvertisingPage() {
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <Megaphone className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl leading-[1.05]">
-            Reach engaged voters.
-            <br />
-            <span className="text-primary">Keep it honest.</span>
+          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl leading-[1.05]">{t("Reach engaged voters.")}<br />
+            <span className="text-primary">{t("Keep it honest.")}</span>
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Advertise on Gov Search App and connect with an audience that cares about
-            their community. Every ad is clearly labeled and never affects
-            candidate rankings or editorial content.
-          </p>
+          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">{t("Advertise on Gov Search App and connect with an audience that cares about their community. Every ad is clearly labeled and never affects candidate rankings or editorial content.")}</p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Button size="lg" className="h-14 px-8 rounded-2xl text-base font-bold touch-target shadow-md shadow-primary/20" asChild>
-              <Link to="/advertiser-dashboard">Start Advertising <ArrowRight className="ml-2 h-5 w-5" /></Link>
+              <Link to="/advertiser-dashboard">{t("Start Advertising")} <ArrowRight className="ml-2 h-5 w-5" /></Link>
             </Button>
             <Button size="lg" variant="outline" className="h-14 px-8 rounded-2xl text-base font-semibold touch-target" asChild>
-              <Link to="/contact">Talk to Our Team</Link>
+              <Link to="/contact">{t("Talk to Our Team")}</Link>
             </Button>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
-        <h2 className="text-center text-3xl font-bold tracking-tight">Who advertises on Gov Search App?</h2>
-        <p className="mt-3 text-center text-muted-foreground">Organizations that want to reach informed, civically engaged audiences.</p>
+        <h2 className="text-center text-3xl font-bold tracking-tight">{t("Who advertises on Gov Search App?")}</h2>
+        <p className="mt-3 text-center text-muted-foreground">{t("Organizations that want to reach informed, civically engaged audiences.")}</p>
         <div className="mt-8 md:mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {audienceTypes.map((a) => (
             <Card key={a.title} className="p-6 text-center rounded-2xl hover:shadow-lg transition-all">
@@ -85,7 +80,7 @@ export function AdvertisingPage() {
                 <a.icon className="h-7 w-7 text-primary" strokeWidth={1.8} />
               </div>
               <h3 className="mt-4 font-bold text-lg">{a.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{a.desc}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{t(a.desc)}</p>
             </Card>
           ))}
         </div>
@@ -93,15 +88,15 @@ export function AdvertisingPage() {
 
       <section className="bg-secondary/30 border-y border-border/60">
         <div className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
-          <h2 className="text-center text-3xl font-bold tracking-tight">Where your ad appears</h2>
-          <p className="mt-3 text-center text-muted-foreground">Choose from multiple placements across the platform.</p>
+          <h2 className="text-center text-3xl font-bold tracking-tight">{t("Where your ad appears")}</h2>
+          <p className="mt-3 text-center text-muted-foreground">{t("Choose from multiple placements across the platform.")}</p>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {placementOptions.map((p, i) => (
               <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary">
                   <p.icon className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <span className="text-sm font-semibold text-foreground">{p.label}</span>
+                <span className="text-sm font-semibold text-foreground">{t(p.label)}</span>
               </div>
             ))}
           </div>
@@ -109,20 +104,20 @@ export function AdvertisingPage() {
       </section>
 
       <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
-        <h2 className="text-center text-3xl font-bold tracking-tight">Simple, transparent pricing</h2>
-        <p className="mt-3 text-center text-muted-foreground">Admin-configurable. No hidden fees. Cancel anytime.</p>
+        <h2 className="text-center text-3xl font-bold tracking-tight">{t("Simple, transparent pricing")}</h2>
+        <p className="mt-3 text-center text-muted-foreground">{t("Admin-configurable. No hidden fees. Cancel anytime.")}</p>
         <div className={`mt-8 md:mt-10 mx-auto grid max-w-5xl gap-5 md:grid-cols-2 ${plans.length >= 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
           {plans.map((plan, idx) => (
             <Card key={plan.id} className={`relative p-6 rounded-2xl transition-all hover:shadow-xl ${idx === 1 ? 'border-2 border-primary ring-2 ring-primary/10' : ''}`}>
               {idx === 1 && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">Most Popular</span>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">{t("Most Popular")}</span>
               )}
               <h3 className="font-bold text-xl">{plan.plan_name}</h3>
               <p className="mt-2 text-3xl font-extrabold text-foreground">
                 {formatPrice(plan.monthly_price)}
-                {plan.monthly_price > 0 && <span className="text-base font-normal text-muted-foreground">/mo</span>}
+                {plan.monthly_price > 0 && <span className="text-base font-normal text-muted-foreground">{t("/mo")}</span>}
               </p>
-              {plan.description && <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>}
+              {plan.description && <p className="mt-2 text-sm text-muted-foreground">{t(plan.description)}</p>}
               <ul className="mt-4 space-y-2">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
@@ -132,7 +127,7 @@ export function AdvertisingPage() {
                 ))}
               </ul>
               <Button variant={idx === 1 ? 'default' : 'outline'} className="mt-6 w-full rounded-xl" asChild>
-                <Link to="/advertiser-dashboard">Get Started</Link>
+                <Link to="/advertiser-dashboard">{t("Get Started")}</Link>
               </Button>
             </Card>
           ))}
@@ -145,11 +140,8 @@ export function AdvertisingPage() {
             <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
               <MapPin className="h-7 w-7 text-primary" />
             </div>
-            <h2 className="text-3xl font-bold tracking-tight">Geographic targeting</h2>
-            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-              Target by state, city, ZIP code, or district. Only reach the voters
-              who matter to you. We currently support {ALL_REGION_CONFIGS.length} states with more on the way.
-            </p>
+            <h2 className="text-3xl font-bold tracking-tight">{t("Geographic targeting")}</h2>
+            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{t("Target by state, city, ZIP code, or district. Only reach the voters who matter to you. We currently support")} {ALL_REGION_CONFIGS.length} {t("states with more on the way.")}</p>
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               {ALL_REGION_CONFIGS.map((c: { state: string }) => (
                 <span key={c.state} className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">{c.state}</span>
@@ -164,12 +156,8 @@ export function AdvertisingPage() {
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10">
             <ShieldCheck className="h-7 w-7 text-accent" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight">Are you a candidate?</h2>
-          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-            Claim your profile and manage your campaign information. All candidate
-            services are administrative only — they never affect your ranking,
-            placement, or editorial content.
-          </p>
+          <h2 className="text-3xl font-bold tracking-tight">{t("Are you a candidate?")}</h2>
+          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">{t("Claim your profile and manage your campaign information. All candidate services are administrative only — they never affect your ranking, placement, or editorial content.")}</p>
         </div>
         <div className="mt-10 grid gap-5 md:grid-cols-2 max-w-3xl mx-auto">
           {servicePlans.map((plan) => (
@@ -177,9 +165,9 @@ export function AdvertisingPage() {
               <h3 className="font-bold text-xl">{plan.plan_name}</h3>
               <p className="mt-2 text-3xl font-extrabold text-foreground">
                 {formatPrice(plan.annual_price)}
-                <span className="text-base font-normal text-muted-foreground">/yr</span>
+                <span className="text-base font-normal text-muted-foreground">{t("/yr")}</span>
               </p>
-              {plan.description && <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>}
+              {plan.description && <p className="mt-2 text-sm text-muted-foreground">{t(plan.description)}</p>}
               <ul className="mt-4 space-y-2">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
@@ -189,7 +177,7 @@ export function AdvertisingPage() {
                 ))}
               </ul>
               <Button variant="outline" className="mt-6 w-full rounded-xl" asChild>
-                <Link to="/candidates">Claim Your Profile</Link>
+                <Link to="/candidates">{t("Claim Your Profile")}</Link>
               </Button>
             </Card>
           ))}
@@ -198,7 +186,7 @@ export function AdvertisingPage() {
 
       <section className="mx-auto max-w-content px-4 sm:px-6 py-12 md:py-14">
         <Card className="p-8 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5">
-          <h2 className="text-2xl font-bold tracking-tight">Our commitment to nonpartisanship</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t("Our commitment to nonpartisanship")}</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {[
               'Advertising never affects candidate rankings or editorial placement',

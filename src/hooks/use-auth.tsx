@@ -55,7 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Sync language to localStorage + DOM
     const lang = p?.language_preference ?? null;
     const savedLang = localStorage.getItem('ballotlens_lang') as LanguageName | null;
-    const effectiveLang = lang ?? savedLang ?? 'en';
+    // The profile column defaults to 'en', so 'en' there may just mean "never
+    // chosen". If this device has another language picked (e.g. chosen before
+    // signing up), keep it and save it to the profile instead of flipping the
+    // whole site back to English on sign-in.
+    const deviceChoice = savedLang && savedLang !== 'en' ? savedLang : null;
+    const effectiveLang = lang && lang !== 'en' ? lang : deviceChoice ?? lang ?? 'en';
+    if (p && deviceChoice && lang === 'en' && p.id !== 'demo-user') {
+      supabase.from('profiles').update({ language_preference: deviceChoice }).eq('id', p.id).then(() => {});
+    }
     localStorage.setItem('ballotlens_lang', effectiveLang);
     document.documentElement.setAttribute('lang', effectiveLang);
     window.dispatchEvent(new CustomEvent(LANGUAGE_EVENT, { detail: effectiveLang }));

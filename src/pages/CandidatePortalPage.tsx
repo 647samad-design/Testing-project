@@ -25,6 +25,7 @@ import {
 import type { CampaignTeamMember, TeamRole, CandidateGetToKnow, CandidateFundingSource, CandidateEndorsement, FundingSourceType, EndorserType, FeedPost } from '@/types';
 import { toast } from 'sonner';
 import { usePageMeta } from '@/hooks/use-page-meta';
+import { t } from '@/i18n';
 
 interface ClaimedCandidate {
   candidate_id: string;
@@ -33,7 +34,7 @@ interface ClaimedCandidate {
 }
 
 export function CandidatePortalPage() {
-  usePageMeta({ title: 'Candidate Portal', noindex: true });
+  usePageMeta({ title: t("Candidate Portal"), noindex: true });
   const { user, loading: authLoading } = useAuth();
   const [claimed, setClaimed] = useState<ClaimedCandidate[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -65,9 +66,9 @@ export function CandidatePortalPage() {
           managed = await getMyManagedCandidates().catch(() => []);
         }
         if (managed.some((m) => m.status === 'active')) {
-          toast.success('Payment successful — Candidate Management is active. Your Team and Campaign tools are unlocked.');
+          toast.success(t("Payment successful — Candidate Management is active. Your Team and Campaign tools are unlocked."));
         } else {
-          toast.success("Payment received — Candidate Management is finishing setup. Refresh in a minute if the tools aren't unlocked yet.");
+          toast.success(t("Payment received — Candidate Management is finishing setup. Refresh in a minute if the tools aren't unlocked yet."));
         }
         window.history.replaceState({}, '', window.location.pathname);
       } else if (checkoutResult === 'canceled') {
@@ -94,7 +95,7 @@ export function CandidatePortalPage() {
   if (authLoading) {
     return (
       <div className="mx-auto max-w-content px-4 sm:px-6 py-16">
-        <LoadingState message="Loading…" />
+        <LoadingState message={t("Loading…")} />
       </div>
     );
   }
@@ -103,38 +104,36 @@ export function CandidatePortalPage() {
     return (
       <div className="mx-auto max-w-content px-4 sm:px-6 py-16">
         <EmptyState
-          title="Sign in required"
-          description="You need an account to access the candidate portal."
+          title={t("Sign in required")}
+          description={t("You need an account to access the candidate portal.")}
           icon={<ShieldCheck className="h-10 w-10" />}
-          action={<Link to="/signin"><Button>Sign In</Button></Link>}
+          action={<Link to="/signin"><Button>{t("Sign In")}</Button></Link>}
         />
       </div>
     );
   }
 
-  if (loading) return <LoadingState message="Loading your portal…" />;
+  if (loading) return <LoadingState message={t("Loading your portal…")} />;
 
   const verifiedClaim = claimed.find((c) => c.status === 'verified');
 
   return (
     <div className="mx-auto max-w-content px-4 sm:px-6 py-8 animate-fade-in">
-      <h1 className="font-display text-4xl font-semibold tracking-tight">Candidate Portal</h1>
-      <p className="mt-2 text-lg text-muted-foreground">
-        Manage your candidate profile. All submissions are reviewed by our team before going live.
-      </p>
+      <h1 className="font-display text-4xl font-semibold tracking-tight">{t("Candidate Portal")}</h1>
+      <p className="mt-2 text-lg text-muted-foreground">{t("Manage your candidate profile. All submissions are reviewed by our team before going live.")}</p>
 
       {loadError && (
         <div className="mt-8">
-          <ErrorState title="Couldn’t load your profiles" message={loadError} onRetry={() => window.location.reload()} />
+          <ErrorState title={t("Couldn’t load your profiles")} message={loadError} onRetry={() => window.location.reload()} />
         </div>
       )}
       {!loadError && claimed.length === 0 && (
         <div className="mt-8">
           <EmptyState
-            title="No claimed profiles yet"
-            description="Find your candidate profile and click 'Is this your profile?' to claim it."
+            title={t("No claimed profiles yet")}
+            description={t("Find your candidate profile and click 'Is this your profile?' to claim it.")}
             icon={<ShieldCheck className="h-10 w-10" />}
-            action={<Link to="/candidates"><Button>Browse Candidates</Button></Link>}
+            action={<Link to="/candidates"><Button>{t("Browse Candidates")}</Button></Link>}
           />
         </div>
       )}
@@ -156,7 +155,7 @@ export function CandidatePortalPage() {
                   </div>
                   {c.status === 'verified' && (
                     <Link to={`/candidates/${c.candidate_id}`}>
-                      <Button variant="outline" size="sm" className="rounded-xl">View Profile</Button>
+                      <Button variant="outline" size="sm" className="rounded-xl">{t("View Profile")}</Button>
                     </Link>
                   )}
                 </div>
@@ -186,7 +185,7 @@ export function CandidatePortalPage() {
                     }`}
                   >
                     <tab.icon className="h-4 w-4" />
-                    {tab.label}
+                    {t(tab.label)}
                   </button>
                 ))}
               </div>
@@ -200,17 +199,12 @@ export function CandidatePortalPage() {
 
                 {activeTab === 'overview' && (
                   <Card className="p-6 rounded-2xl">
-                    <h3 className="font-bold text-lg">Portal Overview</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Use the tabs above to submit updates to your profile. All changes go through admin review before appearing publicly.
-                      Your payments never affect your ranking, placement, or editorial content.
-                    </p>
+                    <h3 className="font-bold text-lg">{t("Portal Overview")}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{t("Use the tabs above to submit updates to your profile. All changes go through admin review before appearing publicly. Your payments never affect your ranking, placement, or editorial content.")}</p>
 
                     <div className="mt-6 border-t border-border pt-6">
-                      <Label className="text-sm font-semibold">Profile Photo</Label>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Upload a photo, then submit it for review. It goes live once approved.
-                      </p>
+                      <Label className="text-sm font-semibold">{t("Profile Photo")}</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">{t("Upload a photo, then submit it for review. It goes live once approved.")}</p>
                       <div className="mt-3">
                         <PhotoUpload
                           candidateId={verifiedClaim.candidate_id}
@@ -226,18 +220,14 @@ export function CandidatePortalPage() {
                     </div>
 
                     <div className="mt-6 border-t border-border pt-6">
-                      <Label className="text-sm font-semibold">Post an Update</Label>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Share a campaign update with voters who follow you — appears in their Feed immediately (no review needed, unlike bio/photo edits).
-                      </p>
+                      <Label className="text-sm font-semibold">{t("Post an Update")}</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">{t("Share a campaign update with voters who follow you — appears in their Feed immediately (no review needed, unlike bio/photo edits).")}</p>
                       <PostUpdateForm candidateId={verifiedClaim.candidate_id} />
                     </div>
 
                     <div className="mt-6 border-t border-border pt-6">
-                      <Label className="text-sm font-semibold">Candidate Management</Label>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Upgrade to launch campaign tools, invite a team, and unlock analytics for your profile.
-                      </p>
+                      <Label className="text-sm font-semibold">{t("Candidate Management")}</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">{t("Upgrade to launch campaign tools, invite a team, and unlock analytics for your profile.")}</p>
                       <Button
                         variant="outline"
                         size="sm"
@@ -251,23 +241,22 @@ export function CandidatePortalPage() {
                           }
                         }}
                       >
-                        <Sparkles className="h-3.5 w-3.5" /> Upgrade to Management — $299
-                      </Button>
+                        <Sparkles className="h-3.5 w-3.5" /> {t("Upgrade to Management — $299")}</Button>
                     </div>
                   </Card>
                 )}
 
                 {activeTab === 'bio' && (
                   <Card className="p-6 rounded-2xl">
-                    <h3 className="font-bold text-lg">Update Your Biography</h3>
+                    <h3 className="font-bold text-lg">{t("Update Your Biography")}</h3>
                     <div className="mt-4 space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="bio-value">Biography</Label>
+                        <Label htmlFor="bio-value">{t("Biography")}</Label>
                         <Textarea
                           id="bio-value"
                           value={bioForm.value}
                           onChange={(e) => setBioForm({ ...bioForm, value: e.target.value })}
-                          placeholder="Tell voters about yourself…"
+                          placeholder={t("Tell voters about yourself…")}
                           rows={6}
                         />
                       </div>
@@ -283,7 +272,7 @@ export function CandidatePortalPage() {
                         disabled={submitting || !bioForm.value.trim()}
                         className="rounded-xl"
                       >
-                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> Submit for Review</>}
+                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> {t("Submit for Review")}</>}
                       </Button>
                     </div>
                   </Card>
@@ -291,16 +280,16 @@ export function CandidatePortalPage() {
 
                 {activeTab === 'questionnaire' && (
                   <Card className="p-6 rounded-2xl">
-                    <h3 className="font-bold text-lg">Candidate Questionnaire</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">Answer questions voters may have. Responses appear after admin approval.</p>
+                    <h3 className="font-bold text-lg">{t("Candidate Questionnaire")}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{t("Answer questions voters may have. Responses appear after admin approval.")}</p>
                     <div className="mt-4 space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="q-question">Question</Label>
-                        <Input id="q-question" value={qForm.question} onChange={(e) => setQForm({ ...qForm, question: e.target.value })} placeholder="e.g., What is your position on education funding?" />
+                        <Label htmlFor="q-question">{t("Question")}</Label>
+                        <Input id="q-question" value={qForm.question} onChange={(e) => setQForm({ ...qForm, question: e.target.value })} placeholder={t("e.g., What is your position on education funding?")} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="q-answer">Your Answer</Label>
-                        <Textarea id="q-answer" value={qForm.answer} onChange={(e) => setQForm({ ...qForm, answer: e.target.value })} placeholder="Your response…" rows={4} />
+                        <Label htmlFor="q-answer">{t("Your Answer")}</Label>
+                        <Textarea id="q-answer" value={qForm.answer} onChange={(e) => setQForm({ ...qForm, answer: e.target.value })} placeholder={t("Your response…")} rows={4} />
                       </div>
                       <Button
                         onClick={async () => {
@@ -314,7 +303,7 @@ export function CandidatePortalPage() {
                         disabled={submitting || !qForm.question.trim()}
                         className="rounded-xl"
                       >
-                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> Submit for Review</>}
+                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> {t("Submit for Review")}</>}
                       </Button>
                     </div>
                   </Card>
@@ -322,34 +311,34 @@ export function CandidatePortalPage() {
 
                 {activeTab === 'events' && (
                   <Card className="p-6 rounded-2xl">
-                    <h3 className="font-bold text-lg">Add a Campaign Event</h3>
+                    <h3 className="font-bold text-lg">{t("Add a Campaign Event")}</h3>
                     <div className="mt-4 space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="ev-title">Event Title</Label>
-                        <Input id="ev-title" value={evForm.title} onChange={(e) => setEvForm({ ...evForm, title: e.target.value })} placeholder="Town Hall Meeting" />
+                        <Label htmlFor="ev-title">{t("Event Title")}</Label>
+                        <Input id="ev-title" value={evForm.title} onChange={(e) => setEvForm({ ...evForm, title: e.target.value })} placeholder={t("Town Hall Meeting")} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="ev-desc">Description</Label>
-                        <Input id="ev-desc" value={evForm.description} onChange={(e) => setEvForm({ ...evForm, description: e.target.value })} placeholder="Meet and greet with voters" />
+                        <Label htmlFor="ev-desc">{t("Description")}</Label>
+                        <Input id="ev-desc" value={t(evForm.description)} onChange={(e) => setEvForm({ ...evForm, description: e.target.value })} placeholder={t("Meet and greet with voters")} />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label htmlFor="ev-date">Date</Label>
+                          <Label htmlFor="ev-date">{t("Date")}</Label>
                           <Input id="ev-date" type="date" value={evForm.event_date} onChange={(e) => setEvForm({ ...evForm, event_date: e.target.value })} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="ev-time">Time</Label>
+                          <Label htmlFor="ev-time">{t("Time")}</Label>
                           <Input id="ev-time" type="time" value={evForm.start_time} onChange={(e) => setEvForm({ ...evForm, start_time: e.target.value })} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label htmlFor="ev-loc">Location</Label>
-                          <Input id="ev-loc" value={evForm.location_name} onChange={(e) => setEvForm({ ...evForm, location_name: e.target.value })} placeholder="Community Center" />
+                          <Label htmlFor="ev-loc">{t("Location")}</Label>
+                          <Input id="ev-loc" value={evForm.location_name} onChange={(e) => setEvForm({ ...evForm, location_name: e.target.value })} placeholder={t("Community Center")} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="ev-city">City</Label>
-                          <Input id="ev-city" value={evForm.city} onChange={(e) => setEvForm({ ...evForm, city: e.target.value })} placeholder="City" />
+                          <Label htmlFor="ev-city">{t("City")}</Label>
+                          <Input id="ev-city" value={evForm.city} onChange={(e) => setEvForm({ ...evForm, city: e.target.value })} placeholder={t("City")} />
                         </div>
                       </div>
                       <Button
@@ -364,7 +353,7 @@ export function CandidatePortalPage() {
                         disabled={submitting || !evForm.title.trim() || !evForm.event_date}
                         className="rounded-xl"
                       >
-                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> Submit Event</>}
+                        {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> {t("Submit Event")}</>}
                       </Button>
                     </div>
                   </Card>
@@ -372,17 +361,11 @@ export function CandidatePortalPage() {
                 {activeTab === 'quiz' && (
                   <Card className="p-6 rounded-2xl">
                     <h3 className="font-bold text-lg flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-accent" />
-                      Issue Positions Quiz
-                    </h3>
-                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                      Answer the same questions voters answer during onboarding. This lets voters see where you stand on key issues and find alignment with your campaign. All answers go through admin review before going public.
-                    </p>
+                      <Sparkles className="h-5 w-5 text-accent" />{t("Issue Positions Quiz")}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{t("Answer the same questions voters answer during onboarding. This lets voters see where you stand on key issues and find alignment with your campaign. All answers go through admin review before going public.")}</p>
                     <Link to="/candidate-quiz">
                       <Button className="mt-4 rounded-xl gap-2 font-bold">
-                        <Sparkles className="h-4 w-4" />
-                        Take the Quiz
-                      </Button>
+                        <Sparkles className="h-4 w-4" />{t("Take the Quiz")}</Button>
                     </Link>
                   </Card>
                 )}
@@ -462,7 +445,7 @@ function TeamTab({ candidateId }: { candidateId: string }) {
     if (!window.confirm(`Revoke access for ${memberEmail}? They'll immediately lose access to this campaign.`)) return;
     try {
       await revokeTeamMember(id);
-      toast.success('Access revoked.');
+      toast.success(t("Access revoked."));
       setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, status: 'revoked' } : m)));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to revoke access.');
@@ -472,23 +455,21 @@ function TeamTab({ candidateId }: { candidateId: string }) {
   async function handleRoleChange(id: string, role: TeamRole) {
     try {
       await updateTeamMemberRole(id, role);
-      toast.success('Role updated.');
+      toast.success(t("Role updated."));
       setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role } : m)));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update role.');
     }
   }
 
-  if (loading) return <LoadingState message="Loading team…" />;
+  if (loading) return <LoadingState message={t("Loading team…")} />;
 
   if (!hasManagement) {
     return (
       <Card className="p-6 rounded-2xl text-center">
         <Users className="h-8 w-8 mx-auto text-muted-foreground" />
-        <h3 className="mt-3 font-bold text-lg">Team invites are a Candidate Management feature</h3>
-        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-          Upgrade to Candidate Management to invite a campaign manager, staff, and volunteers to help run your profile.
-        </p>
+        <h3 className="mt-3 font-bold text-lg">{t("Team invites are a Candidate Management feature")}</h3>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">{t("Upgrade to Candidate Management to invite a campaign manager, staff, and volunteers to help run your profile.")}</p>
         <Button
           className="mt-4 rounded-xl gap-1.5"
           onClick={async () => {
@@ -500,8 +481,7 @@ function TeamTab({ candidateId }: { candidateId: string }) {
             }
           }}
         >
-          <Sparkles className="h-4 w-4" /> Upgrade to Management — $299
-        </Button>
+          <Sparkles className="h-4 w-4" /> {t("Upgrade to Management — $299")}</Button>
       </Card>
     );
   }
@@ -509,11 +489,11 @@ function TeamTab({ candidateId }: { candidateId: string }) {
   return (
     <div className="space-y-4">
       <Card className="p-6 rounded-2xl">
-        <h3 className="font-bold text-lg flex items-center gap-2"><Users className="h-5 w-5" /> Invite a Team Member</h3>
+        <h3 className="font-bold text-lg flex items-center gap-2"><Users className="h-5 w-5" /> {t("Invite a Team Member")}</h3>
         <div className="mt-4 flex flex-col sm:flex-row gap-2">
           <Input
             type="email"
-            placeholder="teammate@email.com"
+            placeholder={t("teammate@email.com")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="flex-1"
@@ -523,18 +503,18 @@ function TeamTab({ candidateId }: { candidateId: string }) {
             onChange={(e) => setRole(e.target.value as TeamRole)}
             className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
           >
-            {TEAM_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            {TEAM_ROLES.map((r) => <option key={r.value} value={r.value}>{t(r.label)}</option>)}
           </select>
           <Button onClick={handleInvite} disabled={!email.trim() || inviting} className="gap-1.5">
-            {inviting ? 'Inviting…' : <><Plus className="h-4 w-4" /> Invite</>}
+            {inviting ? t("Inviting…") : <><Plus className="h-4 w-4" /> {t("Invite")}</>}
           </Button>
         </div>
       </Card>
 
       <Card className="p-6 rounded-2xl">
-        <h3 className="font-bold text-lg mb-3">Team Members</h3>
+        <h3 className="font-bold text-lg mb-3">{t("Team Members")}</h3>
         {members.filter((m) => m.status !== 'revoked').length === 0 ? (
-          <p className="text-sm text-muted-foreground">No team members yet — invite someone above.</p>
+          <p className="text-sm text-muted-foreground">{t("No team members yet — invite someone above.")}</p>
         ) : (
           <div className="space-y-2">
             {members.filter((m) => m.status !== 'revoked').map((m) => (
@@ -547,7 +527,7 @@ function TeamTab({ candidateId }: { candidateId: string }) {
                       onChange={(e) => handleRoleChange(m.id, e.target.value as TeamRole)}
                       className="text-xs rounded-md border border-input bg-background px-1.5 py-0.5"
                     >
-                      {TEAM_ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      {TEAM_ROLES.map((r) => <option key={r.value} value={r.value}>{t(r.label)}</option>)}
                     </select>
                     <span className="text-xs text-muted-foreground">· {m.status}</span>
                   </div>
@@ -614,7 +594,7 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
     try {
       const goals = goalsText.split('\n').map((g) => g.trim()).filter(Boolean);
       await upsertCampaign(candidateId, { headline, message, goals, is_active: isActive });
-      toast.success('Campaign page saved.');
+      toast.success(t("Campaign page saved."));
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save campaign page.');
@@ -655,7 +635,7 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
       } else {
         await addCampaignEvent(candidateId, payload);
       }
-      toast.success('Event saved.');
+      toast.success(t("Event saved."));
       setEditingEventId(null);
       setEventDraft(EMPTY_EVENT_DRAFT);
       setEvents(await getAllCampaignEventsForManagement(candidateId));
@@ -671,23 +651,20 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
     try {
       await deleteCampaignEvent(id);
       setEvents((prev) => prev.filter((e) => e.id !== id));
-      toast.success('Event deleted.');
+      toast.success(t("Event deleted."));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete event.');
     }
   }
 
-  if (loading) return <LoadingState message="Loading campaign…" />;
+  if (loading) return <LoadingState message={t("Loading campaign…")} />;
 
   if (!hasManagement) {
     return (
       <Card className="p-6 rounded-2xl text-center">
         <Megaphone className="h-8 w-8 mx-auto text-muted-foreground" />
-        <h3 className="mt-3 font-bold text-lg">Campaign pages are a Candidate Management feature</h3>
-        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-          Upgrade to launch a public campaign page with your message, goals, and events for voters
-          to follow while your race is active.
-        </p>
+        <h3 className="mt-3 font-bold text-lg">{t("Campaign pages are a Candidate Management feature")}</h3>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">{t("Upgrade to launch a public campaign page with your message, goals, and events for voters to follow while your race is active.")}</p>
         <Button
           className="mt-4 rounded-xl gap-1.5"
           onClick={async () => {
@@ -699,8 +676,7 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
             }
           }}
         >
-          <Sparkles className="h-4 w-4" /> Upgrade to Management — $299
-        </Button>
+          <Sparkles className="h-4 w-4" /> {t("Upgrade to Management — $299")}</Button>
       </Card>
     );
   }
@@ -709,80 +685,75 @@ function CampaignManagementTab({ candidateId }: { candidateId: string }) {
     <div className="space-y-4">
       <Card className="p-6 rounded-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-lg flex items-center gap-2"><Megaphone className="h-5 w-5" /> Campaign Page</h3>
+          <h3 className="font-bold text-lg flex items-center gap-2"><Megaphone className="h-5 w-5" /> {t("Campaign Page")}</h3>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            Visible to voters
-          </label>
+            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />{t("Visible to voters")}</label>
         </div>
         <div className="space-y-3">
           <div>
-            <Label className="text-xs">Headline</Label>
-            <Input value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Fighting for [district]'s future" />
+            <Label className="text-xs">{t("Headline")}</Label>
+            <Input value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder={t("Fighting for [district]'s future")} />
           </div>
           <div>
-            <Label className="text-xs">Campaign Message</Label>
+            <Label className="text-xs">{t("Campaign Message")}</Label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
-              placeholder="Why you're running…"
+              placeholder={t("Why you're running…")}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <Label className="text-xs">Goals (one per line)</Label>
+            <Label className="text-xs">{t("Goals (one per line)")}</Label>
             <textarea
               value={goalsText}
               onChange={(e) => setGoalsText(e.target.value)}
               rows={3}
-              placeholder={'Lower property taxes\nInvest in local schools'}
+              placeholder={t("Lower property taxes\nInvest in local schools")}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
           <Button onClick={handleSaveCampaign} disabled={saving} className="gap-1.5">
-            {saving ? 'Saving…' : 'Save Campaign Page'}
+            {saving ? t("Saving…") : t("Save Campaign Page")}
           </Button>
         </div>
       </Card>
 
       <Card className="p-6 rounded-2xl">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-lg flex items-center gap-2"><Calendar className="h-5 w-5" /> Events</h3>
+          <h3 className="font-bold text-lg flex items-center gap-2"><Calendar className="h-5 w-5" /> {t("Events")}</h3>
           {editingEventId === null && (
             <Button size="sm" variant="outline" onClick={() => startEditEvent()} className="gap-1.5">
-              <Plus className="h-3.5 w-3.5" /> Add Event
-            </Button>
+              <Plus className="h-3.5 w-3.5" /> {t("Add Event")}</Button>
           )}
         </div>
 
         {editingEventId !== null && (
           <div className="mb-4 space-y-2 rounded-lg border border-border p-4">
-            <Input placeholder="Event title" value={eventDraft.title} onChange={(e) => setEventDraft((d) => ({ ...d, title: e.target.value }))} />
+            <Input placeholder={t("Event title")} value={eventDraft.title} onChange={(e) => setEventDraft((d) => ({ ...d, title: e.target.value }))} />
             <Input type="datetime-local" value={eventDraft.event_date} onChange={(e) => setEventDraft((d) => ({ ...d, event_date: e.target.value }))} />
-            <Input placeholder="Location" value={eventDraft.location} onChange={(e) => setEventDraft((d) => ({ ...d, location: e.target.value }))} />
-            <Input placeholder="Description (optional)" value={eventDraft.description} onChange={(e) => setEventDraft((d) => ({ ...d, description: e.target.value }))} />
+            <Input placeholder={t("Location")} value={eventDraft.location} onChange={(e) => setEventDraft((d) => ({ ...d, location: e.target.value }))} />
+            <Input placeholder={t("Description (optional)")} value={t(eventDraft.description)} onChange={(e) => setEventDraft((d) => ({ ...d, description: e.target.value }))} />
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input type="checkbox" checked={eventDraft.is_public} onChange={(e) => setEventDraft((d) => ({ ...d, is_public: e.target.checked }))} />
-              Visible to voters
-            </label>
+              <input type="checkbox" checked={eventDraft.is_public} onChange={(e) => setEventDraft((d) => ({ ...d, is_public: e.target.checked }))} />{t("Visible to voters")}</label>
             <div className="flex gap-2">
               <Button size="sm" disabled={savingEvent || !eventDraft.title.trim() || !eventDraft.event_date} onClick={handleSaveEvent}>
-                {savingEvent ? 'Saving…' : 'Save Event'}
+                {savingEvent ? t("Saving…") : t("Save Event")}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setEditingEventId(null)}>Cancel</Button>
+              <Button size="sm" variant="outline" onClick={() => setEditingEventId(null)}>{t("Cancel")}</Button>
             </div>
           </div>
         )}
 
         {events.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No events yet.</p>
+          <p className="text-sm text-muted-foreground">{t("No events yet.")}</p>
         ) : (
           <div className="space-y-2">
             {events.map((e) => (
               <div key={e.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
                 <div>
-                  <p className="font-medium">{e.title}{!e.is_public && ' (Hidden)'}</p>
+                  <p className="font-medium">{e.title}{!e.is_public && t(" (Hidden)")}</p>
                   <p className="text-xs text-muted-foreground">{parseDateOnly(e.event_date).toLocaleDateString()}</p>
                 </div>
                 <div className="flex gap-1">
@@ -854,37 +825,35 @@ function ProfileDetailsEditor({ candidateId }: { candidateId: string }) {
       next_election_date: blankToNull(form.next_election_date),
     });
     setSaving(false);
-    if (result.success) toast.success('Profile details saved.');
+    if (result.success) toast.success(t("Profile details saved."));
     else toast.error(result.error ?? 'Failed to save profile details.');
   }
 
-  if (loading) return <LoadingState message="Loading profile details…" />;
+  if (loading) return <LoadingState message={t("Loading profile details…")} />;
 
   return (
     <Card className="p-6 rounded-2xl">
-      <h3 className="font-bold text-lg mb-1">Profile Details</h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        Shown on your public profile right away (these are factual details, not reviewed like endorsements).
-      </p>
+      <h3 className="font-bold text-lg mb-1">{t("Profile Details")}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{t("Shown on your public profile right away (these are factual details, not reviewed like endorsements).")}</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div><Label className="text-xs">Office sought</Label><Input value={form.office_sought} onChange={(e) => set('office_sought', e.target.value)} placeholder="e.g. City Council" /></div>
-        <div><Label className="text-xs">District</Label><Input value={form.district} onChange={(e) => set('district', e.target.value)} placeholder="e.g. District 3" /></div>
-        <div><Label className="text-xs">Current occupation</Label><Input value={form.current_occupation} onChange={(e) => set('current_occupation', e.target.value)} /></div>
-        <div><Label className="text-xs">Hometown / area</Label><Input value={form.hometown_area} onChange={(e) => set('hometown_area', e.target.value)} /></div>
-        <div><Label className="text-xs">Election date</Label><Input type="date" value={form.election_date} onChange={(e) => set('election_date', e.target.value)} /></div>
+        <div><Label className="text-xs">{t("Office sought")}</Label><Input value={form.office_sought} onChange={(e) => set('office_sought', e.target.value)} placeholder={t("e.g. City Council")} /></div>
+        <div><Label className="text-xs">{t("District")}</Label><Input value={form.district} onChange={(e) => set('district', e.target.value)} placeholder={t("e.g. District 3")} /></div>
+        <div><Label className="text-xs">{t("Current occupation")}</Label><Input value={form.current_occupation} onChange={(e) => set('current_occupation', e.target.value)} /></div>
+        <div><Label className="text-xs">{t("Hometown / area")}</Label><Input value={form.hometown_area} onChange={(e) => set('hometown_area', e.target.value)} /></div>
+        <div><Label className="text-xs">{t("Election date")}</Label><Input type="date" value={form.election_date} onChange={(e) => set('election_date', e.target.value)} /></div>
         <div>
-          <Label className="text-xs">Election type</Label>
+          <Label className="text-xs">{t("Election type")}</Label>
           <select value={form.election_type} onChange={(e) => set('election_type', e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-            <option value="">Not set</option>
-            <option value="primary">Primary</option>
-            <option value="runoff">Runoff</option>
-            <option value="general">General</option>
+            <option value="">{t("Not set")}</option>
+            <option value="primary">{t("Primary")}</option>
+            <option value="runoff">{t("Runoff")}</option>
+            <option value="general">{t("General")}</option>
           </select>
         </div>
-        <div><Label className="text-xs">Term length</Label><Input value={form.term_length} onChange={(e) => set('term_length', e.target.value)} placeholder="e.g. 4 years" /></div>
-        <div><Label className="text-xs">Next election date</Label><Input type="date" value={form.next_election_date} onChange={(e) => set('next_election_date', e.target.value)} /></div>
+        <div><Label className="text-xs">{t("Term length")}</Label><Input value={form.term_length} onChange={(e) => set('term_length', e.target.value)} placeholder={t("e.g. 4 years")} /></div>
+        <div><Label className="text-xs">{t("Next election date")}</Label><Input type="date" value={form.next_election_date} onChange={(e) => set('next_election_date', e.target.value)} /></div>
       </div>
-      <Button onClick={handleSave} disabled={saving} className="mt-4">{saving ? 'Saving…' : 'Save Details'}</Button>
+      <Button onClick={handleSave} disabled={saving} className="mt-4">{saving ? t("Saving…") : t("Save Details")}</Button>
     </Card>
   );
 }
@@ -935,7 +904,7 @@ function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
     const result = await submitGetToKnow(candidateId, gtkQuestion.trim(), gtkAnswer.trim(), getToKnow.length);
     setSavingGtk(false);
     if (result.success) {
-      toast.success('Submitted for review.');
+      toast.success(t("Submitted for review."));
       setGtkQuestion(''); setGtkAnswer('');
       load();
     } else {
@@ -956,7 +925,7 @@ function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
     });
     setSavingFund(false);
     if (result.success) {
-      toast.success('Submitted for review.');
+      toast.success(t("Submitted for review."));
       setFundPercentage(''); setFundLabel('');
       load();
     } else {
@@ -977,7 +946,7 @@ function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
     });
     setSavingEndorsement(false);
     if (result.success) {
-      toast.success('Submitted for review.');
+      toast.success(t("Submitted for review."));
       setEndorserName(''); setEndorserTitle('');
       load();
     } else {
@@ -985,28 +954,24 @@ function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
     }
   }
 
-  if (loading) return <LoadingState message="Loading profile extras…" />;
+  if (loading) return <LoadingState message={t("Loading profile extras…")} />;
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Get-to-know answers, funding sources and endorsements go through admin review before they
-        appear on your public profile. The lists below show what's already approved; a new submission
-        shows up here once an admin approves it.
-      </p>
+      <p className="text-sm text-muted-foreground">{t("Get-to-know answers, funding sources and endorsements go through admin review before they appear on your public profile. The lists below show what's already approved; a new submission shows up here once an admin approves it.")}</p>
       <ProfileDetailsEditor candidateId={candidateId} />
 
       <Card className="p-6 rounded-2xl">
-        <h3 className="font-bold text-lg mb-2">Get to Know You (Q&amp;A)</h3>
+        <h3 className="font-bold text-lg mb-2">{t("Get to Know You (Q&A)")}</h3>
         <div className="space-y-2 mb-4">
-          <Input placeholder="Question (e.g. What's your favorite local spot?)" value={gtkQuestion} onChange={(e) => setGtkQuestion(e.target.value)} />
-          <Input placeholder="Your answer" value={gtkAnswer} onChange={(e) => setGtkAnswer(e.target.value)} />
+          <Input placeholder={t("Question (e.g. What's your favorite local spot?)")} value={gtkQuestion} onChange={(e) => setGtkQuestion(e.target.value)} />
+          <Input placeholder={t("Your answer")} value={gtkAnswer} onChange={(e) => setGtkAnswer(e.target.value)} />
           <Button size="sm" onClick={handleSubmitGtk} disabled={savingGtk || !gtkQuestion.trim() || !gtkAnswer.trim()}>
-            {savingGtk ? 'Submitting…' : 'Submit'}
+            {savingGtk ? t("Submitting…") : t("Submit")}
           </Button>
         </div>
         {getToKnow.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing submitted yet.</p>
+          <p className="text-sm text-muted-foreground">{t("Nothing submitted yet.")}</p>
         ) : (
           <div className="space-y-2">
             {getToKnow.map((g) => (
@@ -1020,24 +985,24 @@ function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
       </Card>
 
       <Card className="p-6 rounded-2xl">
-        <h3 className="font-bold text-lg mb-2">Funding Sources</h3>
+        <h3 className="font-bold text-lg mb-2">{t("Funding Sources")}</h3>
         <div className="space-y-2 mb-4">
           <select value={fundType} onChange={(e) => setFundType(e.target.value as FundingSourceType)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-            {FUNDING_SOURCE_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {FUNDING_SOURCE_TYPES.map((opt) => <option key={opt.value} value={opt.value}>{t(opt.label)}</option>)}
           </select>
-          <Input type="number" placeholder="Percentage (e.g. 40)" value={fundPercentage} onChange={(e) => setFundPercentage(e.target.value)} />
-          <Input placeholder="Label (optional, e.g. 'Local small businesses')" value={fundLabel} onChange={(e) => setFundLabel(e.target.value)} />
+          <Input type="number" placeholder={t("Percentage (e.g. 40)")} value={fundPercentage} onChange={(e) => setFundPercentage(e.target.value)} />
+          <Input placeholder={t("Label (optional, e.g. 'Local small businesses')")} value={fundLabel} onChange={(e) => setFundLabel(e.target.value)} />
           <Button size="sm" onClick={handleSubmitFunding} disabled={savingFund || !fundPercentage}>
-            {savingFund ? 'Submitting…' : 'Submit'}
+            {savingFund ? t("Submitting…") : t("Submit")}
           </Button>
         </div>
         {funding.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing submitted yet.</p>
+          <p className="text-sm text-muted-foreground">{t("Nothing submitted yet.")}</p>
         ) : (
           <div className="space-y-2">
             {funding.map((f) => (
               <div key={f.id} className="flex justify-between text-sm border-b border-border/50 pb-2 last:border-0">
-                <span>{FUNDING_SOURCE_TYPES.find((t) => t.value === f.source_type)?.label} {f.source_label ? `— ${f.source_label}` : ''}</span>
+                <span>{t(FUNDING_SOURCE_TYPES.find((opt) => opt.value === f.source_type)?.label ?? '')} {f.source_label ? `— ${f.source_label}` : ''}</span>
                 <span className="font-medium">{f.percentage}% <span className="text-xs font-normal text-muted-foreground">({f.status})</span></span>
               </div>
             ))}
@@ -1046,25 +1011,25 @@ function ProfileExtrasTab({ candidateId }: { candidateId: string }) {
       </Card>
 
       <Card className="p-6 rounded-2xl">
-        <h3 className="font-bold text-lg mb-2">Endorsements</h3>
+        <h3 className="font-bold text-lg mb-2">{t("Endorsements")}</h3>
         <div className="space-y-2 mb-4">
-          <Input placeholder="Endorser name" value={endorserName} onChange={(e) => setEndorserName(e.target.value)} />
+          <Input placeholder={t("Endorser name")} value={endorserName} onChange={(e) => setEndorserName(e.target.value)} />
           <select value={endorserType} onChange={(e) => setEndorserType(e.target.value as EndorserType)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-            {ENDORSER_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {ENDORSER_TYPES.map((opt) => <option key={opt.value} value={opt.value}>{t(opt.label)}</option>)}
           </select>
-          <Input placeholder="Title (optional, e.g. 'Mayor of...')" value={endorserTitle} onChange={(e) => setEndorserTitle(e.target.value)} />
+          <Input placeholder={t("Title (optional, e.g. 'Mayor of...')")} value={endorserTitle} onChange={(e) => setEndorserTitle(e.target.value)} />
           <Button size="sm" onClick={handleSubmitEndorsement} disabled={savingEndorsement || !endorserName.trim()}>
-            {savingEndorsement ? 'Submitting…' : 'Submit'}
+            {savingEndorsement ? t("Submitting…") : t("Submit")}
           </Button>
         </div>
         {endorsements.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing submitted yet.</p>
+          <p className="text-sm text-muted-foreground">{t("Nothing submitted yet.")}</p>
         ) : (
           <div className="space-y-2">
             {endorsements.map((e) => (
               <div key={e.id} className="text-sm border-b border-border/50 pb-2 last:border-0">
                 <p className="font-medium">{e.endorser_name}{e.endorser_title ? `, ${e.endorser_title}` : ''}</p>
-                <p className="text-xs text-muted-foreground">{ENDORSER_TYPES.find((t) => t.value === e.endorser_type)?.label} · {e.status}</p>
+                <p className="text-xs text-muted-foreground">{t(ENDORSER_TYPES.find((opt) => opt.value === e.endorser_type)?.label ?? '')} · {e.status}</p>
               </div>
             ))}
           </div>
@@ -1098,7 +1063,7 @@ function PostUpdateForm({ candidateId }: { candidateId: string }) {
     setPosting(true);
     try {
       await createFeedPost(candidateId, body.trim(), 'update');
-      toast.success('Posted to your feed.');
+      toast.success(t("Posted to your feed."));
       setBody('');
       load();
     } catch (err) {
@@ -1124,16 +1089,16 @@ function PostUpdateForm({ candidateId }: { candidateId: string }) {
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={3}
-        placeholder="What's happening in your campaign?"
+        placeholder={t("What's happening in your campaign?")}
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
       />
       <Button size="sm" className="mt-2 gap-1.5" onClick={handlePost} disabled={posting || !body.trim()}>
-        {posting ? 'Posting…' : 'Post to Feed'}
+        {posting ? t("Posting…") : t("Post to Feed")}
       </Button>
 
       {!loading && posts.length > 0 && (
         <div className="mt-4 space-y-2 border-t border-border pt-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recent posts</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("Recent posts")}</p>
           {posts.slice(0, 5).map((p) => (
             <div key={p.id} className="flex items-start justify-between gap-3 text-sm border-b border-border/50 pb-2 last:border-0">
               <p className="text-muted-foreground">{p.body}</p>
@@ -1169,16 +1134,14 @@ function AnalyticsTab({ candidateId }: { candidateId: string }) {
     })();
   }, [candidateId]);
 
-  if (loading) return <LoadingState message="Loading analytics…" />;
+  if (loading) return <LoadingState message={t("Loading analytics…")} />;
 
   if (!hasManagement) {
     return (
       <Card className="p-8 rounded-2xl text-center">
         <BarChart3 className="mx-auto h-8 w-8 text-muted-foreground" />
-        <h3 className="mt-3 font-bold text-lg">Analytics is a Management feature</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Upgrade to Candidate Management to see profile views, followers, and engagement stats.
-        </p>
+        <h3 className="mt-3 font-bold text-lg">{t("Analytics is a Management feature")}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{t("Upgrade to Candidate Management to see profile views, followers, and engagement stats.")}</p>
         <Button
           size="sm"
           className="mt-4 rounded-xl gap-1.5"
@@ -1187,17 +1150,16 @@ function AnalyticsTab({ candidateId }: { candidateId: string }) {
               const { startCheckout } = await import('@/services/stripe');
               await startCheckout('candidate_management', candidateId);
             } catch {
-              toast.error('Could not start checkout.');
+              toast.error(t("Could not start checkout."));
             }
           }}
         >
-          <Sparkles className="h-3.5 w-3.5" /> Upgrade to Management — $299
-        </Button>
+          <Sparkles className="h-3.5 w-3.5" /> {t("Upgrade to Management — $299")}</Button>
       </Card>
     );
   }
 
-  if (!stats) return <p className="text-sm text-muted-foreground">Could not load analytics.</p>;
+  if (!stats) return <p className="text-sm text-muted-foreground">{t("Could not load analytics.")}</p>;
 
   const cards = [
     { label: 'Profile Views', value: stats.profileViews },
@@ -1210,8 +1172,8 @@ function AnalyticsTab({ candidateId }: { candidateId: string }) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
       {cards.map((c) => (
-        <Card key={c.label} className="p-5 rounded-2xl">
-          <p className="text-xs text-muted-foreground">{c.label}</p>
+        <Card key={t(c.label)} className="p-5 rounded-2xl">
+          <p className="text-xs text-muted-foreground">{t(c.label)}</p>
           <p className="mt-1 text-2xl font-bold">{c.value}</p>
         </Card>
       ))}

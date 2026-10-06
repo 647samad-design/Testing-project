@@ -3,6 +3,7 @@ import { Upload, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { t } from '@/i18n';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -37,7 +38,7 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
-      toast.error('Image must be smaller than 5MB.');
+      toast.error(t("Image must be smaller than 5MB."));
       return;
     }
 
@@ -58,7 +59,7 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
       const { data: publicUrlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
       setPreview(publicUrlData.publicUrl);
       onUploaded(publicUrlData.publicUrl);
-      toast.success('Photo uploaded.');
+      toast.success(t("Photo uploaded."));
     } catch (err) {
       toast.error(explainUploadError(err));
     } finally {
@@ -71,9 +72,9 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
     <div className="flex items-center gap-3">
       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-secondary flex items-center justify-center border border-border">
         {preview ? (
-          <img src={preview} alt="Candidate" className="h-full w-full object-cover" />
+          <img src={preview} alt={t("Candidate")} className="h-full w-full object-cover" />
         ) : (
-          <span className="text-xs text-muted-foreground">No photo</span>
+          <span className="text-xs text-muted-foreground">{t("No photo")}</span>
         )}
       </div>
       <div className="flex flex-col gap-1">
@@ -94,7 +95,7 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
           className="gap-1.5"
         >
           {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-          {uploading ? 'Uploading…' : preview ? 'Replace photo' : 'Upload photo'}
+          {uploading ? t("Uploading…") : preview ? t("Replace photo") : t("Upload photo")}
         </Button>
         {preview && !uploading && (
           <button
@@ -102,8 +103,7 @@ export function PhotoUpload({ currentUrl, candidateId, onUploaded }: PhotoUpload
             onClick={() => { setPreview(null); onUploaded(''); }}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
           >
-            <X className="h-3 w-3" /> Remove
-          </button>
+            <X className="h-3 w-3" /> {t("Remove")}</button>
         )}
       </div>
     </div>
