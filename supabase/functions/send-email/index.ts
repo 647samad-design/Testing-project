@@ -7,6 +7,7 @@
 // the client.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { asLang, unsubscribeFooter } from "../_shared/email-i18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,7 +90,8 @@ Deno.serve(async (req: Request) => {
     if (unsubscribeList === "digest" || unsubscribeList === "reminders") {
       const t = await unsubscribeToken(userId, unsubscribeList);
       const link = `${supabaseUrl}/functions/v1/email-unsubscribe?u=${encodeURIComponent(userId)}&l=${unsubscribeList}&t=${t}`;
-      finalHtml = `${html}<p style="color:#888;font-size:12px;margin-top:24px;">Don't want these emails? <a href="${link}">Unsubscribe</a>.</p>`;
+      const { data: prof } = await admin.from("profiles").select("language_preference").eq("id", userId).maybeSingle();
+      finalHtml = `${html}${unsubscribeFooter(asLang(prof?.language_preference), link)}`;
       extraHeaders = {
         "List-Unsubscribe": `<${link}>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",

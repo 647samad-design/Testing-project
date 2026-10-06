@@ -58,7 +58,7 @@ jobs:
         run: POSTGREST_BIN=/tmp/postgrest ./db-tests/run-api-tests.sh
 
   edge-functions:
-    name: Edge functions — type-check + unsubscribe tests
+    name: Edge functions — type-check, unsubscribe + email translation tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +75,7 @@ jobs:
         working-directory: supabase/functions
         run: |
           status=0
-          for f in $(ls -d */ | sed 's#/##' | grep -v '^tests$'); do
+          for f in $(ls -d */ | sed 's#/##' | grep -v '^tests$' | grep -v '^_shared$'); do
             if ! out=$(deno check "$f/index.ts" 2>&1); then
               status=1
               # Surface each error as an annotation (visible on the run page and via the API).
@@ -86,5 +86,7 @@ jobs:
           exit $status
       - name: Unsubscribe token parity
         run: deno test --allow-read --allow-env supabase/functions/tests/unsubscribe_token_test.ts
+      - name: Email translations
+        run: deno test --allow-env supabase/functions/tests/email_i18n_test.ts
       - name: Unsubscribe end-to-end
         run: deno run --allow-net --allow-env --allow-read supabase/functions/tests/email_unsubscribe_e2e.ts

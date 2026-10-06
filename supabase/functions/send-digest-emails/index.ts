@@ -8,9 +8,8 @@
 // today, so it's safe to call it every day and let it sort out who's due).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { formatDate, getUserLangs, manageFooter, tr } from "../_shared/email-i18n.ts";
 
-// Links in emails point at the configured site (SITE_URL secret), never a hard-coded domain.
-const SITE = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
 
 // supabase-js can't infer table types without generated types; treat the
 // client as untyped instead of fighting mismatched generics.
@@ -89,7 +88,9 @@ Deno.serve(async (req: Request) => {
     let skippedEmpty = 0;
     const errors: string[] = [];
 
+    const langs = await getUserLangs(admin, due.map((p: { user_id: string }) => p.user_id));
     for (const pref of due) {
+      const lang = langs.get(pref.user_id) ?? "en";
       const since = pref.last_digest_sent_at ?? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const sections: string[] = [];
 
@@ -105,7 +106,7 @@ Deno.serve(async (req: Request) => {
             .gt("updated_at", since)
             .limit(10);
           if (positions && positions.length > 0) {
-            sections.push(renderSection("Candidate updates", positions.map((p: any) =>
+            sections.push(renderSection(tr("candidateUpdates", lang), positions.map((p: any) =>
               `${p.candidates?.first_name ?? ""} ${p.candidates?.last_name ?? ""}: ${(p.summary ?? "").slice(0, 140)}`
             )));
           }
@@ -122,7 +123,7 @@ Deno.serve(async (req: Request) => {
             .limit(20);
           const relevant = (measures ?? []).filter((m: any) => !m.districts || m.districts.state === location.state);
           if (relevant.length > 0) {
-            sections.push(renderSection("Ballot measure updates", relevant.slice(0, 10).map((m: any) => m.title)));
+            sections.push(renderSection(tr("measureUpdates", lang), relevant.slice(0, 10).map((m: any) => m.title)));
           }
         }
       }
@@ -135,7 +136,7 @@ Deno.serve(async (req: Request) => {
           .order("created_at", { ascending: false })
           .limit(10);
         if (sources && sources.length > 0) {
-          sections.push(renderSection("Recently added articles", sources.map((s: any) => `${s.title}${s.publisher ? ` — ${s.publisher}` : ""}`)));
+          sections.push(renderSection(tr("recentArticles", lang), sources.map((s: any) => `${s.title}${s.publisher ? ` — ${s.publisher}` : ""}`)));
         }
       }
 
@@ -146,7 +147,7 @@ Deno.serve(async (req: Request) => {
           .gt("created_at", since)
           .limit(10);
         if (elections && elections.length > 0) {
-          sections.push(renderSection("New elections added", elections.map((e: any) => `${e.name} — ${e.election_date}`)));
+          sections.push(renderSection(tr("newElections", lang), elections.map((e: any) => `${e.name} — ${formatDate(lang, e.election_date)}`)));
         }
       }
 
@@ -156,11 +157,11 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!dryRun) {
-        const html = `<h1>Your Gov Search App Digest</h1>${sections.join("")}<p style="color:#888;font-size:12px;margin-top:24px;">Manage what you receive in your account settings (Notifications tab)${SITE ? `: ${SITE}/account` : "."}</p>`;
+        const html = `<h1>${tr("digestSubject", lang)}</h1>${sections.join("")}${manageFooter(lang)}`;
         const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
           method: "POST",
           headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: pref.user_id, subject: "Your Gov Search App Digest", html, unsubscribeList: "digest" }),
+          body: JSON.stringify({ userId: pref.user_id, subject: tr("digestSubject", lang), html, unsubscribeList: "digest" }),
         });
         if (!sendResponse.ok) {
           errors.push(`user ${pref.user_id}: ${await sendResponse.text()}`);

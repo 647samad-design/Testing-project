@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { getUserLangs, manageFooter, raceResult } from "../_shared/email-i18n.ts";
 
 // supabase-js can't infer table types without generated types; treat the
 // client as untyped instead of fighting mismatched generics.
@@ -318,15 +319,6 @@ async function createNotificationsForState(
   const winnerName = race.winner_name as string | null;
   const winnerParty = race.winner_party as string | null;
 
-  const title =
-    type === "race_called"
-      ? `${winnerName} wins ${officeName} in ${statePostal}`
-      : `${officeName} results certified in ${statePostal}`;
-
-  const body =
-    type === "race_called"
-      ? `AP has called the ${officeName} race${winnerParty ? ` for ${winnerName} (${winnerParty})` : ` for ${winnerName}`}.`
-      : `The ${officeName} race in ${statePostal} has been officially certified.`;
 
   // Create a feed post visible to all users
   const feedBody =
@@ -361,11 +353,14 @@ async function createNotificationsForState(
 
   if (usersInState.length === 0) return;
 
+  // Each follower gets the result (bell + email) in their own language.
+  const langs = await getUserLangs(supabase, usersInState.map((u: { user_id: string }) => u.user_id));
+  const textFor = (userId: string) => raceResult(langs.get(userId) ?? "en", type, officeName, statePostal, winnerName, winnerParty);
   const notifications = usersInState.map((u: { user_id: string }) => ({
     user_id: u.user_id,
     type,
-    title,
-    body,
+    title: textFor(u.user_id).title,
+    body: textFor(u.user_id).body,
     is_read: false,
   }));
 
@@ -393,8 +388,8 @@ async function createNotificationsForState(
         headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: (pref as { user_id: string }).user_id,
-          subject: title,
-          html: `<p>${body}</p><p style="color:#888;font-size:12px;">Manage alert preferences in your account settings (Notifications tab)${Deno.env.get("SITE_URL") ? `: ${Deno.env.get("SITE_URL")!.replace(/\/+$/, "")}/account` : "."}</p>`,
+          subject: textFor((pref as { user_id: string }).user_id).title,
+          html: `<p>${textFor((pref as { user_id: string }).user_id).body}</p>${manageFooter(langs.get((pref as { user_id: string }).user_id) ?? "en")}`,
         }),
       });
     } catch {

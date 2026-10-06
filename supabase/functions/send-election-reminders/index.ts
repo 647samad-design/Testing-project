@@ -9,6 +9,7 @@
 // user+election doesn't already exist.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { electionReminder, getUserLangs, manageFooter } from "../_shared/email-i18n.ts";
 
 // supabase-js can't infer table types without generated types; treat the
 // client as untyped instead of fighting mismatched generics.
@@ -101,13 +102,14 @@ Deno.serve(async (req: Request) => {
       if (toRemind.length === 0) continue;
 
       const daysUntil = Math.ceil((new Date(election.election_date).getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
-      const title = `${election.name} is in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`;
-      const bodyText = `A candidate or race you follow is on the ballot for ${election.name} on ${election.election_date}. Check your ballot on Gov Search App to get ready.`;
+      // Each recipient gets the reminder (bell + email) in their own language.
+      const langs = await getUserLangs(admin, toRemind);
+      const textFor = (userId: string) => electionReminder(langs.get(userId) ?? "en", election.name, election.election_date, daysUntil);
 
       if (!dryRun) {
         for (let i = 0; i < toRemind.length; i += 500) {
           const { error: insErr } = await admin.from("notifications").insert(
-            toRemind.slice(i, i + 500).map((userId) => ({ user_id: userId, type: "election_reminder", title, body: bodyText, election_id: election.id, is_read: false }))
+            toRemind.slice(i, i + 500).map((userId) => { const m = textFor(userId); return { user_id: userId, type: "election_reminder", title: m.title, body: m.body, election_id: election.id, is_read: false }; })
           );
           if (insErr) errors.push(`notifications batch ${i}: ${insErr.message}`);
         }
@@ -117,7 +119,7 @@ Deno.serve(async (req: Request) => {
             await fetch(`${supabaseUrl}/functions/v1/send-email`, {
               method: "POST",
               headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ userId, subject: title, html: `<p>${escapeHtml(bodyText)}</p>`, unsubscribeList: "reminders" }),
+              body: JSON.stringify({ userId, subject: textFor(userId).title, html: `<p>${escapeHtml(textFor(userId).body)}</p>${manageFooter(langs.get(userId) ?? "en")}`, unsubscribeList: "reminders" }),
             });
           } catch (e) {
             errors.push(`user ${userId}: ${e instanceof Error ? e.message : "send failed"}`);

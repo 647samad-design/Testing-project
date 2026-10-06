@@ -9,9 +9,8 @@
 // (the same server-to-server pattern used by the other notification flows).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
+import { getUserLangs, siteLink, tr } from "../_shared/email-i18n.ts";
 
-// Links in emails point at the configured site (SITE_URL secret), never a hard-coded domain.
-const SITE = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,13 +82,16 @@ Deno.serve(async (req: Request) => {
     const raw = String(latest.body ?? "");
     const snippet = raw.length > 280 ? `${raw.slice(0, 280)}…` : raw;
 
+    // In the recipient's language, linking to their language's Messages page.
+    const lang = (await getUserLangs(admin, [userId])).get(userId) ?? "en";
+    const replyLink = siteLink(lang, "/messages");
     const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: "POST",
       headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         userId,
-        subject: "You have a new message on Gov Search App",
-        html: `<p>You have a new message on Gov Search App:</p><blockquote style="border-left:3px solid #ddd;margin:0;padding-left:12px;color:#444;">${escapeHtml(snippet)}</blockquote><p style="color:#888;font-size:12px;">${SITE ? `Reply at ${SITE}/messages` : "Reply from the Messages page."}</p>`,
+        subject: tr("newMessageSubject", lang),
+        html: `<p>${tr("newMessageIntro", lang)}</p><blockquote style="border-left:3px solid #ddd;margin:0;padding-left:12px;color:#444;">${escapeHtml(snippet)}</blockquote><p style="color:#888;font-size:12px;">${replyLink ? `${tr("replyAt", lang)} <a href="${replyLink}">${escapeHtml(replyLink)}</a>` : tr("replyFromPage", lang)}</p>`,
       }),
     });
 
