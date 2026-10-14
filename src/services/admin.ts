@@ -149,6 +149,8 @@ export async function bulkImportCandidates(rows: Array<{
   party?: string;
   bio?: string;
   photo_url?: string | null;
+  website_url?: string;
+  education?: string;
 }>): Promise<{ inserted: number; skippedDuplicates: string[] }> {
   // Paged: with more than 1,000 existing candidates a single select only saw
   // the first 1,000, so duplicates of everyone after that slipped through.
@@ -179,6 +181,8 @@ export async function bulkImportCandidates(rows: Array<{
     party: r.party || null,
     bio: r.bio || null,
     photo_url: r.photo_url || null,
+    ...(r.website_url ? { website_url: r.website_url } : {}),
+    ...(r.education ? { education: r.education } : {}),
     is_demo: false,
   }));
   const { data, error } = await supabase.from('candidates').insert(payload).select('id');
@@ -1107,4 +1111,98 @@ export async function reviewCandidateQuizAnswers(ids: string[], decision: 'appro
   await fetchInChunks(ids, (chunk) =>
     supabase.from('candidate_quiz_answers').update({ status: decision }).in('id', chunk).select('id'));
   await logAdminAction(`${decision === 'approved' ? 'approve' : 'reject'}_candidate_quiz`, 'candidate_quiz_answers', undefined, { count: ids.length });
+}
+
+// ─── CSV import: put imported candidates on the right race ───
+
+export interface ImportRaceRow {
+  first_name: string;
+  last_name: string;
+  office?: string;
+  district?: string;
+  state?: string;
+  incumbent?: boolean;
+}
+
+export interface ContestForMatch {
+  id: string;
+  office_name: string;
+  district: { name: string; state: string } | null;
+}
+
+const norm = (s: string | undefined | null) => (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+/** Finds the one race an import row names: same office; same district when
+ * one is given (otherwise a statewide race); same state when given. */
+export function matchContest(contests: ContestForMatch[], row: ImportRaceRow): { contest?: ContestForMatch; problem?: 'not_found' | 'ambiguous' } {
+  const office = norm(row.office);
+  const district = norm(row.district);
+  const state = norm(row.state);
+  const found = contests.filter((c) => {
+    if (norm(c.office_name) !== office) return false;
+    if (district) return !!c.district && norm(c.district.name) === district && (!state || norm(c.district.state) === state);
+    if (c.district) return false;
+    return true;
+  });
+  if (found.length === 1) return { contest: found[0] };
+  return { problem: found.length === 0 ? 'not_found' : 'ambiguous' };
+}
+
+/** After importing candidates, links each row that names a race (office,
+ * district, state) to that race in the upcoming election, so they appear on
+ * voters' ballots. Rows without an office are left alone. */
+export async function linkImportedCandidatesToRaces(rows: ImportRaceRow[]): Promise<{ linked: number; alreadyLinked: number; notFound: string[]; ambiguous: string[] }> {
+  const withRace = rows.filter((r) => r.office && r.office.trim());
+  const result = { linked: 0, alreadyLinked: 0, notFound: [] as string[], ambiguous: [] as string[] };
+  if (withRace.length === 0) return result;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: elections, error: eErr } = await supabase.from('elections').select('id, election_date').order('election_date', { ascending: true });
+  if (eErr) throw eErr;
+  const list = (elections ?? []) as { id: string; election_date: string }[];
+  const election = list.find((e) => e.election_date >= today) ?? list[list.length - 1];
+  if (!election) {
+    result.notFound.push(...withRace.map((r) => `${r.first_name} ${r.last_name} (no election set up)`));
+    return result;
+  }
+
+  const contests = await fetchAllRows<ContestForMatch>((from, to) => supabase
+    .from('ballot_contests')
+    .select('id, office_name, district:districts(name, state)')
+    .eq('election_id', election.id)
+    .order('id')
+    .range(from, to));
+  const people = await fetchAllRows<{ id: string; first_name: string; last_name: string; is_demo: boolean }>((from, to) => supabase
+    .from('candidates').select('id, first_name, last_name, is_demo').order('id').range(from, to));
+  const idByName = new Map<string, string>();
+  for (const p of people.filter((x) => !x.is_demo)) idByName.set(`${norm(p.first_name)}|${norm(p.last_name)}`, p.id);
+
+  const wanted: { candidate_id: string; contest_id: string; incumbent: boolean }[] = [];
+  for (const r of withRace) {
+    const label = `${r.first_name} ${r.last_name} — ${r.office}${r.district ? `, ${r.district}` : ''}`;
+    const candidateId = idByName.get(`${norm(r.first_name)}|${norm(r.last_name)}`);
+    const m = matchContest(contests, r);
+    if (!candidateId || m.problem === 'not_found') { result.notFound.push(label); continue; }
+    if (m.problem === 'ambiguous') { result.ambiguous.push(label); continue; }
+    wanted.push({ candidate_id: candidateId, contest_id: m.contest!.id, incumbent: !!r.incumbent });
+  }
+  if (wanted.length === 0) return result;
+
+  const existing = new Set<string>();
+  const ids = [...new Set(wanted.map((w) => w.candidate_id))];
+  for (let i = 0; i < ids.length; i += 150) {
+    const chunk = ids.slice(i, i + 150);
+    const links = await fetchAllRows<{ candidate_id: string; contest_id: string }>((from, to) => supabase
+      .from('candidate_offices').select('candidate_id, contest_id').in('candidate_id', chunk).order('id').range(from, to));
+    for (const l of links) existing.add(`${l.candidate_id}|${l.contest_id}`);
+  }
+  const fresh = wanted.filter((w) => !existing.has(`${w.candidate_id}|${w.contest_id}`));
+  result.alreadyLinked = wanted.length - fresh.length;
+  for (let i = 0; i < fresh.length; i += 500) {
+    const { error } = await supabase.from('candidate_offices').insert(fresh.slice(i, i + 500));
+    if (error) throw error;
+  }
+  result.linked = fresh.length;
+  if (fresh.length) await logAdminAction('import_link_candidates_to_races', 'candidate_offices', undefined, { count: fresh.length, electionId: election.id });
+  return result;
 }

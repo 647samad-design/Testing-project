@@ -13,7 +13,7 @@ import {
   listCandidatesForAdmin, updateCandidate, deleteCandidate,
   listProfilesForAdmin, setAdminRole, getAuditLog,
   listPendingSubmissions, approveSubmission, rejectSubmission,
-  bulkImportCandidates,
+  bulkImportCandidates, linkImportedCandidatesToRaces,
   compCandidateManagement, revokeCandidateManagement, listActiveManagementCandidateIds,
   getBillingOverview, type BillingOverview,
   getPendingClaims, approveClaim, rejectClaim, type PendingClaim,
@@ -867,7 +867,20 @@ function AdReviewSection() {
   );
 }
 
-type ImportRow = { first_name: string; last_name: string; party?: string; bio?: string; photo_url?: string };
+type ImportRow = { first_name: string; last_name: string; party?: string; bio?: string; photo_url?: string; website_url?: string; education?: string; office?: string; district?: string; state?: string; incumbent?: boolean };
+
+const IMPORT_TEMPLATE = 'first_name,last_name,party,office,district,state,incumbent,bio,photo_url,website_url,education\n'
+  + 'Jane,Sample,Independent,State Representative,State House District 17,Florida,no,Short bio here,,https://example.com,B.A. Example University\n'
+  + 'John,Example,Democratic,U.S. Senator,,,yes,,,,\n';
+
+function downloadImportTemplate() {
+  const url = URL.createObjectURL(new Blob([IMPORT_TEMPLATE], { type: 'text/csv' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'candidates-import-template.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 function ImportCandidatesTab() {
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -892,6 +905,12 @@ function ImportCandidatesTab() {
         party: (row.party || '').trim() || undefined,
         bio: (row.bio || '').trim() || undefined,
         photo_url: (row.photo_url || row.photoUrl || '').trim() || undefined,
+        website_url: (row.website_url || row.website || '').trim() || undefined,
+        education: (row.education || '').trim() || undefined,
+        office: (row.office || row.race || '').trim() || undefined,
+        district: (row.district || '').trim() || undefined,
+        state: (row.state || '').trim() || undefined,
+        incumbent: /^(y|yes|true|1)$/i.test(String(row.incumbent ?? '').trim()),
       });
     });
     return { valid, errors: errs };
@@ -937,6 +956,13 @@ function ImportCandidatesTab() {
       if (inserted > 0) {
         toast.success(`Imported ${inserted} candidate${inserted === 1 ? '' : 's'}.`);
       }
+      const races = await linkImportedCandidatesToRaces(rows);
+      if (races.linked > 0) toast.success(`Put ${races.linked} candidate${races.linked === 1 ? '' : 's'} on their race.`);
+      const raceProblems = [
+        ...races.notFound.map((r) => `Race not found (add the race first, or check the spelling): ${r}`),
+        ...races.ambiguous.map((r) => `More than one race matches — add the district/state: ${r}`),
+      ];
+      setErrors(raceProblems);
       if (skippedDuplicates.length > 0) {
         toast.info(`Skipped ${skippedDuplicates.length} already-existing candidate${skippedDuplicates.length === 1 ? '' : 's'}: ${skippedDuplicates.slice(0, 5).join(', ')}${skippedDuplicates.length > 5 ? '…' : ''}`);
       }
@@ -956,9 +982,13 @@ function ImportCandidatesTab() {
           <UploadIcon className="h-4 w-4" /> Import Candidates from CSV or JSON
         </h3>
         <p className="text-sm text-muted-foreground mb-3">
-          Columns: <code>first_name, last_name, party, bio, photo_url</code> (party/bio/photo_url optional).
-          Photo URLs must already be hosted somewhere public — this doesn't fetch or copy images for you.
+          Required: <code>first_name, last_name</code>. Optional: <code>party, bio, photo_url, website_url, education</code>.
+          To put candidates on the ballot, also fill <code>office</code> (exactly as the race is named, e.g. "State Representative"),
+          <code>district</code> (e.g. "State House District 17"; leave empty for statewide races), <code>state</code> and <code>incumbent</code> (yes/no).
+          Races must already exist in the upcoming election. Photo URLs must already be hosted somewhere public.
         </p>
+        <Button type="button" size="sm" variant="outline" className="mb-3" onClick={downloadImportTemplate}>Download CSV template</Button>
+        <br />
         <input
           type="file"
           accept=".csv,.json"
@@ -982,6 +1012,7 @@ function ImportCandidatesTab() {
               <div key={i} className="flex items-center gap-3 text-sm border-b border-border/50 pb-1.5">
                 <span className="font-medium">{r.first_name} {r.last_name}</span>
                 <span className="text-muted-foreground text-xs">{r.party || 'No party'}</span>
+                {r.office && <span className="text-xs text-primary">{r.office}{r.district ? ` · ${r.district}` : ''}{r.incumbent ? ' · incumbent' : ''}</span>}
               </div>
             ))}
             {rows.length > 25 && <p className="text-xs text-muted-foreground pt-1">…and {rows.length - 25} more</p>}
