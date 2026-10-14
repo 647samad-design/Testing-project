@@ -603,6 +603,39 @@ SELECT rlstest.check('[3000] admin can link a candidate to FEC and Open States',
 SELECT rlstest.check('[3000] malformed FEC ID is rejected',
   rlstest.fails($$UPDATE candidates SET fec_candidate_id='<script>' WHERE id='11111111-0000-0000-0000-000000000001'$$));
 
+-- ───────── [3100] push subscriptions + SMS reminders can't be abused ─────────
+SELECT rlstest.as_owner();
+INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES ('dddddddd-0000-0000-0000-000000000004', 'https://push.example/other', 'k', 'a');
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3100] user can save their own push subscription',
+  rlstest.rc($$INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (auth.uid(), 'https://push.example/mine', 'k', 'a')$$) = 1);
+SELECT rlstest.check('[3100] user sees only their own push subscriptions',
+  rlstest.cnt($$SELECT count(*) FROM push_subscriptions$$) = 1);
+SELECT rlstest.check('[3100] user cannot subscribe someone else / delete theirs',
+  rlstest.fails($$INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES ('dddddddd-0000-0000-0000-000000000004', 'https://push.example/x', 'k', 'a')$$)
+  AND rlstest.rc($$DELETE FROM push_subscriptions WHERE user_id='dddddddd-0000-0000-0000-000000000004'$$) = 0);
+SELECT rlstest.check('[3100] push endpoint must be https',
+  rlstest.fails($$INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (auth.uid(), 'http://evil.example', 'k', 'a')$$));
+-- A client can't skip phone verification.
+SELECT rlstest.rc($$INSERT INTO notification_preferences (user_id, sms_phone, sms_phone_verified, sms_election_reminders) VALUES (auth.uid(), '+19045550123', true, true) ON CONFLICT (user_id) DO UPDATE SET sms_phone = EXCLUDED.sms_phone, sms_phone_verified = true, sms_election_reminders = true$$);
+SELECT rlstest.check('[3100] client cannot set or self-verify a phone number',
+  rlstest.cnt($$SELECT count(*) FROM notification_preferences WHERE user_id = auth.uid() AND (sms_phone IS NOT NULL OR sms_phone_verified OR sms_election_reminders)$$) = 0);
+SELECT rlstest.as_owner();
+UPDATE notification_preferences SET sms_phone = '+19045550123', sms_phone_verified = true, sms_election_reminders = true, sms_consent_at = now() WHERE user_id = 'cccccccc-0000-0000-0000-000000000003';
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.rc($$UPDATE notification_preferences SET sms_phone = '+12025550199' WHERE user_id = auth.uid()$$);
+SELECT rlstest.check('[3100] client cannot swap a verified number for an unverified one',
+  rlstest.cnt($$SELECT count(*) FROM notification_preferences WHERE user_id = auth.uid() AND sms_phone = '+19045550123' AND sms_phone_verified$$) = 1);
+SELECT rlstest.check('[3100] client can turn text reminders off and on again',
+  rlstest.rc($$UPDATE notification_preferences SET sms_election_reminders = false WHERE user_id = auth.uid()$$) = 1
+  AND rlstest.rc($$UPDATE notification_preferences SET sms_election_reminders = true WHERE user_id = auth.uid()$$) = 1
+  AND rlstest.cnt($$SELECT count(*) FROM notification_preferences WHERE user_id = auth.uid() AND sms_election_reminders$$) = 1);
+SELECT rlstest.rc($$UPDATE notification_preferences SET sms_phone = NULL WHERE user_id = auth.uid()$$);
+SELECT rlstest.check('[3100] removing the number turns texts off',
+  rlstest.cnt($$SELECT count(*) FROM notification_preferences WHERE user_id = auth.uid() AND sms_phone IS NULL AND NOT sms_phone_verified AND NOT sms_election_reminders$$) = 1);
+SELECT rlstest.check('[3100] verification codes are never readable by clients',
+  rlstest.fails($$SELECT count(*) FROM sms_verifications$$));
+
 SELECT rlstest.as_owner();
 SELECT count(*) FILTER (WHERE ok) AS passed, count(*) FILTER (WHERE NOT ok) AS failed FROM rlstest.results;
 DO $$ BEGIN IF (SELECT count(*) FROM rlstest.results WHERE NOT ok) > 0 THEN RAISE EXCEPTION 'RLS TEST SUITE FAILED'; END IF; END $$;

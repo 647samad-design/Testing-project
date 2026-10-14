@@ -9,7 +9,8 @@
 // user+election doesn't already exist.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
-import { electionReminder, getUserLangs, manageFooter } from "../_shared/email-i18n.ts";
+import { electionReminder, getUserLangs, manageFooter, siteLink } from "../_shared/email-i18n.ts";
+import { sendPushToUsers, sendSms, smsConfigured, smsReminderPhones } from "../_shared/notify.ts";
 
 // supabase-js can't infer table types without generated types; treat the
 // client as untyped instead of fighting mismatched generics.
@@ -64,6 +65,8 @@ Deno.serve(async (req: Request) => {
     if (!elections || elections.length === 0) return json({ success: true, electionsChecked: 0, remindersSent: 0 });
 
     let remindersSent = 0;
+    let pushesSent = 0;
+    let textsSent = 0;
     const errors: string[] = [];
 
     for (const election of elections) {
@@ -114,6 +117,28 @@ Deno.serve(async (req: Request) => {
           if (insErr) errors.push(`notifications batch ${i}: ${insErr.message}`);
         }
 
+        // Browser/phone push for everyone who turned it on.
+        pushesSent += await sendPushToUsers(admin, toRemind, (userId) => {
+          const m = textFor(userId);
+          const lang = langs.get(userId) ?? "en";
+          return { title: m.title, body: m.body, url: lang === "en" ? "/ballot" : `/${lang}/ballot`, tag: `election-${election.id}` };
+        }).catch(() => 0);
+
+        // Text messages for users who verified a phone and opted in.
+        if (smsConfigured()) {
+          const phones = await smsReminderPhones(admin, toRemind);
+          for (const [userId, phone] of phones) {
+            const lang = langs.get(userId) ?? "en";
+            const link = siteLink(lang, "/ballot");
+            try {
+              await sendSms(phone, `${textFor(userId).body}${link ? ` ${link}` : ""} Reply STOP to opt out.`);
+              textsSent++;
+            } catch (e) {
+              errors.push(`sms ${userId}: ${e instanceof Error ? e.message : "send failed"}`);
+            }
+          }
+        }
+
         for (const userId of toRemind) {
           try {
             await fetch(`${supabaseUrl}/functions/v1/send-email`, {
@@ -129,7 +154,7 @@ Deno.serve(async (req: Request) => {
       remindersSent += toRemind.length;
     }
 
-    return json({ success: true, electionsChecked: elections.length, remindersSent, errors, dryRun });
+    return json({ success: true, electionsChecked: elections.length, remindersSent, pushesSent, textsSent, errors, dryRun });
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : "Unknown error" }, 500);
   }

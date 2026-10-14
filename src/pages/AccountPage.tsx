@@ -17,6 +17,7 @@ import { getMySubscription, getMyManagedCandidates, openBillingPortal, startChec
 import { invalidateSubscriptionCache } from '@/services/subscription-cache';
 import { getFollowedCandidates } from '@/services/social';
 import { getNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from '@/services/notification-preferences';
+import { DeviceNotificationsCard } from '@/components/shared/DeviceNotificationsCard';
 import { toast } from 'sonner';
 import type { Candidate, Issue, UserLocation, ElectionJourneyStep, Election } from '@/types';
 import { cn } from '@/lib/utils';
@@ -770,6 +771,7 @@ export function AccountPage() {
 
         <TabsContent value="notifications" className="mt-6">
           <NotificationSettingsTab />
+          <DeviceNotificationsCard />
         </TabsContent>
       </Tabs>
     </div>

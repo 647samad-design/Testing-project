@@ -10,6 +10,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { getUserLangs, siteLink, tr } from "../_shared/email-i18n.ts";
+import { sendPushToUsers } from "../_shared/notify.ts";
 
 
 const corsHeaders = {
@@ -85,6 +86,13 @@ Deno.serve(async (req: Request) => {
     // In the recipient's language, linking to their language's Messages page.
     const lang = (await getUserLangs(admin, [userId])).get(userId) ?? "en";
     const replyLink = siteLink(lang, "/messages");
+    // Phone/browser notification too, if they turned it on (never blocks the email).
+    await sendPushToUsers(admin, [userId], {
+      title: tr("newMessageSubject", lang),
+      body: snippet.slice(0, 140),
+      url: lang === "en" ? "/messages" : `/${lang}/messages`,
+      tag: `conversation-${conversationId}`,
+    }).catch(() => 0);
     const sendResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: "POST",
       headers: { Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json" },
