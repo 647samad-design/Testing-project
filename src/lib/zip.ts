@@ -1,3 +1,4 @@
+import { msg } from '@/i18n';
 /**
  * Pulls a 5-digit US ZIP out of what the voter typed: "32034", " 32034 ",
  * "32034-1234", or an address ending in a ZIP. Returns null when there isn't
@@ -11,4 +12,5 @@ export function extractZip(input: string): string | null {
   return zip;
 }
 
-export const INVALID_ZIP_MESSAGE = 'Please enter a valid 5-digit ZIP code.';
+/** English source; pass through t() where shown. */
+export const INVALID_ZIP_MESSAGE = msg('Please enter a valid 5-digit ZIP code.');

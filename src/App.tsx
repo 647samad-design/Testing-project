@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { I18nProvider } from '@/i18n';
-import { basenameFor, langFromPath } from '@/i18n/routing';
+import { basenameFor, langFromPath, stripLang } from '@/i18n/routing';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Header, Footer } from '@/components/shared/Layout';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
@@ -49,6 +49,8 @@ const StoriesPage = lazy(() => import('@/pages/StoriesPage').then((m) => ({ defa
 const StoryDetailPage = lazy(() => import('@/pages/StoriesPage').then((m) => ({ default: m.StoryDetailPage })));
 const ContestDetailPage = lazy(() => import('@/pages/ContestDetailPage').then((m) => ({ default: m.ContestDetailPage })));
 const RepresentativesPage = lazy(() => import('@/pages/RepresentativesPage').then((m) => ({ default: m.RepresentativesPage })));
+const EmbedPage = lazy(() => import('@/pages/EmbedPage').then((m) => ({ default: m.EmbedPage })));
+const PartnerDashboardPage = lazy(() => import('@/pages/PartnerDashboardPage').then((m) => ({ default: m.PartnerDashboardPage })));
 const MyPicksPage = lazy(() => import('@/pages/MyPicksPage').then((m) => ({ default: m.MyPicksPage })));
 const MeasureDetailPage = lazy(() => import('@/pages/ContestDetailPage').then((m) => ({ default: m.MeasureDetailPage })));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
@@ -63,7 +65,25 @@ function LazyPageFallback() {
   );
 }
 
+/** The partner widget (/embed) runs inside other sites' iframes: no site chrome. */
+const IS_EMBED = stripLang(window.location.pathname).startsWith('/embed');
+
 function App() {
+  if (IS_EMBED) {
+    return (
+      <ErrorBoundary>
+        <I18nProvider>
+          <BrowserRouter basename={basenameFor(langFromPath(window.location.pathname))}>
+            <Suspense fallback={null}>
+              <Routes>
+                <Route path="*" element={<EmbedPage />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </I18nProvider>
+      </ErrorBoundary>
+    );
+  }
   return (
     <ErrorBoundary>
     <AuthProvider>
@@ -80,6 +100,7 @@ function App() {
               <Route path="/ballot" element={<MyBallotPage />} />
               <Route path="/ballot/picks" element={<MyPicksPage />} />
               <Route path="/representatives" element={<RepresentativesPage />} />
+              <Route path="/partner" element={<PartnerDashboardPage />} />
               <Route path="/ballot/:contestId" element={<ContestDetailPage />} />
               <Route path="/ballot/measure/:measureId" element={<MeasureDetailPage />} />
               <Route path="/candidates" element={<CandidatesPage />} />

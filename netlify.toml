@@ -21,6 +21,18 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
+# The partner widget (/embed, /es/embed, ...) is made to be framed by other
+# websites. Netlify can't unset X-Frame-Options for one path, so a tiny edge
+# function does it for the widget only. If it ever doesn't run, the widget is
+# simply blocked from framing (fails safe); the rest of the site keeps DENY.
+[[edge_functions]]
+  path = "/embed"
+  function = "embed-frame-headers"
+
+[[edge_functions]]
+  path = "/*/embed"
+  function = "embed-frame-headers"
+
 # The service worker must always be re-checked, or users get stuck on an old version.
 [[headers]]
   for = "/sw.js"

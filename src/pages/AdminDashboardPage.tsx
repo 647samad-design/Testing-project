@@ -32,6 +32,7 @@ import {
 } from '@/services/admin';
 import { triggerNewsFetch, triggerElectionFetch, triggerDigestEmails, triggerElectionReminders } from '@/services/election-results';
 import Papa from 'papaparse';
+import { listPartners, createPartner, setPartnerActive, embedCode, SLUG_RE } from '@/services/partners';
 import { Upload as UploadIcon, RefreshCw } from 'lucide-react';
 import type { VerificationStatus, Election, Source, District, StoryCategory } from '@/types';
 import { getElections as getElectionsList } from '@/services/elections';
@@ -115,6 +116,7 @@ export function AdminDashboardPage() {
           <TabsTrigger value="billingoverview">Billing</TabsTrigger>
           <TabsTrigger value="manage">Manage Candidates</TabsTrigger>
           <TabsTrigger value="import">Import Candidates</TabsTrigger>
+          <TabsTrigger value="partners">Partners</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="claimslib">Claims Library</TabsTrigger>
@@ -235,6 +237,9 @@ export function AdminDashboardPage() {
           <ImportCandidatesTab />
         </TabsContent>
 
+        <TabsContent value="partners" className="mt-6">
+          <PartnersAdminTab />
+        </TabsContent>
         <TabsContent value="admins" className="mt-6">
           <ManageAdminsTab currentUserId={profile.id} />
         </TabsContent>
@@ -2898,5 +2903,69 @@ function ManageRecordsPanel() {
         )
       )}
     </Card>
+  );
+}
+
+
+// ─── Partners (embeddable widget) ───
+
+function PartnersAdminTab() {
+  const [list, setList] = useState<Awaited<ReturnType<typeof listPartners>> | null>(null);
+  const [form, setForm] = useState({ name: '', slug: '', website: '', brand_color: '#15776c', logo_url: '', ownerEmail: '' });
+  const [saving, setSaving] = useState(false);
+
+  const load = () => listPartners().then(setList).catch((e) => { toast.error(e instanceof Error ? e.message : 'Failed to load partners.'); setList([]); });
+  useEffect(() => { load(); }, []);
+
+  async function create() {
+    if (!form.name.trim() || !SLUG_RE.test(form.slug)) { toast.error('Enter a name and a slug (lowercase letters, numbers and dashes).'); return; }
+    setSaving(true);
+    try {
+      await createPartner(form);
+      toast.success(`Partner "${form.name}" created.`);
+      setForm({ name: '', slug: '', website: '', brand_color: '#15776c', logo_url: '', ownerEmail: '' });
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to create partner.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-5">
+        <h3 className="font-semibold">Add a partner</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Partners (newsrooms, nonprofits, schools) embed the "Find your ballot" widget on their own website and see usage in their Partner dashboard (/partner). The owner must already have an account.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value, slug: f.slug || e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50) }))} placeholder="Organization name" />
+          <Input value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase() }))} placeholder="slug (e.g. county-news)" />
+          <Input value={form.website} onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))} placeholder="Website (https://…)" />
+          <Input value={form.logo_url} onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))} placeholder="Logo URL (https://…, optional)" />
+          <Input value={form.ownerEmail} onChange={(e) => setForm((f) => ({ ...f, ownerEmail: e.target.value }))} placeholder="Owner account email (optional)" />
+          <div className="flex items-center gap-2">
+            <input type="color" value={form.brand_color} onChange={(e) => setForm((f) => ({ ...f, brand_color: e.target.value }))} className="h-10 w-12 rounded border border-input" aria-label="Brand color" />
+            <span className="text-sm text-muted-foreground">Brand color {form.brand_color}</span>
+          </div>
+        </div>
+        <Button className="mt-3" onClick={create} disabled={saving}>{saving ? 'Creating…' : 'Create partner'}</Button>
+      </Card>
+
+      {list === null ? <LoadingState message="Loading partners…" /> : list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No partners yet.</p>
+      ) : list.map((p) => (
+        <Card key={p.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 font-medium"><span className="h-3 w-3 rounded-full" style={{ background: p.brand_color }} />{p.name} <span className="text-xs text-muted-foreground">/{p.slug}</span></p>
+            <p className="text-xs text-muted-foreground">{p.owner_email ? `Owner: ${p.owner_email}` : 'No owner account'}{p.is_active ? '' : ' · inactive'}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href={`/embed?partner=${p.slug}`} target="_blank" rel="noopener noreferrer"><Button size="sm" variant="outline">Preview widget</Button></a>
+            <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(embedCode(window.location.origin, p.slug, 'en')).then(() => toast.success('Embed code copied.'))}>Copy embed code</Button>
+            <Button size="sm" variant="outline" onClick={() => setPartnerActive(p.id, !p.is_active).then(load).catch((e) => toast.error(e instanceof Error ? e.message : 'Failed.'))}>{p.is_active ? 'Deactivate' : 'Activate'}</Button>
+          </div>
+        </Card>
+      ))}
+    </div>
   );
 }

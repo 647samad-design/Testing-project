@@ -636,6 +636,44 @@ SELECT rlstest.check('[3100] removing the number turns texts off',
 SELECT rlstest.check('[3100] verification codes are never readable by clients',
   rlstest.fails($$SELECT count(*) FROM sms_verifications$$));
 
+-- ───────── [3200] partners: owner edits branding only, stats are private ─────────
+SELECT rlstest.as_owner();
+INSERT INTO partners (id, name, slug, owner_user_id) VALUES
+  ('9a000000-0000-0000-0000-000000000001', 'County News', 'county-news', 'cccccccc-0000-0000-0000-000000000003'),
+  ('9a000000-0000-0000-0000-000000000002', 'Other Org', 'other-org', 'dddddddd-0000-0000-0000-000000000004');
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[3200] anyone can read active partner branding (public view)',
+  rlstest.cnt($$SELECT count(*) FROM public_partners WHERE slug IN ('county-news','other-org')$$) = 2);
+SELECT rlstest.check('[3200] anon cannot read the partners table (owner ids)',
+  rlstest.fails($$SELECT count(*) FROM partners$$));
+SELECT rlstest.check('[3200] anon can count a widget view, and only known events',
+  NOT rlstest.fails($$SELECT track_partner_event('county-news', 'view')$$)
+  AND NOT rlstest.fails($$SELECT track_partner_event('county-news', 'drop table')$$));
+SELECT rlstest.check('[3200] anon cannot write stats directly',
+  rlstest.fails($$INSERT INTO partner_daily_stats (partner_id, day, views) VALUES ('9a000000-0000-0000-0000-000000000001', current_date, 999999)$$));
+SELECT rlstest.check('[3200] anon cannot read stats',
+  rlstest.fails($$SELECT * FROM partner_stats('9a000000-0000-0000-0000-000000000001', 30)$$));
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[3200] owner sees their stats (1 view counted, bad event ignored)',
+  rlstest.cnt($$SELECT views FROM partner_stats('9a000000-0000-0000-0000-000000000001', 30)$$) = 1);
+SELECT rlstest.check('[3200] owner cannot read another partner''s stats',
+  rlstest.fails($$SELECT * FROM partner_stats('9a000000-0000-0000-0000-000000000002', 30)$$));
+SELECT rlstest.check('[3200] owner sees only their own partner row',
+  rlstest.cnt($$SELECT count(*) FROM partners$$) = 1);
+SELECT rlstest.rc($$UPDATE partners SET brand_color='#112233', slug='hijacked', is_active=false, owner_user_id='dddddddd-0000-0000-0000-000000000004' WHERE id='9a000000-0000-0000-0000-000000000001'$$);
+SELECT rlstest.check('[3200] owner can change branding but not slug, owner or active flag',
+  rlstest.cnt($$SELECT count(*) FROM partners WHERE id='9a000000-0000-0000-0000-000000000001' AND brand_color='#112233' AND slug='county-news' AND is_active AND owner_user_id=auth.uid()$$) = 1);
+SELECT rlstest.check('[3200] owner cannot edit another partner or create partners',
+  rlstest.rc($$UPDATE partners SET name='x' WHERE id='9a000000-0000-0000-0000-000000000002'$$) = 0
+  AND rlstest.fails($$INSERT INTO partners (name, slug) VALUES ('Fake', 'fake-org')$$));
+SELECT rlstest.check('[3200] bad brand color / logo URL rejected',
+  rlstest.fails($$UPDATE partners SET brand_color='red;}' WHERE id='9a000000-0000-0000-0000-000000000001'$$)
+  AND rlstest.fails($$UPDATE partners SET logo_url='javascript:alert(1)' WHERE id='9a000000-0000-0000-0000-000000000001'$$));
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[3200] admin can create partners and read any stats',
+  rlstest.rc($$INSERT INTO partners (name, slug) VALUES ('School District', 'school-district')$$) = 1
+  AND NOT rlstest.fails($$SELECT * FROM partner_stats('9a000000-0000-0000-0000-000000000002', 30)$$));
+
 SELECT rlstest.as_owner();
 SELECT count(*) FILTER (WHERE ok) AS passed, count(*) FILTER (WHERE NOT ok) AS failed FROM rlstest.results;
 DO $$ BEGIN IF (SELECT count(*) FROM rlstest.results WHERE NOT ok) > 0 THEN RAISE EXCEPTION 'RLS TEST SUITE FAILED'; END IF; END $$;

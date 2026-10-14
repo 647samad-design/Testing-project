@@ -56,7 +56,7 @@ export function MyBallotPage() {
     if (!extractZip(savedAddress)) {
       sessionStorage.removeItem('ballotlens_address');
       setAddressInput(savedAddress);
-      setAddressError(INVALID_ZIP_MESSAGE);
+      setAddressError(t(INVALID_ZIP_MESSAGE));
       setNeedsAddress(true);
       setLoading(false);
       return;
@@ -85,13 +85,16 @@ export function MyBallotPage() {
 
   function handleAddressSubmit() {
     if (!addressInput.trim()) return;
-    if (!extractZip(addressInput)) { setAddressError(INVALID_ZIP_MESSAGE); return; }
+    if (!extractZip(addressInput)) { setAddressError(t(INVALID_ZIP_MESSAGE)); return; }
     setAddressError(null);
     loadBallotFor(addressInput.trim());
   }
 
   useEffect(() => {
     async function init() {
+      // A link like /ballot?zip=32034 (from the partner widget or a shared link) opens that ballot.
+      const urlZip = extractZip(new URLSearchParams(window.location.search).get('zip') ?? '');
+      if (urlZip) sessionStorage.setItem('ballotlens_address', urlZip);
       let savedAddress = sessionStorage.getItem('ballotlens_address');
 
       if (!savedAddress && user) {

@@ -44,7 +44,7 @@ export function LandingPage() {
       return;
     }
     if (!extractZip(address)) {
-      setError(INVALID_ZIP_MESSAGE);
+      setError(t(INVALID_ZIP_MESSAGE));
       return;
     }
     setError(null);
