@@ -12,10 +12,9 @@ export async function getOrCreateConversation(candidateId: string): Promise<Conv
 
   // Look up the candidate's claimed user_id if any
   const { data: claim } = await supabase
-    .from('candidate_claims')
+    .from('public_verified_claims')
     .select('user_id')
     .eq('candidate_id', candidateId)
-    .eq('status', 'verified')
     .maybeSingle();
 
   const { data, error } = await supabase

@@ -45,8 +45,8 @@ describe('getOrCreateConversation', () => {
           }),
         };
       }
-      if (table === 'candidate_claims') {
-        return { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { user_id: 'candidate-user-1' }, error: null }) }) }) }) };
+      if (table === 'public_verified_claims') {
+        return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { user_id: 'candidate-user-1' }, error: null }) }) }) };
       }
       throw new Error(`unexpected table ${table}`);
     });
@@ -65,8 +65,8 @@ describe('getOrCreateConversation', () => {
           insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error('db error') }) }) }),
         };
       }
-      if (table === 'candidate_claims') {
-        return { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }) }) };
+      if (table === 'public_verified_claims') {
+        return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }) };
       }
       throw new Error(`unexpected table ${table}`);
     });

@@ -4,10 +4,10 @@ import type { CandidateClaim, CandidateSubmission, CandidateQuestionnaireRespons
 export async function getVerifiedClaim(candidateId: string): Promise<CandidateClaim | null> {
   try {
     const { data, error } = await supabase
-      .from('candidate_claims')
+      // Public view: only the safe columns (no email or admin notes).
+      .from('public_verified_claims')
       .select('*')
       .eq('candidate_id', candidateId)
-      .eq('status', 'verified')
       .maybeSingle();
     if (error) throw error;
     return data as CandidateClaim | null;

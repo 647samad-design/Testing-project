@@ -536,6 +536,36 @@ SELECT rlstest.check('[600] user cannot upgrade their own plan for free',
   rlstest.fails($$UPDATE subscriptions SET plan='pro_yearly', status='active' WHERE user_id=auth.uid()$$)
   OR rlstest.cnt($$SELECT count(*) FROM subscriptions WHERE user_id=auth.uid() AND plan='pro_yearly'$$) = 0);
 
+-- ───────── [2800] two verified candidates cannot touch each other; claim privacy ─────────
+SELECT rlstest.as_owner();
+INSERT INTO candidate_claims (candidate_id,user_id,full_name,email,status,admin_notes)
+ VALUES ('11111111-0000-0000-0000-000000000002','dddddddd-0000-0000-0000-000000000004','Claimant D','claimant-d@t.io','verified','private admin note');
+SELECT rlstest.as_user('bbbbbbbb-0000-0000-0000-000000000002');
+SELECT rlstest.check('[2800] candidate B cannot update candidate D''s profile row',
+  rlstest.rc($$UPDATE candidates SET bio='hacked' WHERE id='11111111-0000-0000-0000-000000000002'$$) = 0);
+SELECT rlstest.check('[2800] candidate B cannot update candidate D''s claim',
+  rlstest.rc($$UPDATE candidate_claims SET email='x@x.io' WHERE user_id='dddddddd-0000-0000-0000-000000000004'$$) = 0);
+SELECT rlstest.check('[2800] candidate B cannot delete candidate D''s claim',
+  rlstest.rc($$DELETE FROM candidate_claims WHERE user_id='dddddddd-0000-0000-0000-000000000004'$$) = 0);
+SELECT rlstest.check('[2800] candidate B cannot add positions to candidate D',
+  rlstest.fails($$INSERT INTO candidate_positions (candidate_id, issue_id, summary) SELECT '11111111-0000-0000-0000-000000000002', id, 'x' FROM issues LIMIT 1$$));
+SELECT rlstest.check('[2800] candidate B cannot read candidate D''s claim email/notes',
+  rlstest.cnt($$SELECT count(*) FROM candidate_claims WHERE user_id='dddddddd-0000-0000-0000-000000000004'$$) = 0);
+SELECT rlstest.check('[2800] candidate B still reads own claim',
+  rlstest.cnt($$SELECT count(*) FROM candidate_claims WHERE user_id=auth.uid()$$) = 1);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[2800] anon cannot read any claim email/admin notes',
+  rlstest.cnt($$SELECT count(*) FROM candidate_claims$$) = 0);
+SELECT rlstest.check('[2800] anon sees who owns a profile via public_verified_claims',
+  rlstest.cnt($$SELECT count(*) FROM public_verified_claims WHERE candidate_id='11111111-0000-0000-0000-000000000002' AND user_id='dddddddd-0000-0000-0000-000000000004'$$) = 1);
+SELECT rlstest.check('[2800] public_verified_claims has no email or notes columns',
+  rlstest.cnt($$SELECT count(*) FROM information_schema.columns WHERE table_name='public_verified_claims' AND column_name IN ('email','admin_notes','verification_notes','full_name')$$) = 0);
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[2800] voter can still message the verified claimant',
+  rlstest.rc($$INSERT INTO conversations (voter_id, candidate_id, candidate_user_id) VALUES (auth.uid(), '11111111-0000-0000-0000-000000000002', 'dddddddd-0000-0000-0000-000000000004')$$) = 1);
+SELECT rlstest.check('[2800] voter cannot route a conversation to a non-claimant',
+  rlstest.fails($$INSERT INTO conversations (voter_id, candidate_id, candidate_user_id) VALUES (auth.uid(), '11111111-0000-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000002')$$));
+
 SELECT rlstest.as_owner();
 SELECT count(*) FILTER (WHERE ok) AS passed, count(*) FILTER (WHERE NOT ok) AS failed FROM rlstest.results;
 DO $$ BEGIN IF (SELECT count(*) FROM rlstest.results WHERE NOT ok) > 0 THEN RAISE EXCEPTION 'RLS TEST SUITE FAILED'; END IF; END $$;
