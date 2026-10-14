@@ -1181,5 +1181,18 @@ const dict: Record<string, string> = {
   "Legislator": "Законодатель",
   "Delegate": "Делегат",
   "Assembly Member": "Член ассамблеи",
+  "Individuals": "Частные лица",
+  "PACs & other committees": "PAC и другие комитеты",
+  "Party & candidate's own money": "Партия и собственные средства кандидата",
+  "Campaign finance (FEC)": "Финансирование кампании (FEC)",
+  "{year} cycle": "цикл {year}",
+  "Campaign finance data isn't available right now.": "Данные о финансировании кампании сейчас недоступны.",
+  "Raised": "Собрано",
+  "Spent": "Потрачено",
+  "Cash on hand": "Остаток средств",
+  "Debts": "Долги",
+  "Where the money came from": "Откуда деньги",
+  "Source: Federal Election Commission filings": "Источник: отчёты в Федеральную избирательную комиссию",
+  "through {date}": "по {date}",
 };
 export default dict;

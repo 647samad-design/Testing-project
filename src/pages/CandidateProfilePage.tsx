@@ -43,6 +43,7 @@ import type { FeedPost, CampaignTeamMember } from '@/types';
 import { getCampaign, type Campaign as CampaignType } from '@/services/campaign';
 import { CampaignTab } from '@/components/shared/CampaignTab';
 import { Megaphone } from 'lucide-react';
+import { CampaignFinanceCard } from '@/components/shared/CampaignFinanceCard';
 import { SponsoredBillsList } from '@/components/shared/SponsoredBillsList';
 import { t, dateLocale } from '@/i18n';
 
@@ -416,6 +417,7 @@ export function CandidateProfilePage() {
 
           {/* Who Funds Me + Endorsements */}
           <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {candidate.fec_candidate_id && <CampaignFinanceCard fecId={candidate.fec_candidate_id} />}
             <WhoFundsMe candidateId={candidate.id} />
             <Endorsements candidateId={candidate.id} />
           </div>

@@ -1181,5 +1181,18 @@ const dict: Record<string, string> = {
   "Legislator": "Lejislatè",
   "Delegate": "Delege",
   "Assembly Member": "Manm Asanble",
+  "Individuals": "Moun",
+  "PACs & other committees": "PAC ak lòt komite",
+  "Party & candidate's own money": "Pati ak lajan pwòp kandida a",
+  "Campaign finance (FEC)": "Finansman kanpay (FEC)",
+  "{year} cycle": "sik {year}",
+  "Campaign finance data isn't available right now.": "Done finansman kanpay yo pa disponib kounye a.",
+  "Raised": "Ranmase",
+  "Spent": "Depanse",
+  "Cash on hand": "Lajan disponib",
+  "Debts": "Dèt",
+  "Where the money came from": "Ki kote lajan an soti",
+  "Source: Federal Election Commission filings": "Sous: rapò ki depoze nan Komisyon Eleksyon Federal la",
+  "through {date}": "jiska {date}",
 };
 export default dict;
