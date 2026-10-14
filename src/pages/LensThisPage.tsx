@@ -14,7 +14,7 @@ import { isDemoMode } from '@/lib/demo-mode';
 import { getFactChecks, submitFactCheck } from '@/services/civic';
 import { cn } from '@/lib/utils';
 import type { FactCheck, FactCheckPlatform } from '@/types';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -998,5 +998,5 @@ function timeAgo(dateStr: string): string {
   if (diffHr < 24) return `${diffHr}h ago`;
   const diffDay = Math.floor(diffHr / 24);
   if (diffDay < 7) return `${diffDay}d ago`;
-  return date.toLocaleDateString();
+  return date.toLocaleDateString(dateLocale());
 }

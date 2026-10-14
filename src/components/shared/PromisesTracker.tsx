@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { parseDateOnly } from '@/lib/date-utils';
 import type { CandidatePromise, PromiseStatus } from '@/types';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 const STATUS_STYLES: Record<PromiseStatus, { label: string; icon: typeof CheckCircle2; color: string; bg: string; dot: string }> = {
   completed: { label: 'Completed', icon: CheckCircle2, color: 'text-success', bg: 'bg-success/8', dot: 'bg-success' },
@@ -172,7 +172,7 @@ export function PromisesTracker({ candidateId, canEdit, isAdmin = false }: { can
                         {t(style.label)}
                       </Badge>
                       {promise.date_made && (
-                        <span className="text-xs text-muted-foreground">{t("Promised")} {parseDateOnly(promise.date_made).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        <span className="text-xs text-muted-foreground">{t("Promised")} {parseDateOnly(promise.date_made).toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                       )}
                       {promise.issue && (

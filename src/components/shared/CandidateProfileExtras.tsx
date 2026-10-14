@@ -14,7 +14,7 @@ import type {
   CandidateProfileExtras, CandidateGetToKnow, CandidateFundingSource,
   CandidateEndorsement,
 } from '@/types';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 // ─── Candidate Snapshot ────────────────────────────────────────────────────
 
@@ -102,7 +102,7 @@ export function ElectionInfo({ candidateId }: { candidateId: string }) {
           <div className="rounded-xl bg-secondary/40 p-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{t("Election Date")}</p>
             <p className="text-sm font-bold text-foreground mt-0.5">
-              {electionDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              {electionDate?.toLocaleDateString(dateLocale(), { month: 'long', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
         )}
@@ -135,7 +135,7 @@ export function ElectionInfo({ candidateId }: { candidateId: string }) {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-foreground">{t("Next Election")}</p>
               <p className="text-xs text-muted-foreground">
-                {nextElection.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                {nextElection.toLocaleDateString(dateLocale(), { month: 'long', day: 'numeric', year: 'numeric' })}
                 {daysToNext !== null && ` — ${daysToNext} days away`}
               </p>
             </div>
@@ -301,7 +301,7 @@ export function WhoFundsMe({ candidateId }: { candidateId: string }) {
       </div>
 
       {sources[0]?.report_date && (
-        <p className="mt-3 text-[10px] text-muted-foreground">{t("Data as of")} {parseDateOnly(sources[0].report_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+        <p className="mt-3 text-[10px] text-muted-foreground">{t("Data as of")} {parseDateOnly(sources[0].report_date).toLocaleDateString(dateLocale(), { month: 'short', year: 'numeric' })}
         </p>
       )}
     </Card>
@@ -368,7 +368,7 @@ export function Endorsements({ candidateId }: { candidateId: string }) {
                 </div>
                 {e.endorsement_date && (
                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {parseDateOnly(e.endorsement_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    {parseDateOnly(e.endorsement_date).toLocaleDateString(dateLocale(), { month: 'short', year: 'numeric' })}
                   </p>
                 )}
               </div>

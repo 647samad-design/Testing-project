@@ -82,7 +82,7 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <DistrictBadge
-              text={levelLabel[contest.contest_level]}
+              text={t(levelLabel[contest.contest_level])}
               variant={levelVariant[contest.contest_level]}
             />
             {contest.district && (

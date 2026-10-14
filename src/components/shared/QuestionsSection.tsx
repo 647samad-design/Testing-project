@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { getVoterQuestions, askQuestion, answerQuestion, rateQuestion } from '@/services/social';
 import { getIssues } from '@/services/districts';
 import type { VoterQuestion, Issue, RatingType } from '@/types';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 export function QuestionsSection({ candidateId, canAnswer }: { candidateId: string; canAnswer: boolean }) {
   const { user } = useAuth();
@@ -262,5 +262,5 @@ function timeAgo(dateStr: string): string {
   if (min < 60) return `${min}m ago`;
   if (hr < 24) return `${hr}h ago`;
   if (day < 7) return `${day}d ago`;
-  return new Date(dateStr).toLocaleDateString();
+  return new Date(dateStr).toLocaleDateString(dateLocale());
 }

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Vote as VoteIcon, TrendingUp, ChevronDown, ChevronUp, ShieldCheck, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCalledRaces, getCertifiedResults, type ElectionRace } from '@/services/election-results';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 export function ElectionResultsCard({ state, title = 'Election Results', compact = false }: { state?: string; title?: string; compact?: boolean }) {
   const [calledRaces, setCalledRaces] = useState<ElectionRace[]>([]);
@@ -135,7 +135,7 @@ export function ElectionResultsCard({ state, title = 'Election Results', compact
                   })}
                   {race.last_updated && (
                     <p className="text-[10px] text-muted-foreground pt-1">
-                      <TrendingUp className="h-3 w-3 inline mr-1" />{t("Last updated:")} {new Date(race.last_updated).toLocaleString()}
+                      <TrendingUp className="h-3 w-3 inline mr-1" />{t("Last updated:")} {new Date(race.last_updated).toLocaleString(dateLocale())}
                     </p>
                   )}
                 </div>

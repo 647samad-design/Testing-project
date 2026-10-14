@@ -1,3 +1,4 @@
+import { dateLocale } from '@/i18n';
 /**
  * Safely parses a plain "YYYY-MM-DD" date-only string (no time component)
  * as a LOCAL calendar date, not UTC midnight.
@@ -36,7 +37,7 @@ export function parseDateOnly(dateString: string): Date {
  * "Mon D, YYYY" for display — e.g. voting record dates, source publication
  * dates, statement dates, bar admission dates, social/news post dates.
  *
- * This exact implementation (new Date(dateStr) -> toLocaleDateString())
+ * This exact implementation (new Date(dateStr) -> toLocaleDateString(dateLocale()))
  * was independently duplicated, bug and all, in 5 separate files
  * (EvidenceCard, NewsCard, SourceCard, and local copies inside
  * CandidateProfilePage and NewsPage) — every one of them showed the wrong
@@ -48,5 +49,5 @@ export function parseDateOnly(dateString: string): Date {
 export function formatDate(dateStr: string): string {
   const d = parseDateOnly(dateStr);
   if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric', year: 'numeric' });
 }

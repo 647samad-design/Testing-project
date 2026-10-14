@@ -18,7 +18,7 @@ import { isDemoMode } from '@/lib/demo-mode';
 import { parseDateOnly } from '@/lib/date-utils';
 import { ElectionResultsCard } from '@/components/shared/ElectionResultsCard';
 import { toStatePostal } from '@/lib/us-states';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 const levelOrder = ['federal', 'state', 'local', 'judicial'] as const;
 const levelLabels: Record<string, string> = {
@@ -209,8 +209,8 @@ export function MyBallotPage() {
               return (
                 <span className="text-muted-foreground">
                   <span className="hidden sm:inline">· </span>
-                  {d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                  {days > 1 ? ` · in ${days} days` : days === 1 ? t(" · tomorrow") : days === 0 ? t(" · today") : ''}
+                  {d.toLocaleDateString(dateLocale(), { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  {days > 1 ? t(" · in {n} days", { n: days }) : days === 1 ? t(" · tomorrow") : days === 0 ? t(" · today") : ''}
                 </span>
               );
             })()}

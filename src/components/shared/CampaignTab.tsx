@@ -8,6 +8,7 @@ import {
   getCampaignEvents, getEventRsvpCount, getMyRsvpEventIds, rsvpToEvent, cancelRsvp,
   type Campaign, type CampaignEvent,
 } from '@/services/campaign';
+import { dateLocale } from '@/i18n';
 
 interface CampaignTabProps {
   campaign: Campaign;
@@ -101,7 +102,7 @@ export function CampaignTab({ campaign }: CampaignTabProps) {
                       <p className="font-semibold">{e.title}</p>
                       <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5" />
-                        {new Date(e.event_date).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                        {new Date(e.event_date).toLocaleString(dateLocale(), { dateStyle: 'medium', timeStyle: 'short' })}
                       </p>
                       {e.location && (
                         <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1.5">

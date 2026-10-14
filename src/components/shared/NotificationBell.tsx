@@ -4,7 +4,7 @@ import { Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '@/services/social';
 import type { AppNotification } from '@/types';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 /**
  * A persistent, always-visible notification bell for the header. Previously,
@@ -96,7 +96,7 @@ export function NotificationBell() {
                 >
                   <p className="font-medium">{n.title}</p>
                   {n.body && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{n.body}</p>}
-                  <p className="mt-1 text-[11px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString()}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString(dateLocale())}</p>
                 </Link>
               ))
             )}

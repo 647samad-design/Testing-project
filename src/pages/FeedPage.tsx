@@ -19,7 +19,7 @@ import { parseDateOnly } from '@/lib/date-utils';
 import { getSocialFeed, getFollowedCandidates, getFollowedIssues, togglePostLike, getNotifications } from '@/services/social';
 import { cn } from '@/lib/utils';
 import type { FeedPost, Candidate, Issue, AppNotification, FeedPostType } from '@/types';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 const POST_TYPE_STYLES: Record<FeedPostType, { label: string; icon: typeof Zap; color: string; bg: string; ring: string }> = {
   update: { label: 'Update', icon: Zap, color: 'text-primary', bg: 'bg-primary/5', ring: 'ring-primary/15' },
@@ -611,9 +611,9 @@ function formatTimeAgo(dateStr: string): string {
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffHr < 24) return `${diffHr}h ago`;
   if (diffDay < 7) return `${diffDay}d ago`;
-  return date.toLocaleDateString();
+  return date.toLocaleDateString(dateLocale());
 }
 
 function formatDate(dateStr: string): string {
-  return parseDateOnly(dateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  return parseDateOnly(dateStr).toLocaleDateString(dateLocale(), { weekday: 'long', month: 'short', day: 'numeric' });
 }

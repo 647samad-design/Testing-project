@@ -43,7 +43,7 @@ import type { FeedPost, CampaignTeamMember } from '@/types';
 import { getCampaign, type Campaign as CampaignType } from '@/services/campaign';
 import { CampaignTab } from '@/components/shared/CampaignTab';
 import { Megaphone } from 'lucide-react';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 function getPartyClass(party: string | null): string {
   if (!party) return '';
@@ -303,7 +303,7 @@ export function CandidateProfilePage() {
               <div key={ev.id} className="flex items-start gap-3 rounded-xl bg-secondary/30 p-3">
                 <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-primary/10">
                   <span className="text-xs font-bold text-primary">
-                    {parseDateOnly(ev.event_date).toLocaleDateString('en-US', { month: 'short' })}
+                    {parseDateOnly(ev.event_date).toLocaleDateString(dateLocale(), { month: 'short' })}
                   </span>
                   <span className="text-lg font-bold text-primary leading-none">
                     {parseDateOnly(ev.event_date).getDate()}
@@ -438,13 +438,13 @@ export function CandidateProfilePage() {
                     <span className="text-xs font-semibold text-muted-foreground">
                       {post.post_type === 'event' ? t("Event") : post.post_type === 'position_change' ? t("Position Update") : t("Update")}
                     </span>
-                    <span className="text-xs text-muted-foreground">{new Date(post.created_at).toLocaleDateString()}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(post.created_at).toLocaleDateString(dateLocale())}</span>
                   </div>
                   <p className="text-sm text-foreground whitespace-pre-wrap">{post.body}</p>
                   {post.image_url && <img src={post.image_url} alt={t("Post image")} className="mt-2 rounded-xl max-h-60 object-cover" />}
                   {post.event_date && (
                     <div className="mt-2 rounded-xl border border-border bg-secondary/30 p-2 text-sm">
-                      <span className="font-semibold">{parseDateOnly(post.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                      <span className="font-semibold">{parseDateOnly(post.event_date).toLocaleDateString(dateLocale(), { weekday: 'long', month: 'short', day: 'numeric' })}</span>
                       {post.event_start_time && <span className="text-muted-foreground"> {t("at")} {post.event_start_time}</span>}
                       {post.event_location && <span className="text-muted-foreground"> — {post.event_location}</span>}
                     </div>

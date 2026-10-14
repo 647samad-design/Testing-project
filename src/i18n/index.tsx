@@ -36,6 +36,13 @@ export function t(source: string, vars?: Record<string, string | number>): strin
  * Returns it unchanged; translate it with t() where it is rendered. */
 export const msg = (source: string): string => source;
 
+/** BCP-47 locale for formatting dates in the current language.
+ * Haitian Creole has no Intl locale data, so French month names are used (closest). */
+const DATE_LOCALES: Record<LanguageName, string> = { en: 'en-US', es: 'es-US', pt: 'pt-BR', ht: 'fr-HT', ru: 'ru-RU' };
+export function dateLocale(): string {
+  return DATE_LOCALES[current] ?? 'en-US';
+}
+
 export function currentLanguage(): LanguageName {
   return current;
 }

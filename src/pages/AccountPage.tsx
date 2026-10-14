@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { getElections } from '@/services/civic';
 import { parseDateOnly } from '@/lib/date-utils';
-import { t, currentLanguage } from '@/i18n';
+import { t, currentLanguage, dateLocale } from '@/i18n';
 
 export function AccountPage() {
   usePageMeta({ title: t("Account"), noindex: true });
@@ -209,7 +209,7 @@ export function AccountPage() {
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   const quizDone = localStorage.getItem('ballotlens_quiz_done') === 'true';
   const civicLevel = profile?.civic_level ?? Math.floor(civicScore / 20) + 1;
-  const joinedDate = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '2026';
+  const joinedDate = user?.created_at ? new Date(user.created_at).toLocaleDateString(dateLocale(), { month: 'short', year: 'numeric' }) : '2026';
 
   // Journey progress
   const completedSteps = journeySteps.filter(s => s.completed).length;
@@ -442,7 +442,7 @@ export function AccountPage() {
                 <h2 className="font-bold text-sm uppercase tracking-wide">{t("Today's Briefing")}</h2>
               </div>
               <span className="text-[10px] font-bold text-muted-foreground">
-                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}
+                {new Date().toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric', weekday: 'short' })}
               </span>
             </div>
             <div className="p-5 space-y-3">
@@ -1123,11 +1123,11 @@ function BillingTab() {
             {isPaid && subscription?.current_period_end && (
               <p className="mt-1 text-sm text-muted-foreground">
                 {subscription.cancel_at_period_end ? t("Cancels") : t("Renews")} {t("on")}{' '}
-                {new Date(subscription.current_period_end).toLocaleDateString()}
+                {new Date(subscription.current_period_end).toLocaleDateString(dateLocale())}
               </p>
             )}
             {isPaid && subscription?.created_at && (
-              <p className="mt-0.5 text-xs text-muted-foreground">{t("Purchased")} {new Date(subscription.created_at).toLocaleDateString(undefined, { dateStyle: 'long' })}
+              <p className="mt-0.5 text-xs text-muted-foreground">{t("Purchased")} {new Date(subscription.created_at).toLocaleDateString(dateLocale(), { dateStyle: 'long' })}
               </p>
             )}
             {!isPaid && (
@@ -1255,7 +1255,7 @@ function UpcomingElectionsCard() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold leading-snug text-foreground line-clamp-2">{e.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  {date.toLocaleDateString(dateLocale(), { month: 'long', day: 'numeric', year: 'numeric' })}
                 </p>
               </div>
               <Badge variant="outline" className="rounded-lg text-[10px] font-bold border-warning/30 text-warning">

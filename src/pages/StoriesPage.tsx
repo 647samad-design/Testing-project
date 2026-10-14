@@ -7,7 +7,7 @@ import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { AdSlot } from '@/components/shared/AdSlot';
 import { getFeaturedStories, getRecentStories, getStoryBySlug, getStoryCategories } from '@/services/stories';
 import type { Story, StoryCategory } from '@/types';
-import { t } from '@/i18n';
+import { t, dateLocale } from '@/i18n';
 
 const categoryColors: Record<string, string> = {
   emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -31,7 +31,7 @@ function formatDate(dateStr: string | null): string {
   if (!dateStr) return '';
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString(dateLocale(), { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 export function StoriesPage() {
