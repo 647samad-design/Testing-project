@@ -89,6 +89,6 @@ jobs:
       - name: Email translations
         run: deno test --allow-env supabase/functions/tests/email_i18n_test.ts
       - name: Feature helper tests (voter info, etc.)
-        run: deno test --allow-env --allow-read supabase/functions/tests/voter_info_test.ts supabase/functions/tests/representatives_test.ts supabase/functions/tests/campaign_finance_test.ts supabase/functions/tests/notify_test.ts supabase/functions/tests/ask_ai_test.ts
+        run: deno test --allow-env --allow-read supabase/functions/tests/voter_info_test.ts supabase/functions/tests/representatives_test.ts supabase/functions/tests/campaign_finance_test.ts supabase/functions/tests/notify_test.ts supabase/functions/tests/ask_ai_test.ts supabase/functions/tests/cron_auth_test.ts
       - name: Unsubscribe end-to-end
         run: deno run --allow-net --allow-env --allow-read supabase/functions/tests/email_unsubscribe_e2e.ts

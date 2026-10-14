@@ -11,6 +11,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { electionReminder, getUserLangs, manageFooter, siteLink } from "../_shared/email-i18n.ts";
 import { sendPushToUsers, sendSms, smsConfigured, smsReminderPhones } from "../_shared/notify.ts";
+import { isCronRequest } from "../_shared/cron-auth.ts";
 
 // supabase-js can't infer table types without generated types; treat the
 // client as untyped instead of fighting mismatched generics.
@@ -20,12 +21,13 @@ type Db = any;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, X-Cron-Secret",
 };
 
 const REMINDER_WINDOW_DAYS = 14; // remind for elections within the next 2 weeks
 
 async function requireAdmin(req: Request, supabaseUrl: string, adminClient: Db): Promise<Response | null> {
+  if (isCronRequest(req)) return null; // scheduled job (see sql/SCHEDULED_JOBS.sql)
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return new Response(JSON.stringify({ error: "Missing Authorization header" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;

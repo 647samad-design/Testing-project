@@ -9,6 +9,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { formatDate, getUserLangs, manageFooter, tr } from "../_shared/email-i18n.ts";
+import { isCronRequest } from "../_shared/cron-auth.ts";
 
 
 // supabase-js can't infer table types without generated types; treat the
@@ -19,7 +20,7 @@ type Db = any;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, X-Cron-Secret",
 };
 
 interface Prefs {
@@ -33,6 +34,7 @@ interface Prefs {
 }
 
 async function requireAdmin(req: Request, supabaseUrl: string, adminClient: Db): Promise<Response | null> {
+  if (isCronRequest(req)) return null; // scheduled job (see sql/SCHEDULED_JOBS.sql)
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return new Response(JSON.stringify({ error: "Missing Authorization header" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
