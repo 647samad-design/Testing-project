@@ -30,15 +30,19 @@ function expandSitemapLanguages(xml: string, siteUrl: string): string {
  * hosting settings to the live address). Without it the sitemap is left out
  * rather than published with a wrong domain. */
 function siteUrlFiles(siteUrl: string): Plugin {
+  let outDir = path.resolve(__dirname, 'dist');
   return {
     name: 'site-url-files',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir);
+    },
     // index.html: absolute URLs for canonical / social tags (relative if unset;
     // the app also sets the canonical at runtime from the current address).
     transformIndexHtml(html) {
       return html.replaceAll('__SITE_URL__', siteUrl);
     },
     closeBundle() {
-      const out = path.resolve(__dirname, 'dist');
+      const out = outDir;
       for (const f of ['sitemap.xml', 'robots.txt']) {
         const p = path.join(out, f);
         if (!fs.existsSync(p)) continue;
