@@ -6,6 +6,11 @@ import es from '@/i18n/locales/es';
 import pt from '@/i18n/locales/pt';
 import ht from '@/i18n/locales/ht';
 import ru from '@/i18n/locales/ru';
+import zh from '@/i18n/locales/zh';
+import vi from '@/i18n/locales/vi';
+import tl from '@/i18n/locales/tl';
+import ko from '@/i18n/locales/ko';
+import ar from '@/i18n/locales/ar';
 
 /** Every string passed to t('...') anywhere in src/ must exist in every language. */
 function collectKeys(): Set<string> {
@@ -71,7 +76,7 @@ describe('translations are complete', () => {
   });
   const keys = collectKeys();
   it('found the translated strings', () => expect(keys.size).toBeGreaterThan(300));
-  for (const [lang, dict] of Object.entries({ es, pt, ht, ru })) {
+  for (const [lang, dict] of Object.entries({ es, pt, ht, ru, zh, vi, tl, ko, ar })) {
     it(`${lang} has every string`, () => {
       expect([...keys].filter((k) => !(k in dict))).toEqual([]);
     });

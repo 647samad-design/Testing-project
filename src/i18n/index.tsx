@@ -19,8 +19,15 @@ const loaders: Record<Exclude<LanguageName, 'en'>, () => Promise<{ default: Dict
   pt: () => import('./locales/pt'),
   ht: () => import('./locales/ht'),
   ru: () => import('./locales/ru'),
+  zh: () => import('./locales/zh'),
+  vi: () => import('./locales/vi'),
+  tl: () => import('./locales/tl'),
+  ko: () => import('./locales/ko'),
+  ar: () => import('./locales/ar'),
 };
-export const SUPPORTED: LanguageName[] = ['en', 'es', 'pt', 'ht', 'ru'];
+export const SUPPORTED: LanguageName[] = ['en', 'es', 'pt', 'ht', 'ru', 'zh', 'vi', 'tl', 'ko', 'ar'];
+/** Languages written right-to-left. */
+export const RTL_LANGS: LanguageName[] = ['ar'];
 export const LANGUAGE_EVENT = 'app:language';
 
 let current: LanguageName = 'en';
@@ -38,7 +45,10 @@ export const msg = (source: string): string => source;
 
 /** BCP-47 locale for formatting dates in the current language.
  * Haitian Creole has no Intl locale data, so French month names are used (closest). */
-const DATE_LOCALES: Record<LanguageName, string> = { en: 'en-US', es: 'es-US', pt: 'pt-BR', ht: 'fr-HT', ru: 'ru-RU' };
+const DATE_LOCALES: Record<LanguageName, string> = {
+  en: 'en-US', es: 'es-US', pt: 'pt-BR', ht: 'fr-HT', ru: 'ru-RU',
+  zh: 'zh-CN', vi: 'vi-VN', tl: 'fil-PH', ko: 'ko-KR', ar: 'ar-u-nu-latn',
+};
 export function dateLocale(): string {
   return DATE_LOCALES[current] ?? 'en-US';
 }
@@ -90,6 +100,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', RTL_LANGS.includes(lang) ? 'rtl' : 'ltr');
     if (lang === 'en') {
       current = 'en'; dict = {}; setReady('en');
       return;

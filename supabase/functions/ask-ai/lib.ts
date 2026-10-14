@@ -4,7 +4,7 @@
 export interface SourceRow { id: string; title: string; url: string | null; publisher: string | null; source_type: string; publication_date: string | null; author: string | null; description: string | null; credibility_level: string }
 export interface EvidenceItem { n: number; text: string; source: SourceRow | null }
 
-const LANG_NAMES: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese (Brazil)", ht: "Haitian Creole", ru: "Russian" };
+const LANG_NAMES: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese (Brazil)", ht: "Haitian Creole", ru: "Russian", zh: "Simplified Chinese", vi: "Vietnamese", tl: "Tagalog", ko: "Korean", ar: "Arabic" };
 
 const STATUS_NOTE: Record<string, string> = {
   verified: "verified by our researchers",

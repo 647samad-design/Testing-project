@@ -218,7 +218,7 @@ export interface ClaimEvidence {
   source?: Source;
 }
 
-export type LanguageName = 'en' | 'es' | 'pt' | 'ht' | 'ru';
+export type LanguageName = 'en' | 'es' | 'pt' | 'ht' | 'ru' | 'zh' | 'vi' | 'tl' | 'ko' | 'ar';
 
 export const LANGUAGE_OPTIONS: { value: LanguageName; label: string; nativeLabel: string }[] = [
   { value: 'en', label: 'English', nativeLabel: 'English' },
@@ -226,6 +226,11 @@ export const LANGUAGE_OPTIONS: { value: LanguageName; label: string; nativeLabel
   { value: 'pt', label: 'Portuguese', nativeLabel: 'Português' },
   { value: 'ht', label: 'Haitian Creole', nativeLabel: 'Kreyòl Ayisyen' },
   { value: 'ru', label: 'Russian', nativeLabel: 'Русский' },
+  { value: 'zh', label: 'Chinese (Simplified)', nativeLabel: '简体中文' },
+  { value: 'vi', label: 'Vietnamese', nativeLabel: 'Tiếng Việt' },
+  { value: 'tl', label: 'Tagalog', nativeLabel: 'Tagalog' },
+  { value: 'ko', label: 'Korean', nativeLabel: '한국어' },
+  { value: 'ar', label: 'Arabic', nativeLabel: 'العربية' },
 ];
 
 export interface Profile {

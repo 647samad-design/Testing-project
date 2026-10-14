@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 
-const SITEMAP_LANGS = ['en', 'es', 'pt', 'ht', 'ru'];
+const SITEMAP_LANGS = ['en', 'es', 'pt', 'ht', 'ru', 'zh', 'vi', 'tl', 'ko', 'ar'];
 
 /** One <url> per page per language, each listing all language versions
  * (xhtml:link hreflang), so search engines index every translation. */

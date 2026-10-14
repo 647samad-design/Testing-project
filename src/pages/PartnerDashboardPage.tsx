@@ -11,9 +11,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { embedCode, getMyPartners, getPartnerStats, updatePartnerBranding, type Partner, type PartnerDayStats } from '@/services/partners';
 import { SUPPORTED, t } from '@/i18n';
-import type { LanguageName } from '@/types';
+import { LANGUAGE_OPTIONS, type LanguageName } from '@/types';
 
-const LANG_NAMES: Record<string, string> = { en: 'English', es: 'Español', pt: 'Português', ht: 'Kreyòl ayisyen', ru: 'Русский' };
+const LANG_NAMES: Record<string, string> = Object.fromEntries(LANGUAGE_OPTIONS.map((o) => [o.value, o.nativeLabel]));
 
 /** For partner organizations: their embed code, widget stats and branding. */
 export function PartnerDashboardPage() {

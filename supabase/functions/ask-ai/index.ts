@@ -34,7 +34,7 @@ Deno.serve(async (req: Request) => {
   const body = await req.json().catch(() => ({}));
   const question = typeof body.question === "string" ? body.question.trim() : "";
   const candidateId = typeof body.candidateId === "string" && UUID.test(body.candidateId) ? body.candidateId : null;
-  const lang = ["en", "es", "pt", "ht", "ru"].includes(body.lang) ? body.lang : "en";
+  const lang = ["en", "es", "pt", "ht", "ru", "zh", "vi", "tl", "ko", "ar"].includes(body.lang) ? body.lang : "en";
   if (!question || question.length > 1000 || !candidateId) return json({ status: "invalid_request" }, 400);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

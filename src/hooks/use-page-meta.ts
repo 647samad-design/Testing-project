@@ -53,7 +53,7 @@ function setCanonical(url: string) {
   el.setAttribute('href', url);
 }
 
-const OG_LOCALE: Record<string, string> = { en: 'en_US', es: 'es_US', pt: 'pt_BR', ht: 'ht_HT', ru: 'ru_RU' };
+const OG_LOCALE: Record<string, string> = { en: 'en_US', es: 'es_US', pt: 'pt_BR', ht: 'ht_HT', ru: 'ru_RU', zh: 'zh_CN', vi: 'vi_VN', tl: 'tl_PH', ko: 'ko_KR', ar: 'ar_AR' };
 
 /** <link rel="alternate" hreflang> for every language version of this page,
  * plus x-default (English), so search engines show each reader their language. */

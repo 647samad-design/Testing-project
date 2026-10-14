@@ -6,7 +6,7 @@
  */
 import type { LanguageName } from '@/types';
 
-export const URL_LANGS: LanguageName[] = ['es', 'pt', 'ht', 'ru'];
+export const URL_LANGS: LanguageName[] = ['es', 'pt', 'ht', 'ru', 'zh', 'vi', 'tl', 'ko', 'ar'];
 export const ALL_LANGS: LanguageName[] = ['en', ...URL_LANGS];
 
 /** The language encoded in a pathname ('/es/candidates' -> 'es'; '/candidates' -> 'en'). */
