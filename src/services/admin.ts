@@ -113,10 +113,11 @@ export async function addCandidate(candidate: {
 /** List candidates for the admin "manage" table, most recently added first. */
 export async function listCandidatesForAdmin(): Promise<Array<{
   id: string; first_name: string; last_name: string; party: string | null; photo_url: string | null; is_demo: boolean;
+  openstates_person_id: string | null; openstates_jurisdiction_id: string | null; fec_candidate_id: string | null;
 }>> {
   return fetchAllRows((from, to) => supabase
     .from('candidates')
-    .select('id, first_name, last_name, party, photo_url, is_demo')
+    .select('id, first_name, last_name, party, photo_url, is_demo, openstates_person_id, openstates_jurisdiction_id, fec_candidate_id')
     .order('last_name', { ascending: true })
     .order('id')
     .range(from, to));
@@ -124,7 +125,7 @@ export async function listCandidatesForAdmin(): Promise<Array<{
 
 export async function updateCandidate(
   id: string,
-  updates: Partial<{ first_name: string; last_name: string; party: string; bio: string; photo_url: string | null }>
+  updates: Partial<{ first_name: string; last_name: string; party: string; bio: string; photo_url: string | null; openstates_person_id: string | null; openstates_jurisdiction_id: string | null; fec_candidate_id: string | null }>
 ): Promise<void> {
   const { error } = await supabase.from('candidates').update(updates).eq('id', id);
   if (error) throw error;

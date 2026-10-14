@@ -43,6 +43,7 @@ import type { FeedPost, CampaignTeamMember } from '@/types';
 import { getCampaign, type Campaign as CampaignType } from '@/services/campaign';
 import { CampaignTab } from '@/components/shared/CampaignTab';
 import { Megaphone } from 'lucide-react';
+import { SponsoredBillsList } from '@/components/shared/SponsoredBillsList';
 import { t, dateLocale } from '@/i18n';
 
 function getPartyClass(party: string | null): string {
@@ -499,6 +500,12 @@ export function CandidateProfilePage() {
 
         {/* EVIDENCE */}
         <TabsContent value="evidence" className="mt-6 space-y-6">
+          {candidate.openstates_person_id && candidate.openstates_jurisdiction_id && (
+            <section>
+              <h3 className="mb-3 font-bold text-foreground">{t("Recent bills sponsored")}</h3>
+              <SponsoredBillsList personId={candidate.openstates_person_id} jurisdictionId={candidate.openstates_jurisdiction_id} limit={10} />
+            </section>
+          )}
           {/* Statements */}
           {statements.length > 0 && (
             <section>

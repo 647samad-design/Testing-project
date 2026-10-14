@@ -1417,7 +1417,7 @@ function ManageCandidatesTab() {
   const [managedIds, setManagedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ first_name: string; last_name: string; party: string; photo_url: string | null }>({ first_name: '', last_name: '', party: '', photo_url: null });
+  const [draft, setDraft] = useState<{ first_name: string; last_name: string; party: string; photo_url: string | null; openstates_person_id: string; openstates_jurisdiction_id: string; fec_candidate_id: string }>({ first_name: '', last_name: '', party: '', photo_url: null, openstates_person_id: '', openstates_jurisdiction_id: '', fec_candidate_id: '' });
   const [saving, setSaving] = useState(false);
   const [managementBusyId, setManagementBusyId] = useState<string | null>(null);
   const [raceEditId, setRaceEditId] = useState<string | null>(null);
@@ -1466,13 +1466,18 @@ function ManageCandidatesTab() {
 
   function startEdit(c: (typeof candidates)[number]) {
     setEditingId(c.id);
-    setDraft({ first_name: c.first_name, last_name: c.last_name, party: c.party ?? '', photo_url: c.photo_url });
+    setDraft({ first_name: c.first_name, last_name: c.last_name, party: c.party ?? '', photo_url: c.photo_url, openstates_person_id: c.openstates_person_id ?? '', openstates_jurisdiction_id: c.openstates_jurisdiction_id ?? '', fec_candidate_id: c.fec_candidate_id ?? '' });
   }
 
   async function saveEdit(id: string) {
     setSaving(true);
     try {
-      await updateCandidate(id, draft);
+      await updateCandidate(id, {
+        ...draft,
+        openstates_person_id: draft.openstates_person_id.trim() || null,
+        openstates_jurisdiction_id: draft.openstates_jurisdiction_id.trim() || null,
+        fec_candidate_id: draft.fec_candidate_id.trim().toUpperCase() || null,
+      });
       toast.success('Candidate updated.');
       setEditingId(null);
       await load();
@@ -1511,6 +1516,15 @@ function ManageCandidatesTab() {
                   <Input value={draft.last_name} onChange={(e) => setDraft((d) => ({ ...d, last_name: e.target.value }))} placeholder="Last name" />
                 </div>
                 <Input value={draft.party} onChange={(e) => setDraft((d) => ({ ...d, party: e.target.value }))} placeholder="Party" />
+                <details className="rounded-lg border border-border p-3">
+                  <summary className="cursor-pointer text-sm font-medium">Public data links (optional)</summary>
+                  <p className="mt-2 text-xs text-muted-foreground">Fill these to show live data on the profile. Open States IDs are on the legislator's openstates.org page (or use "Who represents me"); the FEC ID is on fec.gov (e.g. S6FL00123).</p>
+                  <div className="mt-3 grid gap-2">
+                    <Input value={draft.openstates_person_id} onChange={(e) => setDraft((d) => ({ ...d, openstates_person_id: e.target.value }))} placeholder="Open States person ID (ocd-person/…)" />
+                    <Input value={draft.openstates_jurisdiction_id} onChange={(e) => setDraft((d) => ({ ...d, openstates_jurisdiction_id: e.target.value }))} placeholder="Open States jurisdiction ID (ocd-jurisdiction/…)" />
+                    <Input value={draft.fec_candidate_id} onChange={(e) => setDraft((d) => ({ ...d, fec_candidate_id: e.target.value }))} placeholder="FEC candidate ID (e.g. S6FL00123)" />
+                  </div>
+                </details>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" disabled={saving} onClick={() => saveEdit(c.id)}>{saving ? 'Saving…' : 'Save'}</Button>
                   <Button size="sm" variant="outline" disabled={saving} onClick={() => setEditingId(null)}>Cancel</Button>

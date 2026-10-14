@@ -56,6 +56,11 @@ export interface Candidate {
   last_name: string;
   party: string | null;
   photo_url: string | null;
+  /** Open States legislator / jurisdiction (live sponsored bills). */
+  openstates_person_id?: string | null;
+  openstates_jurisdiction_id?: string | null;
+  /** FEC candidate ID (live campaign finance totals). */
+  fec_candidate_id?: string | null;
   bio: string | null;
   education: string | null;
   professional_background: string | null;

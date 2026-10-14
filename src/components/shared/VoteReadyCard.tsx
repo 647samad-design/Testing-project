@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { CheckCircle2, ExternalLink, Mail, MapPin, Navigation, Search, UserCheck, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Landmark, CheckCircle2, ExternalLink, Mail, MapPin, Navigation, Search, UserCheck, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,6 +67,9 @@ export function VoteReadyCard({ statePostal, className }: VoteReadyCardProps) {
           </Button>
         </form>
         <p className="mt-2 text-[11px] text-muted-foreground">{t("Your address is only used for this lookup and is not saved to your account.")}</p>
+        <Link to="/representatives" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+          <Landmark className="h-3.5 w-3.5" />{t("Who represents me?")}
+        </Link>
 
         {info && !loading && <VoterInfoResults info={info} fallbackUrl={links.pollingPlace} />}
       </div>

@@ -593,6 +593,16 @@ SELECT rlstest.as_anon();
 SELECT rlstest.check('[2900] anon cannot read picks',
   rlstest.fails($$SELECT count(*) FROM ballot_picks$$) OR rlstest.cnt($$SELECT count(*) FROM ballot_picks$$) = 0);
 
+-- ───────── [3000] public data IDs on candidates: only admins set them, values validated ─────────
+SELECT rlstest.as_user('bbbbbbbb-0000-0000-0000-000000000002');
+SELECT rlstest.check('[3000] claimant cannot set their own FEC / Open States IDs',
+  rlstest.rc($$UPDATE candidates SET fec_candidate_id='S6FL00123' WHERE id='11111111-0000-0000-0000-000000000001'$$) = 0);
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[3000] admin can link a candidate to FEC and Open States',
+  rlstest.rc($$UPDATE candidates SET fec_candidate_id='S6FL00123', openstates_person_id='ocd-person/0a1b2c3d-0000-0000-0000-000000000001', openstates_jurisdiction_id='ocd-jurisdiction/country:us/government' WHERE id='11111111-0000-0000-0000-000000000001'$$) = 1);
+SELECT rlstest.check('[3000] malformed FEC ID is rejected',
+  rlstest.fails($$UPDATE candidates SET fec_candidate_id='<script>' WHERE id='11111111-0000-0000-0000-000000000001'$$));
+
 SELECT rlstest.as_owner();
 SELECT count(*) FILTER (WHERE ok) AS passed, count(*) FILTER (WHERE NOT ok) AS failed FROM rlstest.results;
 DO $$ BEGIN IF (SELECT count(*) FROM rlstest.results WHERE NOT ok) > 0 THEN RAISE EXCEPTION 'RLS TEST SUITE FAILED'; END IF; END $$;
