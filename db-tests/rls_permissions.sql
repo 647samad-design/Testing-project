@@ -566,6 +566,33 @@ SELECT rlstest.check('[2800] voter can still message the verified claimant',
 SELECT rlstest.check('[2800] voter cannot route a conversation to a non-claimant',
   rlstest.fails($$INSERT INTO conversations (voter_id, candidate_id, candidate_user_id) VALUES (auth.uid(), '11111111-0000-0000-0000-000000000002', 'bbbbbbbb-0000-0000-0000-000000000002')$$));
 
+-- ───────── [2900] My Picks are private to their owner ─────────
+SELECT rlstest.as_owner();
+INSERT INTO elections (id, name, election_date) VALUES ('e1e10000-0000-0000-0000-000000000001', 'Pick Test Election', '2030-11-05');
+INSERT INTO ballot_contests (id, election_id, office_name, contest_level) VALUES ('c0c00000-0000-0000-0000-000000000001', 'e1e10000-0000-0000-0000-000000000001', 'Mayor', 'local');
+INSERT INTO ballot_picks (user_id, contest_id, candidate_id) VALUES ('dddddddd-0000-0000-0000-000000000004', 'c0c00000-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000002');
+SELECT rlstest.as_user('cccccccc-0000-0000-0000-000000000003');
+SELECT rlstest.check('[2900] voter can save their own pick',
+  rlstest.rc($$INSERT INTO ballot_picks (user_id, contest_id, candidate_id) VALUES (auth.uid(), 'c0c00000-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000001')$$) = 1);
+SELECT rlstest.check('[2900] voter sees only their own picks',
+  rlstest.cnt($$SELECT count(*) FROM ballot_picks$$) = 1);
+SELECT rlstest.check('[2900] voter cannot save a pick as someone else',
+  rlstest.fails($$INSERT INTO ballot_picks (user_id, measure_id, measure_choice) SELECT 'dddddddd-0000-0000-0000-000000000004', id, 'yes' FROM ballot_measures LIMIT 1$$)
+  OR NOT EXISTS (SELECT 1 FROM ballot_measures));
+SELECT rlstest.check('[2900] voter cannot change or delete someone else''s pick',
+  rlstest.rc($$UPDATE ballot_picks SET candidate_id='11111111-0000-0000-0000-000000000001' WHERE user_id='dddddddd-0000-0000-0000-000000000004'$$) = 0
+  AND rlstest.rc($$DELETE FROM ballot_picks WHERE user_id='dddddddd-0000-0000-0000-000000000004'$$) = 0);
+SELECT rlstest.check('[2900] a pick must be a candidate OR a yes/no, not both',
+  rlstest.fails($$INSERT INTO ballot_picks (user_id, contest_id, candidate_id, measure_choice) VALUES (auth.uid(), 'c0c00000-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000001', 'yes')$$));
+SELECT rlstest.check('[2900] one pick per race',
+  rlstest.fails($$INSERT INTO ballot_picks (user_id, contest_id, candidate_id) VALUES (auth.uid(), 'c0c00000-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000002')$$));
+SELECT rlstest.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+SELECT rlstest.check('[2900] even an admin cannot read voters'' picks',
+  rlstest.cnt($$SELECT count(*) FROM ballot_picks$$) = 0);
+SELECT rlstest.as_anon();
+SELECT rlstest.check('[2900] anon cannot read picks',
+  rlstest.fails($$SELECT count(*) FROM ballot_picks$$) OR rlstest.cnt($$SELECT count(*) FROM ballot_picks$$) = 0);
+
 SELECT rlstest.as_owner();
 SELECT count(*) FILTER (WHERE ok) AS passed, count(*) FILTER (WHERE NOT ok) AS failed FROM rlstest.results;
 DO $$ BEGIN IF (SELECT count(*) FROM rlstest.results WHERE NOT ok) > 0 THEN RAISE EXCEPTION 'RLS TEST SUITE FAILED'; END IF; END $$;

@@ -12,6 +12,7 @@ import { LoadingState, EmptyState } from '@/components/shared/StateComponents';
 import { supabase } from '@/lib/supabase';
 import { getDemoContestById, getDemoMeasureById } from '@/services/demo-data';
 import type { BallotContest, BallotMeasure, Candidate, District } from '@/types';
+import { CandidatePickButton, MeasurePickButtons } from '@/components/shared/PickControls';
 import { t } from '@/i18n';
 
 export function ContestDetailPage() {
@@ -94,7 +95,7 @@ export function ContestDetailPage() {
       <div className="mt-4 mb-6">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium uppercase text-muted-foreground">
-            {contest.contest_level}
+            {t(contest.contest_level.charAt(0).toUpperCase() + contest.contest_level.slice(1))}
           </span>
           {contest.district && (
             <span className="text-sm text-muted-foreground">{contest.district.name}</span>
@@ -137,7 +138,10 @@ export function ContestDetailPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
           {candidates.map((c) => (
-            <CandidateCard key={c.id} candidate={c} contestLabel={contest.office_name} />
+            <div key={c.id} className="flex flex-col gap-2">
+              <CandidateCard candidate={c} contestLabel={contest.office_name} />
+              <CandidatePickButton contestId={contest.id} candidateId={c.id} name={`${c.first_name} ${c.last_name}`} className="self-start" />
+            </div>
           ))}
         </div>
       )}
@@ -192,9 +196,10 @@ export function MeasureDetailPage() {
 
       <div className="mt-4 mb-6">
         <span className="inline-flex items-center rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium uppercase text-muted-foreground">
-          {measure.measure_type}
+          {t(({ amendment: 'Amendment', referendum: 'Referendum', local: 'Local Measure' } as Record<string, string>)[measure.measure_type] ?? 'Measure')}
         </span>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">{measure.title}</h1>
+        <MeasurePickButtons measureId={measure.id} className="mt-4" />
         <div className="mt-4">
           <DemoBanner compact />
         </div>

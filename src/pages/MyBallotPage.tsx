@@ -19,6 +19,10 @@ import { parseDateOnly } from '@/lib/date-utils';
 import { ElectionResultsCard } from '@/components/shared/ElectionResultsCard';
 import { toStatePostal } from '@/lib/us-states';
 import { t, dateLocale } from '@/i18n';
+import { VoteReadyCard } from '@/components/shared/VoteReadyCard';
+import { useMyPicks } from '@/components/shared/PickControls';
+import { countPicks } from '@/services/picks';
+import { ListChecks } from 'lucide-react';
 
 const levelOrder = ['federal', 'state', 'local', 'judicial'] as const;
 const levelLabels: Record<string, string> = {
@@ -44,6 +48,7 @@ export function MyBallotPage() {
   const [measures, setMeasures] = useState<BallotMeasure[]>([]);
   const [districts, setDistricts] = useState<DistrictResult | null>(null);
   const [ballotScope, setBallotScope] = useState<'district' | 'state' | undefined>(undefined);
+  const picks = useMyPicks();
 
   async function loadBallotFor(savedAddress: string) {
     // A stored address that isn't a ZIP (e.g. typed before validation existed)
@@ -246,7 +251,15 @@ export function MyBallotPage() {
         )}
 
         <p className="mt-3 text-sm text-muted-foreground">{t("Your ballot may change depending on your address. Enter a different ZIP code to see races for another location.")}</p>
+
+        <Link to="/ballot/picks" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 touch-target">
+          <ListChecks className="h-4 w-4" />{t("My Picks")}
+          <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">{countPicks(picks)}</span>
+          <span className="font-normal text-muted-foreground">· {t("print or share your choices")}</span>
+        </Link>
       </div>
+
+      <VoteReadyCard statePostal={toStatePostal(districts?.state)} className="mb-8" />
 
       {/* AP race calls / certified results for the voter's state. Renders
           nothing until results exist. This card existed but was never placed

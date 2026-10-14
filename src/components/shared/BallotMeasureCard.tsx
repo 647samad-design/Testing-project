@@ -6,6 +6,7 @@ import { ExplainSimply } from './ExplainSimply';
 import type { BallotMeasure } from '@/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
+import { MeasurePickButtons } from './PickControls';
 
 interface BallotMeasureCardProps {
   measure: BallotMeasure;
@@ -27,7 +28,7 @@ export function BallotMeasureCard({ measure, className }: BallotMeasureCardProps
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <DistrictBadge text={typeLabel[measure.measure_type] ?? 'Measure'} />
+            <DistrictBadge text={t(typeLabel[measure.measure_type] ?? 'Measure')} />
           </div>
           <h3 className="mt-2 font-bold text-foreground">{measure.title}</h3>
           {measure.summary && (
@@ -43,6 +44,7 @@ export function BallotMeasureCard({ measure, className }: BallotMeasureCardProps
           )}
         </div>
       </div>
+      <MeasurePickButtons measureId={measure.id} className="mt-4" />
       <Link
         to={`/ballot/measure/${measure.id}`}
         className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary/80 touch-target"

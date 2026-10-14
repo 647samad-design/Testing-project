@@ -33,7 +33,7 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <header className="print:hidden sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-content items-center justify-between px-4 sm:px-6">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0 touch-target" aria-label={t("Gov Search App home")}>
@@ -208,7 +208,7 @@ export function Header() {
       </Sheet>
 
       {/* Mobile bottom nav — iOS style */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background/90 backdrop-blur-xl md:hidden">
+      <nav className="print:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background/90 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-1.5">
           {mobileNavItems.map((item) => (
             <NavLink
@@ -273,7 +273,7 @@ function LanguageSelector() {
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/60 bg-secondary/20 mt-4 pb-24 md:pb-0">
+    <footer className="print:hidden border-t border-border/60 bg-secondary/20 mt-4 pb-24 md:pb-0">
       <div className="mx-auto max-w-content px-4 sm:px-6 py-8">
         <div className="grid grid-cols-2 gap-6 md:grid-cols-5 [&>*]:min-w-0 [overflow-wrap:anywhere]">
           <div className="col-span-2 md:col-span-1">

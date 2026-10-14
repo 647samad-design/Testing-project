@@ -18,7 +18,7 @@ import { invalidateSubscriptionCache } from '@/services/subscription-cache';
 import { getFollowedCandidates } from '@/services/social';
 import { getNotificationPreferences, updateNotificationPreferences, type NotificationPreferences } from '@/services/notification-preferences';
 import { toast } from 'sonner';
-import type { Candidate, Issue, UserLocation, ElectionJourneyStep } from '@/types';
+import type { Candidate, Issue, UserLocation, ElectionJourneyStep, Election } from '@/types';
 import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { getElections } from '@/services/civic';
@@ -37,6 +37,16 @@ export function AccountPage() {
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const [location, setLocation] = useState<UserLocation | null>(null);
+  const [nextElection, setNextElection] = useState<Election | null>(null);
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    getElections().then((all) => setNextElection(
+      all.filter((e) => e.election_date >= today).sort((a, b) => a.election_date.localeCompare(b.election_date))[0] ?? null,
+    )).catch(() => {});
+  }, []);
+  const daysToElection = nextElection
+    ? Math.max(0, Math.round((parseDateOnly(nextElection.election_date).getTime() - new Date(new Date().toDateString()).getTime()) / 86400000))
+    : 0;
   const [userIssues, setUserIssues] = useState<Issue[]>([]);
   const [savedCandidates, setSavedCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -446,14 +456,16 @@ export function AccountPage() {
               </span>
             </div>
             <div className="p-5 space-y-3">
-              <BriefingItem
-                icon={VoteIcon}
-                color="text-primary"
-                bg="bg-primary/10"
-                title={`${Math.max(0, Math.ceil((new Date('2026-11-03').getTime() - Date.now()) / 86400000))} days to Election Day`}
-                desc={t("Check your registration status and polling location.")}
-                link="/ballot"
-              />
+              {nextElection && (
+                <BriefingItem
+                  icon={VoteIcon}
+                  color="text-primary"
+                  bg="bg-primary/10"
+                  title={daysToElection === 0 ? t("Election Day is today") : t("{n} days to Election Day", { n: daysToElection })}
+                  desc={t("Check your registration status and polling location.")}
+                  link="/ballot"
+                />
+              )}
               {quizDone ? (
                 <BriefingItem
                   icon={CheckCircle2}

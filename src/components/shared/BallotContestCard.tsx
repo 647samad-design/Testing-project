@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import type { BallotContest, CandidatePosition, Issue } from '@/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
+import { CandidatePickButton } from './PickControls';
 
 interface BallotContestCardProps {
   contest: BallotContest;
@@ -100,10 +101,10 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
       {candidates.length > 0 ? (
         <div className="mt-4 space-y-2">
           {candidates.slice(0, 3).map((c) => (
+            <div key={c.id} className="flex items-center gap-2">
             <Link
-              key={c.id}
               to={`/candidates/${c.id}`}
-              className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-secondary touch-target"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-secondary touch-target"
             >
               <Avatar className="h-7 w-7">
                 {c.photo_url ? (
@@ -112,13 +113,15 @@ export function BallotContestCard({ contest, className }: BallotContestCardProps
                   <AvatarFallback className="text-xs">{c.first_name[0]}{c.last_name[0]}</AvatarFallback>
                 )}
               </Avatar>
-              <span className="font-medium text-foreground">
+              <span className="truncate font-medium text-foreground">
                 {c.first_name} {c.last_name}
               </span>
               {c.party && (
                 <span className="text-xs text-muted-foreground">{c.party && t(c.party)}</span>
               )}
             </Link>
+            <CandidatePickButton contestId={contest.id} candidateId={c.id} name={`${c.first_name} ${c.last_name}`} />
+            </div>
           ))}
           {candidates.length > 3 && (
             <p className="px-3 text-xs text-muted-foreground">

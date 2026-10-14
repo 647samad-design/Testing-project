@@ -48,6 +48,7 @@ const ContactPage = lazy(() => import('@/pages/company/ContactPage').then((m) =>
 const StoriesPage = lazy(() => import('@/pages/StoriesPage').then((m) => ({ default: m.StoriesPage })));
 const StoryDetailPage = lazy(() => import('@/pages/StoriesPage').then((m) => ({ default: m.StoryDetailPage })));
 const ContestDetailPage = lazy(() => import('@/pages/ContestDetailPage').then((m) => ({ default: m.ContestDetailPage })));
+const MyPicksPage = lazy(() => import('@/pages/MyPicksPage').then((m) => ({ default: m.MyPicksPage })));
 const MeasureDetailPage = lazy(() => import('@/pages/ContestDetailPage').then((m) => ({ default: m.MeasureDetailPage })));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
 const AdvertiserDashboardPage = lazy(() => import('@/pages/AdvertiserDashboardPage').then((m) => ({ default: m.AdvertiserDashboardPage })));
@@ -76,6 +77,7 @@ function App() {
               <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/ballot" element={<MyBallotPage />} />
+              <Route path="/ballot/picks" element={<MyPicksPage />} />
               <Route path="/ballot/:contestId" element={<ContestDetailPage />} />
               <Route path="/ballot/measure/:measureId" element={<MeasureDetailPage />} />
               <Route path="/candidates" element={<CandidatesPage />} />
