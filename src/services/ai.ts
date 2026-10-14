@@ -3,6 +3,23 @@ import { fetchAllRows } from '@/lib/fetch-all';
 import { supabase } from '@/lib/supabase';
 import { getCandidatePositions, getVotingRecord, getCandidateStatements } from './candidates';
 
+export type LlmResult =
+  | { status: 'ok'; response: AIResponse; usage: AiUsageStatus }
+  | { status: 'limit'; usage: AiUsageStatus };
+
+/** Language-model answer grounded only in this candidate's evidence (ask-ai
+ * edge function). The function also counts the question against the daily
+ * allowance. Returns null when it can't be used (no candidate named, not
+ * configured, or an error): callers then use the built-in answers below. */
+export async function askWithLanguageModel(question: string, candidateId: string | undefined, lang: string): Promise<LlmResult | null> {
+  const id = candidateId || (await findCandidateByName(question))?.id;
+  if (!id) return null;
+  const { data, error } = await supabase.functions.invoke('ask-ai', { body: { question, candidateId: id, lang } });
+  if (error || !data) return null;
+  if ((data.status === 'ok' && data.response) || (data.status === 'limit' && data.usage)) return data as LlmResult;
+  return null;
+}
+
 /**
  * askBallotLensAI
  *
@@ -316,7 +333,7 @@ const hasWord = (text: string, word: string) =>
  * substring, so with real data "What WILL..." or "...HOPE..." would pick a
  * candidate named Will or Hope.
  */
-async function findCandidateByName(question: string): Promise<{ id: string; name: string } | null> {
+export async function findCandidateByName(question: string): Promise<{ id: string; name: string } | null> {
   const data = await fetchAllRows<{ id: string; first_name: string; last_name: string; is_demo?: boolean }>((from, to) =>
     supabase.from('candidates').select('id, first_name, last_name, is_demo').order('id').range(from, to)).catch(() => null);
   if (!data) return null;

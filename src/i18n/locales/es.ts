@@ -1246,5 +1246,8 @@ const dict: Record<string, string> = {
   "Organization name": "Nombre de la organización",
   "Logo URL (https)": "URL del logotipo (https)",
   "Brand color": "Color de marca",
+  "You've used all 100 questions in today's Expanded AI Research allowance. It resets tomorrow.": "Usaste las 100 preguntas de hoy de Investigación con IA ampliada. Se renueva mañana.",
+  "You've used today's 5 free questions. Upgrade for Expanded AI Research — up to 100 questions a day.": "Usaste tus 5 preguntas gratis de hoy. Mejora tu plan para Investigación con IA ampliada: hasta 100 preguntas al día.",
+  "You've used today's {n} questions without an account. Sign in (free) for 5 questions a day.": "Usaste las {n} preguntas de hoy sin cuenta. Inicia sesión (gratis) para tener 5 preguntas al día.",
 };
 export default dict;

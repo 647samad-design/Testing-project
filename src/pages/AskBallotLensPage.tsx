@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { SourceBadge } from '@/components/shared/SourceBadge';
 import { DemoBanner } from '@/components/shared/DemoBanner';
 import { LoadingState } from '@/components/shared/StateComponents';
-import { askBallotLensAI, assessClaim, getAiUsageStatus, consumeAiUsage, type AiUsageStatus } from '@/services/ai';
+import { askBallotLensAI, askWithLanguageModel, assessClaim, getAiUsageStatus, consumeAiUsage, type AiUsageStatus } from '@/services/ai';
 import { consumeAnonAiQuestion, ANON_DAILY_LIMIT } from '@/lib/anon-ai-allowance';
 import { getCandidates } from '@/services/candidates';
 import { useAuth } from '@/hooks/use-auth';
@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import type { AIResponse, Candidate, ClaimAssessment } from '@/types';
 import { cn } from '@/lib/utils';
 import { usePageMeta } from '@/hooks/use-page-meta';
-import { t } from '@/i18n';
+import { t, currentLanguage } from '@/i18n';
 
 /** Example questions use REAL candidates from the database. They used to name
  * fictional demo candidates (Alex Morgan, Jordan Rivera, Taylor Brooks), which
@@ -64,30 +64,36 @@ export function AskBallotLensPage() {
 
   async function handleAsk() {
     if (!question.trim()) return;
+    const limitMessage = (u: AiUsageStatus) => u.isPaid
+      ? t("You've used all 100 questions in today's Expanded AI Research allowance. It resets tomorrow.")
+      : t("You've used today's 5 free questions. Upgrade for Expanded AI Research — up to 100 questions a day.");
+
+    setLoading(true);
+    setResponse(null);
+    const done = (r: AIResponse) => {
+      setResponse(r);
+      setLoading(false);
+      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    };
 
     if (user) {
+      // Signed in + a candidate named: the language model answers from that
+      // candidate's evidence (and counts the question itself).
+      const llm = await askWithLanguageModel(question, selectedCandidate, currentLanguage());
+      if (llm?.status === 'limit') { setUsage(llm.usage); setLoading(false); toast.error(limitMessage(llm.usage)); return; }
+      if (llm?.status === 'ok') { setUsage(llm.usage); done(llm.response); return; }
+
       const result = await consumeAiUsage();
       setUsage(result);
-      if (!result.allowed) {
-        toast.error(
-          result.isPaid
-            ? "You've used all 100 questions in today's Expanded AI Research allowance. It resets tomorrow."
-            : "You've used today's 5 free questions. Upgrade for Expanded AI Research — up to 100 questions a day."
-        );
-        return;
-      }
+      if (!result.allowed) { setLoading(false); toast.error(limitMessage(result)); return; }
     } else if (!consumeAnonAiQuestion()) {
-      toast.error(`You've used today's ${ANON_DAILY_LIMIT} questions without an account. Sign in (free) for 5 questions a day.`);
+      setLoading(false);
+      toast.error(t("You've used today's {n} questions without an account. Sign in (free) for 5 questions a day.", { n: ANON_DAILY_LIMIT }));
       navigate('/signin');
       return;
     }
 
-    setLoading(true);
-    setResponse(null);
-    const result = await askBallotLensAI(question, selectedCandidate);
-    setResponse(result);
-    setLoading(false);
-    setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    done(await askBallotLensAI(question, selectedCandidate));
   }
 
   async function handleClaimCheck() {

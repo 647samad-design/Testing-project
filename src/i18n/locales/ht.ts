@@ -1246,5 +1246,8 @@ const dict: Record<string, string> = {
   "Organization name": "Non òganizasyon an",
   "Logo URL (https)": "Lyen logo (https)",
   "Brand color": "Koulè mak",
+  "You've used all 100 questions in today's Expanded AI Research allowance. It resets tomorrow.": "Ou itilize tout 100 kesyon jodi a nan Rechèch IA elaji a. L ap rekòmanse demen.",
+  "You've used today's 5 free questions. Upgrade for Expanded AI Research — up to 100 questions a day.": "Ou itilize 5 kesyon gratis jodi a. Monte plan ou pou Rechèch IA elaji: jiska 100 kesyon pa jou.",
+  "You've used today's {n} questions without an account. Sign in (free) for 5 questions a day.": "Ou itilize {n} kesyon jodi a san kont. Konekte (gratis) pou w gen 5 kesyon pa jou.",
 };
 export default dict;
